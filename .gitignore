@@ -1,0 +1,21 @@
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
+# Frontend build artifacts
+smart-campus-frontend/node_modules/
+smart-campus-frontend/dist/
+smart-campus-frontend/dist-ssr/
+
+# Backend build artifacts
+smart-campus-backend/target/
+smart-campus-backend/build/
+smart-campus-backend/.idea/
+
+# Local-only configuration
+.env
+.env.*
+smart-campus-backend/config/application-local.properties
