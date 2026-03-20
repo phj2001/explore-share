@@ -1,102 +1,92 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { login as loginApi, register as registerApi, getUserInfo } from '@/api/auth.js'
-import { getToken, setToken, removeToken } from '@/utils/auth.js'
+import { computed, ref } from 'vue'
+import { login as loginApi, register as registerApi } from '@/api/auth.js'
+import {
+  clearAuthState,
+  getStoredUserInfo,
+  getToken,
+  getUserInfoFromToken,
+  setStoredUserInfo,
+  setToken
+} from '@/utils/auth.js'
 
-export const useUserStore = defineStore('user', () => {
-  // 状态
-  const token = ref(getToken() || '')
-  const userInfo = ref(null)
-  const isLoading = ref(false)
-
-  // 计算属性
-  const isLoggedIn = computed(() => !!token.value)
-  const username = computed(() => userInfo.value?.username || '')
-
-  /**
-   * 登录
-   */
-  const login = async (username, password) => {
-    isLoading.value = true
-    try {
-      const data = await loginApi(username, password)
-      token.value = data.token
-      userInfo.value = data.user || { username }
-      setToken(data.token)
-      return data
-    } catch (error) {
-      throw error
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  /**
-   * 注册
-   */
-  const register = async (username, password) => {
-    isLoading.value = true
-    try {
-      const data = await registerApi(username, password)
-      return data
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  /**
-   * 登出
-   */
-  const logout = () => {
-    token.value = ''
-    userInfo.value = null
-    removeToken()
-  }
-
-  /**
-   * 获取用户信息
-   */
-  const fetchUserInfo = async (id) => {
-    if (!token.value || !id) {
-      return userInfo.value
-    }
-
-    isLoading.value = true
-    try {
-      const data = await getUserInfo(id)
-      userInfo.value = data
-      return data
-    } catch (error) {
-      // token 可能失效，清除登录状态
-      if (error.message?.includes('401') || error.message?.includes('未授权')) {
-        logout()
-      }
-      throw error
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  /**
-   * 更新用户信息
-   */
-  const updateUserInfo = (info) => {
-    userInfo.value = { ...userInfo.value, ...info }
+const buildUserInfo = (data, fallbackUsername) => {
+  if (data?.user) {
+    return data.user
   }
 
   return {
-    // 状态
+    id: data?.userId ?? null,
+    username: data?.username || fallbackUsername || '',
+    role: data?.role ?? null
+  }
+}
+
+const getInitialUserInfo = () => {
+  const storedUserInfo = getStoredUserInfo()
+  if (storedUserInfo?.username) {
+    return storedUserInfo
+  }
+
+  const token = getToken()
+  const tokenUserInfo = getUserInfoFromToken(token)
+  if (tokenUserInfo?.username) {
+    setStoredUserInfo(tokenUserInfo)
+    return tokenUserInfo
+  }
+
+  return storedUserInfo
+}
+
+export const useUserStore = defineStore('user', () => {
+  const token = ref(getToken() || '')
+  const userInfo = ref(getInitialUserInfo())
+  const isLoading = ref(false)
+
+  const isLoggedIn = computed(() => !!token.value)
+  const username = computed(() => userInfo.value?.username || '')
+
+  const login = async (usernameInput, password) => {
+    isLoading.value = true
+    try {
+      const data = await loginApi(usernameInput, password)
+      const nextUserInfo = buildUserInfo(data, usernameInput)
+
+      token.value = data.token
+      userInfo.value = nextUserInfo
+
+      setToken(data.token)
+      setStoredUserInfo(nextUserInfo)
+
+      return data
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const register = async (usernameInput, password) => {
+    isLoading.value = true
+    try {
+      return await registerApi(usernameInput, password)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const logout = () => {
+    token.value = ''
+    userInfo.value = null
+    clearAuthState()
+  }
+
+  return {
     token,
     userInfo,
     isLoading,
-    // 计算属性
     isLoggedIn,
     username,
-    // 方法
     login,
     register,
-    logout,
-    fetchUserInfo,
-    updateUserInfo
+    logout
   }
 })

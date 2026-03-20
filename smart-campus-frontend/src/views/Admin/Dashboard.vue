@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard-container">
-    <!-- 侧边栏 -->
     <aside class="sidebar">
       <div class="logo">
         <h2>智慧校园</h2>
@@ -15,21 +14,21 @@
       </nav>
     </aside>
 
-    <!-- 主内容区 -->
     <main class="main-content">
-      <!-- 顶部栏 -->
       <header class="top-bar">
         <el-button @click="handleBackHome" text>
           <el-icon><HomeFilled /></el-icon>
           返回首页
         </el-button>
         <div class="user-info">
-          <span>欢迎，{{ userStore.username }}</span>
+          <span class="welcome-text">
+            欢迎，
+            <span class="username-highlight">{{ displayName }}</span>
+          </span>
           <el-button @click="handleLogout" text>退出登录</el-button>
         </div>
       </header>
 
-      <!-- 内容区域 -->
       <div class="content">
         <router-view />
       </div>
@@ -38,12 +37,15 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { HomeFilled, Location } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { Location, HomeFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+
+const displayName = computed(() => userStore.username || '当前用户')
 
 const handleBackHome = () => {
   router.push('/')
@@ -127,6 +129,25 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   gap: 15px;
+  flex-shrink: 0;
+}
+
+.welcome-text {
+  color: #475569;
+  font-size: 14px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.username-highlight {
+  color: #0f172a;
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(59, 130, 246, 0.08));
+  border-radius: 999px;
+  padding: 4px 10px;
+  line-height: 1;
 }
 
 .content {

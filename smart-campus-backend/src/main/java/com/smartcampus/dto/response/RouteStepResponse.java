@@ -10,29 +10,19 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoutePlanResponse {
+public class RouteStepResponse {
 
-    private String mode;
+    private String instruction;
 
-    private String modeLabel;
-
-    private Double startLat;
-
-    private Double startLng;
-
-    private Double endLat;
-
-    private Double endLng;
+    private String road;
 
     private Integer distanceMeters;
 
     private Integer durationSeconds;
 
-    private String distanceText;
+    private String action;
 
-    private String durationText;
+    private String assistantAction;
 
     private List<RoutePointResponse> points = new ArrayList<>();
-
-    private List<RouteStepResponse> steps = new ArrayList<>();
 }

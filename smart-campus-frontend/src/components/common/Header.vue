@@ -1,12 +1,10 @@
 <template>
   <header class="header">
     <div class="header-content">
-      <!-- Logo - 左侧 -->
       <div class="logo">
         <h1>智慧校园</h1>
       </div>
 
-      <!-- 搜索和筛选 - 居中 -->
       <div class="search-section">
         <el-input
           v-model="searchText"
@@ -37,7 +35,6 @@
         </el-select>
       </div>
 
-      <!-- 导航菜单和用户操作区 - 右侧 -->
       <div class="right-section">
         <nav class="nav-menu">
           <router-link to="/" class="nav-item">首页</router-link>
@@ -46,7 +43,10 @@
 
         <div class="user-actions">
           <template v-if="userStore.isLoggedIn">
-            <span class="username">欢迎，{{ userStore.username }}</span>
+            <span class="welcome-text">
+              欢迎，
+              <span class="username-highlight">{{ displayName }}</span>
+            </span>
             <el-button @click="handleLogout" text>退出登录</el-button>
           </template>
           <template v-else>
@@ -61,12 +61,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { usePOIStore } from '@/stores/poi'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import { usePOIStore } from '@/stores/poi'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -75,6 +75,8 @@ const poiStore = usePOIStore()
 const searchText = ref('')
 const selectedCategory = ref('')
 const poiCategories = ref([])
+
+const displayName = computed(() => userStore.username || '当前用户')
 
 onMounted(async () => {
   try {
@@ -88,24 +90,26 @@ onMounted(async () => {
 const handleSearch = async () => {
   if (!searchText.value) {
     await poiStore.fetchAllPOIs()
-  } else {
-    try {
-      await poiStore.searchByName(searchText.value)
-    } catch (error) {
-      ElMessage.error('搜索失败')
-    }
+    return
+  }
+
+  try {
+    await poiStore.searchByName(searchText.value)
+  } catch (error) {
+    ElMessage.error('搜索失败')
   }
 }
 
 const handleCategoryFilter = async () => {
   if (!selectedCategory.value) {
     await poiStore.fetchAllPOIs()
-  } else {
-    try {
-      await poiStore.fetchByCategory(selectedCategory.value)
-    } catch (error) {
-      ElMessage.error('筛选失败')
-    }
+    return
+  }
+
+  try {
+    await poiStore.fetchByCategory(selectedCategory.value)
+  } catch (error) {
+    ElMessage.error('筛选失败')
   }
 }
 
@@ -135,7 +139,6 @@ const handleLogout = () => {
   gap: 20px;
 }
 
-/* 左侧 - Logo */
 .logo {
   flex-shrink: 0;
 }
@@ -143,19 +146,19 @@ const handleLogout = () => {
 .logo h1 {
   margin: 0;
   font-size: 26px;
-  font-weight: bold;
+  font-weight: 700;
   color: #409eff;
   letter-spacing: 2px;
   text-shadow: 1px 1px 2px rgba(64, 158, 255, 0.2);
 }
 
-/* 居中 - 搜索和筛选 */
 .search-section {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .search-input {
@@ -166,7 +169,6 @@ const handleLogout = () => {
   width: 150px;
 }
 
-/* 右侧 - 导航和用户操作 */
 .right-section {
   flex-shrink: 0;
   display: flex;
@@ -196,11 +198,24 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
-.username {
-  color: #666;
+.welcome-text {
+  color: #475569;
   font-size: 14px;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.username-highlight {
+  color: #0f172a;
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(59, 130, 246, 0.08));
+  border-radius: 999px;
+  padding: 4px 10px;
+  line-height: 1;
 }
 </style>
