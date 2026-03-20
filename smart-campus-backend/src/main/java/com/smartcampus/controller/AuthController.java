@@ -1,13 +1,16 @@
 package com.smartcampus.controller;
 
 import com.smartcampus.dto.common.Result;
+import com.smartcampus.dto.request.RegisterRequest;
 import com.smartcampus.dto.response.LoginResponse;
+import com.smartcampus.dto.response.UserProfileResponse;
 import com.smartcampus.entity.User;
+import com.smartcampus.security.UserRole;
 import com.smartcampus.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -16,20 +19,17 @@ public class AuthController {
 
     private final AuthService authService;
 
-    /**
-     * 用户注册
-     * POST /api/auth/register
-     */
     @PostMapping("/register")
-    public Result<User> register(@RequestBody User user) {
+    public Result<UserProfileResponse> register(@Valid @RequestBody RegisterRequest request) {
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(request.getPassword());
+        user.setRole(UserRole.USER.getCode());
+
         User registeredUser = authService.register(user);
-        return Result.success(registeredUser);
+        return Result.success(UserProfileResponse.fromUser(registeredUser));
     }
 
-    /**
-     * 用户登录
-     * POST /api/auth/login
-     */
     @PostMapping("/login")
     public Result<LoginResponse> login(@RequestParam String username, @RequestParam String password) {
         return authService.login(username, password)
@@ -37,32 +37,34 @@ public class AuthController {
                 .orElse(Result.error("用户名或密码错误"));
     }
 
-    /**
-     * 根据用户名获取用户
-     * GET /api/auth/user?username=xxx
-     */
+    @GetMapping("/me")
+    public Result<UserProfileResponse> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof Long userId)) {
+            return Result.error(401, "未登录或登录已失效");
+        }
+
+        return authService.getUserById(userId)
+                .map(UserProfileResponse::fromUser)
+                .map(Result::success)
+                .orElse(Result.error(404, "用户不存在"));
+    }
+
     @GetMapping("/user")
-    public Result<User> getUserByUsername(@RequestParam String username) {
+    public Result<UserProfileResponse> getUserByUsername(@RequestParam String username) {
         return authService.getUserByUsername(username)
+                .map(UserProfileResponse::fromUser)
                 .map(Result::success)
                 .orElse(Result.error(404, "用户不存在"));
     }
 
-    /**
-     * 根据ID获取用户
-     * GET /api/auth/user/{id}
-     */
     @GetMapping("/user/{id}")
-    public Result<User> getUserById(@PathVariable Long id) {
+    public Result<UserProfileResponse> getUserById(@PathVariable Long id) {
         return authService.getUserById(id)
+                .map(UserProfileResponse::fromUser)
                 .map(Result::success)
                 .orElse(Result.error(404, "用户不存在"));
     }
 
-    /**
-     * 检查用户名是否存在
-     * GET /api/auth/check?username=xxx
-     */
     @GetMapping("/check")
     public Result<Boolean> checkUsername(@RequestParam String username) {
         return Result.success(authService.existsByUsername(username));

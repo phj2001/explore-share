@@ -27,22 +27,18 @@
       </div>
 
       <div class="route-point">
-        <span class="point-tag start">S</span>
+        <button
+          type="button"
+          class="point-tag point-tag-button start"
+          :class="{ 'is-active': routePickMode === 'start' }"
+          @click="handlePickPoint('start')"
+        >
+          S
+        </button>
         <div class="point-text">
           <strong>{{ routeStart?.name || 'No start point' }}</strong>
           <span v-if="routeStart">{{ formatPoint(routeStart) }}</span>
         </div>
-      </div>
-
-      <div class="point-actions">
-        <el-button
-          size="small"
-          plain
-          :type="routePickMode === 'start' ? 'primary' : 'default'"
-          @click="handlePickPoint('start')"
-        >
-          Pick Start on Map
-        </el-button>
       </div>
 
       <div class="route-actions">
@@ -65,22 +61,18 @@
       </div>
 
       <div class="route-point">
-        <span class="point-tag end">E</span>
+        <button
+          type="button"
+          class="point-tag point-tag-button end"
+          :class="{ 'is-active': routePickMode === 'end' }"
+          @click="handlePickPoint('end')"
+        >
+          E
+        </button>
         <div class="point-text">
           <strong>{{ routeEnd?.name || 'No end point' }}</strong>
           <span v-if="routeEnd">{{ formatPoint(routeEnd) }}</span>
         </div>
-      </div>
-
-      <div class="point-actions">
-        <el-button
-          size="small"
-          plain
-          :type="routePickMode === 'end' ? 'primary' : 'default'"
-          @click="handlePickPoint('end')"
-        >
-          Pick End on Map
-        </el-button>
       </div>
     </div>
 
@@ -285,6 +277,21 @@ const handleClearRoute = () => {
   flex-shrink: 0;
 }
 
+.point-tag-button {
+  border: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.point-tag-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+}
+
+.point-tag-button.is-active {
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22);
+}
+
 .point-tag.start {
   background: #16a34a;
 }
@@ -307,11 +314,6 @@ const handleClearRoute = () => {
 .point-text span {
   color: #64748b;
   font-size: 12px;
-}
-
-.point-actions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .route-actions {

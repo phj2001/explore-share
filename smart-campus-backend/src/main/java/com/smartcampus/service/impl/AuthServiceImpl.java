@@ -3,8 +3,9 @@ package com.smartcampus.service.impl;
 import com.smartcampus.dto.response.LoginResponse;
 import com.smartcampus.entity.User;
 import com.smartcampus.repository.UserRepository;
-import com.smartcampus.service.AuthService;
 import com.smartcampus.security.JwtTokenProvider;
+import com.smartcampus.security.UserRole;
+import com.smartcampus.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,11 +28,8 @@ public class AuthServiceImpl implements AuthService {
         if (existsByUsername(user.getUsername())) {
             throw new IllegalArgumentException("用户名已存在: " + user.getUsername());
         }
-        // 设置默认角色
-        if (user.getRole() == null) {
-            user.setRole((short) 1);
-        }
-        // 密码加密
+
+        user.setRole(UserRole.USER.getCode());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         return userRepository.save(user);
@@ -42,7 +40,7 @@ public class AuthServiceImpl implements AuthService {
         return userRepository.findByUsername(username)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
                 .map(user -> {
-                    String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername());
+                    String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
                     return new LoginResponse(token, user.getId(), user.getUsername(), user.getRole());
                 });
     }

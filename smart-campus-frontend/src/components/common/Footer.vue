@@ -10,7 +10,7 @@
         <h4>快速链接</h4>
         <ul>
           <li><router-link to="/">首页</router-link></li>
-          <li><router-link to="/admin/poi">管理后台</router-link></li>
+          <li v-if="userStore.isSuperAdmin"><router-link to="/admin/poi">管理后台</router-link></li>
         </ul>
       </div>
 
@@ -27,7 +27,9 @@
 </template>
 
 <script setup>
-// Footer 组件无需脚本逻辑
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 </script>
 
 <style scoped>

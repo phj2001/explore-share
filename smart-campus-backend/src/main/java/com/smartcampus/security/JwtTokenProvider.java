@@ -17,25 +17,20 @@ public class JwtTokenProvider {
 
     private final JwtConfig jwtConfig;
 
-    /**
-     * 生成JWT令牌
-     */
-    public String generateToken(Long userId, String username) {
+    public String generateToken(Long userId, String username, Short role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtConfig.getExpiration());
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("username", username)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    /**
-     * 从令牌中获取用户ID
-     */
     public Long getUserIdFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -45,9 +40,6 @@ public class JwtTokenProvider {
         return Long.parseLong(claims.getSubject());
     }
 
-    /**
-     * 从令牌中获取用户名
-     */
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -57,9 +49,6 @@ public class JwtTokenProvider {
         return claims.get("username", String.class);
     }
 
-    /**
-     * 验证令牌是否有效
-     */
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
@@ -72,9 +61,6 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * 获取签名密钥
-     */
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);

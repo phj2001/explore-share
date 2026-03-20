@@ -38,7 +38,7 @@
       <div class="right-section">
         <nav class="nav-menu">
           <router-link to="/" class="nav-item">首页</router-link>
-          <router-link to="/admin/poi" class="nav-item">管理后台</router-link>
+          <router-link v-if="userStore.isSuperAdmin" to="/admin/poi" class="nav-item">管理后台</router-link>
         </nav>
 
         <div class="user-actions">
@@ -80,6 +80,10 @@ const displayName = computed(() => userStore.username || '当前用户')
 
 onMounted(async () => {
   try {
+    if (userStore.isLoggedIn && userStore.role == null) {
+      await userStore.syncCurrentUser()
+    }
+
     await poiStore.fetchCategories()
     poiCategories.value = poiStore.categories
   } catch (error) {

@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { login as loginApi, register as registerApi } from '@/api/auth.js'
+import {
+  getCurrentUser as getCurrentUserApi,
+  login as loginApi,
+  register as registerApi
+} from '@/api/auth.js'
+import { SUPER_ADMIN_ROLE } from '@/constants/auth.js'
 import {
   clearAuthState,
   getStoredUserInfo,
@@ -16,7 +21,7 @@ const buildUserInfo = (data, fallbackUsername) => {
   }
 
   return {
-    id: data?.userId ?? null,
+    id: data?.id ?? data?.userId ?? null,
     username: data?.username || fallbackUsername || '',
     role: data?.role ?? null
   }
@@ -45,6 +50,8 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => !!token.value)
   const username = computed(() => userInfo.value?.username || '')
+  const role = computed(() => userInfo.value?.role ?? null)
+  const isSuperAdmin = computed(() => role.value === SUPER_ADMIN_ROLE)
 
   const login = async (usernameInput, password) => {
     isLoading.value = true
@@ -73,6 +80,18 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  const syncCurrentUser = async () => {
+    if (!token.value) {
+      return null
+    }
+
+    const data = await getCurrentUserApi()
+    const nextUserInfo = buildUserInfo(data)
+    userInfo.value = nextUserInfo
+    setStoredUserInfo(nextUserInfo)
+    return nextUserInfo
+  }
+
   const logout = () => {
     token.value = ''
     userInfo.value = null
@@ -85,8 +104,11 @@ export const useUserStore = defineStore('user', () => {
     isLoading,
     isLoggedIn,
     username,
+    role,
+    isSuperAdmin,
     login,
     register,
+    syncCurrentUser,
     logout
   }
 })

@@ -4,6 +4,7 @@ import com.smartcampus.dto.common.Result;
 import com.smartcampus.entity.POI;
 import com.smartcampus.service.POIService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class POIController {
      * POST /api/pois
      */
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public Result<POI> createPOI(@RequestBody POI poi) {
         POI createdPOI = poiService.createPOI(poi);
         return Result.success(createdPOI);
@@ -50,6 +52,7 @@ public class POIController {
      * PUT /api/pois/{id}
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public Result<POI> updatePOI(@PathVariable Long id, @RequestBody POI poi) {
         poi.setId(id);
         POI updatedPOI = poiService.updatePOI(poi);
@@ -61,6 +64,7 @@ public class POIController {
      * DELETE /api/pois/{id}
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public Result<Void> deletePOI(@PathVariable Long id) {
         poiService.deletePOI(id);
         return Result.success();

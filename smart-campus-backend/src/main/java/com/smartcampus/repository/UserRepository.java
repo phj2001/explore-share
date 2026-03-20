@@ -18,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * 检查用户名是否已存在
      */
     boolean existsByUsername(String username);
+
+    boolean existsByRole(Short role);
 }

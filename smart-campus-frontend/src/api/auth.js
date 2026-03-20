@@ -15,3 +15,7 @@ export const checkUsername = (username) => {
     params: { username }
   })
 }
+
+export const getCurrentUser = () => {
+  return request.get('/auth/me')
+}

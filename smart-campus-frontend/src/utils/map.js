@@ -34,7 +34,7 @@ export const isValidCoordinate = (lat, lng) => {
 }
 
 export const getDefaultCenter = () => {
-  return { lat: 34.2215, lng: 108.9838 }
+  return { lat: 34.2323, lng: 108.9299 }
 }
 
 export const getDefaultZoom = () => {

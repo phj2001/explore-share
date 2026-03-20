@@ -1,10 +1,14 @@
 package com.smartcampus.config;
 
+import com.smartcampus.security.CustomAccessDeniedHandler;
+import com.smartcampus.security.CustomAuthenticationEntryPoint;
 import com.smartcampus.security.JwtAuthenticationFilter;
+import com.smartcampus.security.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,14 +19,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
-    /**
-     * 密码编码器
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -33,29 +37,22 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // CORS 预检请求 - 放行所有 OPTIONS 请求
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // 公开接口 - 认证相关
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/check").permitAll()
-
-                        // POI接口 - 按HTTP方法区分权限
-                        // 查询操作（GET）- 公开
                         .requestMatchers(HttpMethod.GET, "/api/pois/**").permitAll()
-                        // 增删改操作（POST/PUT/DELETE）- 需要认证
-                        .requestMatchers(HttpMethod.POST, "/api/pois/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/pois/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/pois/**").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/api/pois/**").authenticated()
-
-                        // 公开接口 - 路径规划
+                        .requestMatchers(HttpMethod.POST, "/api/pois/**").hasRole(UserRole.SUPER_ADMIN.getRoleName())
+                        .requestMatchers(HttpMethod.PUT, "/api/pois/**").hasRole(UserRole.SUPER_ADMIN.getRoleName())
+                        .requestMatchers(HttpMethod.DELETE, "/api/pois/**").hasRole(UserRole.SUPER_ADMIN.getRoleName())
+                        .requestMatchers(HttpMethod.PATCH, "/api/pois/**").hasRole(UserRole.SUPER_ADMIN.getRoleName())
                         .requestMatchers("/api/routes/**").permitAll()
-
-                        // 其他接口 - 需要认证
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
