@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div>
         <h3>{{ currentModeLabel }} Route</h3>
-        <p>Pick start and end points from the POI dialog.</p>
+        <p>{{ panelDescription }}</p>
       </div>
       <el-button
         v-if="routeStart || routeEnd || routeResult"
@@ -21,12 +21,28 @@
         @change="handleModeChange"
       />
 
+      <div v-if="isPickingRoutePoint" class="pick-banner">
+        <span>Click on the map to set {{ routePickMode === 'start' ? 'the start point' : 'the end point' }}.</span>
+        <el-button text @click="handleCancelPickMode">Cancel</el-button>
+      </div>
+
       <div class="route-point">
         <span class="point-tag start">S</span>
         <div class="point-text">
           <strong>{{ routeStart?.name || 'No start point' }}</strong>
           <span v-if="routeStart">{{ formatPoint(routeStart) }}</span>
         </div>
+      </div>
+
+      <div class="point-actions">
+        <el-button
+          size="small"
+          plain
+          :type="routePickMode === 'start' ? 'primary' : 'default'"
+          @click="handlePickPoint('start')"
+        >
+          Pick Start on Map
+        </el-button>
       </div>
 
       <div class="route-actions">
@@ -54,6 +70,17 @@
           <strong>{{ routeEnd?.name || 'No end point' }}</strong>
           <span v-if="routeEnd">{{ formatPoint(routeEnd) }}</span>
         </div>
+      </div>
+
+      <div class="point-actions">
+        <el-button
+          size="small"
+          plain
+          :type="routePickMode === 'end' ? 'primary' : 'default'"
+          @click="handlePickPoint('end')"
+        >
+          Pick End on Map
+        </el-button>
       </div>
     </div>
 
@@ -100,12 +127,26 @@ const routeStart = computed(() => mapStore.routeStart)
 const routeEnd = computed(() => mapStore.routeEnd)
 const routeResult = computed(() => mapStore.routeResult)
 const routeMode = computed(() => mapStore.routeMode)
+const routePickMode = computed(() => mapStore.routePickMode)
+const isPickingRoutePoint = computed(() => mapStore.isPickingRoutePoint)
 const modeOptions = computed(() =>
   mapStore.routeModes.map((mode) => ({ label: mode.label, value: mode.value }))
 )
 
 const currentModeLabel = computed(() => {
   return mapStore.routeModes.find((mode) => mode.value === mapStore.routeMode)?.label || 'Walk'
+})
+
+const panelDescription = computed(() => {
+  if (routePickMode.value === 'start') {
+    return 'Map click mode: choose a temporary start point.'
+  }
+
+  if (routePickMode.value === 'end') {
+    return 'Map click mode: choose a temporary end point.'
+  }
+
+  return 'Pick points from a POI dialog or directly on the map.'
 })
 
 const formatPoint = (point) => {
@@ -121,6 +162,20 @@ const formatStepMeta = (distanceMeters = 0, durationSeconds = 0) => {
       : `${distanceMeters} m`
   const minutes = Math.max(Math.ceil(durationSeconds / 60), 1)
   return `${distance} · ${minutes} min`
+}
+
+const handlePickPoint = (mode) => {
+  if (routePickMode.value === mode) {
+    mapStore.cancelPickingRoutePoint()
+    return
+  }
+
+  mapStore.startPickingRoutePoint(mode)
+  ElMessage.info(`Click on the map to set the ${mode} point`)
+}
+
+const handleCancelPickMode = () => {
+  mapStore.cancelPickingRoutePoint()
 }
 
 const handleSwapPoints = async () => {
@@ -199,6 +254,18 @@ const handleClearRoute = () => {
   gap: 12px;
 }
 
+.pick-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ecfeff;
+  color: #0f766e;
+  font-size: 12px;
+}
+
 .route-point {
   display: flex;
   gap: 12px;
@@ -240,6 +307,11 @@ const handleClearRoute = () => {
 .point-text span {
   color: #64748b;
   font-size: 12px;
+}
+
+.point-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .route-actions {
@@ -335,6 +407,11 @@ const handleClearRoute = () => {
 
   .route-panel.has-route {
     height: 52vh;
+  }
+
+  .pick-banner {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

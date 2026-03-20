@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { planRoute, getNearbyPOIs } from '@/api/route.js'
 import { getDefaultCenter, getDefaultZoom } from '@/utils/map.js'
 
@@ -18,8 +18,11 @@ export const useMapStore = defineStore('map', () => {
   const routeEnd = ref(null)
   const routeResult = ref(null)
   const routeMode = ref('walking')
+  const routePickMode = ref(null)
 
   const selectedPOI = ref(null)
+
+  const isPickingRoutePoint = computed(() => routePickMode.value === 'start' || routePickMode.value === 'end')
 
   const setCenter = (lat, lng) => {
     center.value = { lat, lng }
@@ -48,6 +51,18 @@ export const useMapStore = defineStore('map', () => {
     routeMode.value = mode
   }
 
+  const setRoutePickMode = (mode) => {
+    routePickMode.value = mode
+  }
+
+  const startPickingRoutePoint = (mode) => {
+    routePickMode.value = mode
+  }
+
+  const cancelPickingRoutePoint = () => {
+    routePickMode.value = null
+  }
+
   const swapRoutePoints = () => {
     const nextStart = routeEnd.value
     routeEnd.value = routeStart.value
@@ -58,6 +73,7 @@ export const useMapStore = defineStore('map', () => {
     routeStart.value = null
     routeEnd.value = null
     routeResult.value = null
+    routePickMode.value = null
   }
 
   const planRouteAsync = async () => {
@@ -118,6 +134,8 @@ export const useMapStore = defineStore('map', () => {
     routeResult,
     routeMode,
     routeModes: ROUTE_MODES,
+    routePickMode,
+    isPickingRoutePoint,
     selectedPOI,
     setCenter,
     setZoom,
@@ -125,6 +143,9 @@ export const useMapStore = defineStore('map', () => {
     setRouteStart,
     setRouteEnd,
     setRouteMode,
+    setRoutePickMode,
+    startPickingRoutePoint,
+    cancelPickingRoutePoint,
     swapRoutePoints,
     clearRoute,
     planRouteAsync,

@@ -4,6 +4,10 @@
 
     <RoutePolyline />
 
+    <div v-if="mapStore.isPickingRoutePoint" class="map-pick-tip">
+      Click on the map to set the {{ mapStore.routePickMode === 'start' ? 'start' : 'end' }} point.
+    </div>
+
     <div v-if="sdkError" class="map-error">
       <h3>AMap failed to load</h3>
       <p>{{ sdkError }}</p>
@@ -162,6 +166,51 @@ const focusSelectedPoi = (poi) => {
   map.setZoomAndCenter(Math.max(map.getZoom(), 17), position)
 }
 
+const buildTemporaryRoutePoint = (mode, lat, lng) => {
+  const convertedCoordinate = fromAmapCoordinate(lat, lng)
+  const rawLat = convertedCoordinate?.lat ?? lat
+  const rawLng = convertedCoordinate?.lng ?? lng
+  const pointName = mode === 'start' ? 'Custom Start Point' : 'Custom End Point'
+
+  return {
+    poiId: null,
+    name: pointName,
+    lat,
+    lng,
+    rawLat,
+    rawLng,
+    isTemporary: true
+  }
+}
+
+const applyTemporaryRoutePoint = (mode, lat, lng) => {
+  const point = buildTemporaryRoutePoint(mode, lat, lng)
+  if (mode === 'start') {
+    mapStore.setRouteStart(point)
+  } else {
+    mapStore.setRouteEnd(point)
+  }
+
+  mapStore.cancelPickingRoutePoint()
+  ElMessage.success(`${point.name} selected`)
+}
+
+const updateMapCursor = () => {
+  if (!map || !mapRoot.value) return
+
+  mapRoot.value.style.cursor = mapStore.isPickingRoutePoint ? 'crosshair' : ''
+}
+
+const handleMapClick = (event) => {
+  if (!mapStore.routePickMode) {
+    return
+  }
+
+  const clickedLat = event.lnglat.getLat()
+  const clickedLng = event.lnglat.getLng()
+  applyTemporaryRoutePoint(mapStore.routePickMode, clickedLat, clickedLng)
+}
+
 const initMap = async () => {
   AMapRef = await loadAmapSdk()
 
@@ -180,6 +229,8 @@ const initMap = async () => {
 
   map.on('moveend', handleMapMove)
   map.on('zoomend', syncMapCenterToStore)
+  map.on('click', handleMapClick)
+  updateMapCursor()
 }
 
 const loadPOIs = async () => {
@@ -306,7 +357,8 @@ const setAsRoutePoint = (type) => {
     lat: mapCoordinate.lat,
     lng: mapCoordinate.lng,
     rawLat: Number(selectedPOI.value.latitude),
-    rawLng: Number(selectedPOI.value.longitude)
+    rawLng: Number(selectedPOI.value.longitude),
+    isTemporary: false
   }
 
   if (type === 'start') {
@@ -362,6 +414,7 @@ onUnmounted(() => {
   if (map) {
     map.off('moveend', handleMapMove)
     map.off('zoomend', syncMapCenterToStore)
+    map.off('click', handleMapClick)
     map.destroy()
     map = null
   }
@@ -404,6 +457,13 @@ watch(
   },
   { deep: true }
 )
+
+watch(
+  () => mapStore.routePickMode,
+  () => {
+    updateMapCursor()
+  }
+)
 </script>
 
 <style scoped>
@@ -419,6 +479,19 @@ watch(
 .map-view {
   width: 100%;
   height: 100%;
+}
+
+.map-pick-tip {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1100;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e2e8f0;
+  font-size: 13px;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.24);
 }
 
 .map-error {
@@ -464,6 +537,12 @@ watch(
 @media (max-width: 768px) {
   .map-container {
     height: calc(100vh - 56px);
+  }
+
+  .map-pick-tip {
+    left: 12px;
+    right: 12px;
+    top: 12px;
   }
 
   .map-error {
