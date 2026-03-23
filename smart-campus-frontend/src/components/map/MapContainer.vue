@@ -5,32 +5,53 @@
     <RoutePolyline />
 
     <div v-if="mapStore.isPickingRoutePoint" class="map-pick-tip">
-      Click on the map to set the {{ mapStore.routePickMode === 'start' ? 'start' : 'end' }} point.
+      请在地图上点击，设置{{ mapStore.routePickMode === 'start' ? '起点' : '终点' }}。
     </div>
 
     <div v-if="sdkError" class="map-error">
-      <h3>AMap failed to load</h3>
+      <h3>高德地图加载失败</h3>
       <p>{{ sdkError }}</p>
-      <p>Check `VITE_AMAP_JS_KEY` and the AMap domain whitelist.</p>
+      <p>请检查 `VITE_AMAP_JS_KEY` 和高德地图白名单配置。</p>
     </div>
 
     <el-dialog
       v-model="showDetailDialog"
       :title="selectedPOI?.name"
-      width="420px"
+      width="920px"
       destroy-on-close
+      class="poi-dialog"
     >
-      <div v-if="selectedPOI" class="poi-detail">
-        <p><strong>Category:</strong> {{ selectedPOI.category }}</p>
-        <p><strong>Coordinate:</strong> {{ selectedPOI.latitude }}, {{ selectedPOI.longitude }}</p>
-        <p><strong>Description:</strong> {{ selectedPOI.description || 'N/A' }}</p>
+      <div v-if="selectedPOI" class="poi-dialog-content">
+        <section class="poi-overview">
+          <div class="poi-overview-card">
+            <span class="poi-category">{{ selectedPOI.category }}</span>
+            <h3>{{ selectedPOI.name }}</h3>
+            <p>{{ selectedPOI.description || '这个地点暂时还没有详细介绍。' }}</p>
+          </div>
+
+          <div class="poi-meta-grid">
+            <div class="meta-card">
+              <span>纬度</span>
+              <strong>{{ selectedPOI.latitude }}</strong>
+            </div>
+            <div class="meta-card">
+              <span>经度</span>
+              <strong>{{ selectedPOI.longitude }}</strong>
+            </div>
+          </div>
+
+          <div class="poi-actions">
+            <el-button @click="setAsRoutePoint('start')">设为起点</el-button>
+            <el-button type="primary" plain @click="setAsRoutePoint('end')">设为终点</el-button>
+          </div>
+        </section>
+
+        <PoiSharePanel :poi="selectedPOI" />
       </div>
 
       <template #footer>
         <div class="dialog-actions">
-          <el-button @click="setAsRoutePoint('start')">Set Start</el-button>
-          <el-button type="primary" plain @click="setAsRoutePoint('end')">Set End</el-button>
-          <el-button @click="showDetailDialog = false">Close</el-button>
+          <el-button @click="showDetailDialog = false">关闭</el-button>
         </div>
       </template>
     </el-dialog>
@@ -41,6 +62,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import RoutePolyline from '@/components/map/RoutePolyline.vue'
+import PoiSharePanel from '@/components/map/PoiSharePanel.vue'
 import { usePOIStore } from '@/stores/poi'
 import { useMapStore } from '@/stores/map'
 import {
@@ -170,7 +192,7 @@ const buildTemporaryRoutePoint = (mode, lat, lng) => {
   const convertedCoordinate = fromAmapCoordinate(lat, lng)
   const rawLat = convertedCoordinate?.lat ?? lat
   const rawLng = convertedCoordinate?.lng ?? lng
-  const pointName = mode === 'start' ? 'Custom Start Point' : 'Custom End Point'
+  const pointName = mode === 'start' ? '自定义起点' : '自定义终点'
 
   return {
     poiId: null,
@@ -192,7 +214,7 @@ const applyTemporaryRoutePoint = (mode, lat, lng) => {
   }
 
   mapStore.cancelPickingRoutePoint()
-  ElMessage.success(`${point.name} selected`)
+  ElMessage.success(`已设置${point.name}`)
 }
 
 const updateMapCursor = () => {
@@ -216,7 +238,7 @@ const initMap = async () => {
 
   const center = toAmapCoordinate(mapStore.center.lat, mapStore.center.lng)
   if (!center) {
-    throw new Error('Invalid default map center')
+    throw new Error('默认地图中心坐标无效')
   }
 
   map = new AMapRef.Map(mapRoot.value, {
@@ -238,7 +260,7 @@ const loadPOIs = async () => {
     await Promise.all([poiStore.fetchAllPOIs(), poiStore.fetchCategories()])
     renderMarkers()
   } catch (error) {
-    ElMessage.error('Failed to load POIs')
+    ElMessage.error('加载 POI 失败')
   }
 }
 
@@ -347,7 +369,7 @@ const setAsRoutePoint = (type) => {
 
   const mapCoordinate = toAmapCoordinate(selectedPOI.value.latitude, selectedPOI.value.longitude)
   if (!mapCoordinate) {
-    ElMessage.error('Invalid POI coordinate')
+    ElMessage.error('POI 坐标无效')
     return
   }
 
@@ -363,10 +385,10 @@ const setAsRoutePoint = (type) => {
 
   if (type === 'start') {
     mapStore.setRouteStart(point)
-    ElMessage.success(`Set ${point.name} as start`)
+    ElMessage.success(`已将 ${point.name} 设为起点`)
   } else {
     mapStore.setRouteEnd(point)
-    ElMessage.success(`Set ${point.name} as end`)
+    ElMessage.success(`已将 ${point.name} 设为终点`)
   }
 
   showDetailDialog.value = false
@@ -394,8 +416,8 @@ const handleMapMove = async () => {
       convertedSouthWest.lng,
       convertedNorthEast.lng
     )
-  } catch (error) {
-    // Keep the current interaction responsive if viewport sync fails.
+  } catch {
+    // 保持视图交互流畅，不在这里打断用户操作。
   }
 }
 
@@ -405,7 +427,7 @@ onMounted(async () => {
     await loadPOIs()
     drawRoute()
   } catch (error) {
-    sdkError.value = error.message || 'Failed to initialize AMap'
+    sdkError.value = error.message || '高德地图初始化失败'
     ElMessage.error(sdkError.value)
   }
 })
@@ -523,15 +545,75 @@ watch(
   margin-top: 6px;
 }
 
-.poi-detail p {
-  margin: 10px 0;
-  line-height: 1.6;
+.poi-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.poi-overview {
+  padding: 24px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(191, 219, 254, 0.55), rgba(255, 255, 255, 0.92));
+}
+
+.poi-overview-card h3 {
+  margin: 14px 0 8px;
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.poi-overview-card p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.poi-category {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.poi-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.meta-card {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.meta-card span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.meta-card strong {
+  display: block;
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.poi-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
 }
 
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
 }
 
 @media (max-width: 768px) {
@@ -550,6 +632,14 @@ watch(
     right: 12px;
     bottom: 84px;
     max-width: none;
+  }
+
+  .poi-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .poi-actions {
+    flex-direction: column;
   }
 }
 </style>

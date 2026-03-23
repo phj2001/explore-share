@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/check").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/poi-shares/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/pois/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/pois/**").hasRole(UserRole.SUPER_ADMIN.getRoleName())

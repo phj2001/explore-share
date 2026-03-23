@@ -1,16 +1,25 @@
 <template>
-  <div class="route-panel" :class="{ 'has-route': routeResult?.steps?.length }">
+  <el-tooltip v-if="isCollapsed" content="点击进行导航" placement="left">
+    <button type="button" class="route-trigger" @click="handleExpandPanel">
+      <el-icon><Guide /></el-icon>
+    </button>
+  </el-tooltip>
+
+  <div v-else class="route-panel" :class="{ 'has-route': routeResult?.steps?.length }">
     <div class="panel-header">
       <div>
         <h3>{{ currentModeLabel }} Route</h3>
         <p>{{ panelDescription }}</p>
       </div>
-      <el-button
-        v-if="routeStart || routeEnd || routeResult"
-        :icon="Delete"
-        text
-        @click="handleClearRoute"
-      />
+      <div class="header-actions">
+        <el-button :icon="Minus" text @click="handleCollapsePanel" />
+        <el-button
+          v-if="routeStart || routeEnd || routeResult"
+          :icon="Delete"
+          text
+          @click="handleClearRoute"
+        />
+      </div>
     </div>
 
     <div class="panel-body">
@@ -108,12 +117,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Delete, Sort } from '@element-plus/icons-vue'
+import { Delete, Guide, Minus, Sort } from '@element-plus/icons-vue'
 import { useMapStore } from '@/stores/map'
 
 const mapStore = useMapStore()
+const isCollapsed = ref(true)
 
 const routeStart = computed(() => mapStore.routeStart)
 const routeEnd = computed(() => mapStore.routeEnd)
@@ -196,9 +206,45 @@ const handleModeChange = async (mode) => {
 const handleClearRoute = () => {
   mapStore.clearRoute()
 }
+
+const handleExpandPanel = () => {
+  isCollapsed.value = false
+}
+
+const handleCollapsePanel = () => {
+  isCollapsed.value = true
+}
 </script>
 
 <style scoped>
+.route-trigger {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f766e, #0ea5e9);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.route-trigger:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.26);
+}
+
+.route-trigger .el-icon {
+  font-size: 24px;
+}
+
 .route-panel {
   position: absolute;
   top: 20px;
@@ -226,6 +272,12 @@ const handleClearRoute = () => {
   padding: 16px 18px 12px;
   background: linear-gradient(135deg, #0f766e, #0ea5e9);
   color: #fff;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .panel-header h3 {
@@ -398,6 +450,12 @@ const handleClearRoute = () => {
 }
 
 @media (max-width: 768px) {
+  .route-trigger {
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+  }
+
   .route-panel {
     left: 12px;
     right: 12px;
