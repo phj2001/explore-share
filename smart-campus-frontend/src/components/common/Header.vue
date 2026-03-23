@@ -38,15 +38,18 @@
       <div class="right-section">
         <nav class="nav-menu">
           <router-link to="/" class="nav-item">首页</router-link>
+          <router-link v-if="userStore.isLoggedIn" to="/settings" class="nav-item">设置</router-link>
           <router-link v-if="userStore.isSuperAdmin" to="/admin/poi" class="nav-item">管理后台</router-link>
         </nav>
 
         <div class="user-actions">
           <template v-if="userStore.isLoggedIn">
-            <span class="welcome-text">
-              欢迎，
+            <router-link to="/settings" class="profile-link">
+              <el-avatar :size="36" :src="avatarUrl || undefined" class="user-avatar">
+                {{ displayName.slice(0, 1).toUpperCase() }}
+              </el-avatar>
               <span class="username-highlight">{{ displayName }}</span>
-            </span>
+            </router-link>
             <el-button @click="handleLogout" text>退出登录</el-button>
           </template>
           <template v-else>
@@ -76,18 +79,19 @@ const searchText = ref('')
 const selectedCategory = ref('')
 const poiCategories = ref([])
 
-const displayName = computed(() => userStore.username || '当前用户')
+const displayName = computed(() => userStore.displayName || '当前用户')
+const avatarUrl = computed(() => userStore.avatarUrl)
 
 onMounted(async () => {
   try {
-    if (userStore.isLoggedIn && userStore.role == null) {
+    if (userStore.isLoggedIn && !userStore.userInfo?.displayName && !userStore.userInfo?.avatarUrl) {
       await userStore.syncCurrentUser()
     }
 
     await poiStore.fetchCategories()
     poiCategories.value = poiStore.categories
   } catch (error) {
-    console.error('加载分类失败:', error)
+    console.error('加载头部数据失败:', error)
   }
 })
 
@@ -99,7 +103,7 @@ const handleSearch = async () => {
 
   try {
     await poiStore.searchByName(searchText.value)
-  } catch (error) {
+  } catch {
     ElMessage.error('搜索失败')
   }
 }
@@ -112,7 +116,7 @@ const handleCategoryFilter = async () => {
 
   try {
     await poiStore.fetchByCategory(selectedCategory.value)
-  } catch (error) {
+  } catch {
     ElMessage.error('筛选失败')
   }
 }
@@ -136,7 +140,7 @@ const handleLogout = () => {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
-  height: 60px;
+  min-height: 68px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -201,17 +205,22 @@ const handleLogout = () => {
 .user-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
-.welcome-text {
-  color: #475569;
-  font-size: 14px;
-  white-space: nowrap;
+.profile-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #fff;
+  font-weight: 700;
 }
 
 .username-highlight {
@@ -219,7 +228,43 @@ const handleLogout = () => {
   font-weight: 700;
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(59, 130, 246, 0.08));
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 6px 12px;
   line-height: 1;
+}
+
+@media (max-width: 960px) {
+  .header-content {
+    padding: 12px 16px;
+    min-height: auto;
+    flex-wrap: wrap;
+  }
+
+  .search-section {
+    order: 3;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .search-input,
+  .category-select {
+    width: 100%;
+  }
+
+  .right-section {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav-menu {
+    gap: 12px;
+  }
+
+  .username-highlight {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 </style>

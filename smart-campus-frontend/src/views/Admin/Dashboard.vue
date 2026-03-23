@@ -45,7 +45,7 @@ import { useUserStore } from '@/stores/user'
 const router = useRouter()
 const userStore = useUserStore()
 
-const displayName = computed(() => userStore.username || '当前用户')
+const displayName = computed(() => userStore.displayName || '当前用户')
 
 const handleBackHome = () => {
   router.push('/')

@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { clearAuthState, getToken } from '@/utils/auth.js'
 
-const BASE_URL = 'http://localhost:8080/api'
+export const BASE_URL = 'http://localhost:8080/api'
+export const API_ORIGIN = BASE_URL.replace(/\/api$/, '')
 const TIMEOUT = 10000
 
 const request = axios.create({

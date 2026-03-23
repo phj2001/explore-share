@@ -16,6 +16,12 @@ const routes = [
     meta: { title: '登录', hideAuth: true }
   },
   {
+    path: '/settings',
+    name: 'Settings',
+    component: () => import('@/views/Settings.vue'),
+    meta: { title: '用户设置', requiresAuth: true }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/Admin/Dashboard.vue'),

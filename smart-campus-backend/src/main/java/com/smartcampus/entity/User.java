@@ -24,6 +24,9 @@ public class User {
     @Column(name = "username", nullable = false, length = 50)
     private String username;
 
+    @Column(name = "display_name", length = 100)
+    private String displayName;
+
     /**
      * 密码：只接受写入，不返回给前端
      */
@@ -34,6 +37,29 @@ public class User {
     @Column(name = "role", nullable = false)
     private Short role = 1;
 
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
+
+    @Column(name = "bio", length = 150)
+    private String bio;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }
