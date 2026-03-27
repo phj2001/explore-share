@@ -39,7 +39,7 @@
         <nav class="nav-menu">
           <router-link to="/" class="nav-item">首页</router-link>
           <router-link v-if="userStore.isLoggedIn" to="/settings" class="nav-item">设置</router-link>
-          <router-link v-if="userStore.isSuperAdmin" to="/admin/poi" class="nav-item">管理后台</router-link>
+          <router-link v-if="userStore.isSuperAdmin" to="/admin/overview" class="nav-item">管理后台</router-link>
         </nav>
 
         <div class="user-actions">

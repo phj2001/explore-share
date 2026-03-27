@@ -10,7 +10,7 @@
         <h4>快速链接</h4>
         <ul>
           <li><router-link to="/">首页</router-link></li>
-          <li v-if="userStore.isSuperAdmin"><router-link to="/admin/poi">管理后台</router-link></li>
+          <li v-if="userStore.isSuperAdmin"><router-link to="/admin/overview">管理后台</router-link></li>
         </ul>
       </div>
 

@@ -2,9 +2,11 @@ package com.smartcampus.service.impl;
 
 import com.smartcampus.dto.response.LoginResponse;
 import com.smartcampus.entity.User;
+import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.security.JwtTokenProvider;
 import com.smartcampus.security.UserRole;
+import com.smartcampus.security.UserStatus;
 import com.smartcampus.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         user.setRole(UserRole.USER.getCode());
+        user.setStatus(UserStatus.ACTIVE.getCode());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         return userRepository.save(user);
@@ -40,6 +43,9 @@ public class AuthServiceImpl implements AuthService {
         return userRepository.findByUsername(username)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
                 .map(user -> {
+                    if (UserStatus.fromCode(user.getStatus()) == UserStatus.DISABLED) {
+                        throw new BusinessException(403, "账号已被禁用");
+                    }
                     String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
                     return new LoginResponse(token, user.getId(), user.getUsername(), user.getRole());
                 });
@@ -48,7 +54,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Optional<User> verifyLogin(String username, String password) {
         return userRepository.findByUsername(username)
-                .filter(user -> passwordEncoder.matches(password, user.getPassword()));
+                .filter(user -> passwordEncoder.matches(password, user.getPassword()))
+                .filter(user -> UserStatus.fromCode(user.getStatus()) == UserStatus.ACTIVE);
     }
 
     @Override

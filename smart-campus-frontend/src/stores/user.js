@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
-  getCurrentUser as getCurrentUserApi,
   login as loginApi,
   register as registerApi
 } from '@/api/auth.js'
@@ -40,7 +39,8 @@ const buildUserInfo = (data, fallbackUsername) => {
     displayName: data?.displayName || '',
     avatarUrl: resolveAssetUrl(data?.avatarUrl || ''),
     bio: data?.bio || '',
-    role: data?.role ?? null
+    role: data?.role ?? null,
+    status: data?.status ?? null
   }
 }
 
@@ -72,6 +72,7 @@ export const useUserStore = defineStore('user', () => {
   const avatarUrl = computed(() => userInfo.value?.avatarUrl || '')
   const bio = computed(() => userInfo.value?.bio || '')
   const role = computed(() => userInfo.value?.role ?? null)
+  const status = computed(() => userInfo.value?.status ?? null)
   const isSuperAdmin = computed(() => role.value === SUPER_ADMIN_ROLE)
 
   const applyUserInfo = (data, fallbackUsername) => {
@@ -109,7 +110,7 @@ export const useUserStore = defineStore('user', () => {
       return null
     }
 
-    const data = await getCurrentUserApi()
+    const data = await getMyProfileApi()
     return applyUserInfo(data)
   }
 
@@ -142,6 +143,7 @@ export const useUserStore = defineStore('user', () => {
     avatarUrl,
     bio,
     role,
+    status,
     isSuperAdmin,
     login,
     register,

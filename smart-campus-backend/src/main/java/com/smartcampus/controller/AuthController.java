@@ -1,6 +1,7 @@
 package com.smartcampus.controller;
 
 import com.smartcampus.dto.common.Result;
+import com.smartcampus.dto.request.LoginRequest;
 import com.smartcampus.dto.request.RegisterRequest;
 import com.smartcampus.dto.response.LoginResponse;
 import com.smartcampus.dto.response.UserProfileResponse;
@@ -9,8 +10,16 @@ import com.smartcampus.security.UserRole;
 import com.smartcampus.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,11 +39,19 @@ public class AuthController {
         return Result.success(UserProfileResponse.fromUser(registeredUser));
     }
 
-    @PostMapping("/login")
-    public Result<LoginResponse> login(@RequestParam String username, @RequestParam String password) {
-        return authService.login(username, password)
-                .map(Result::success)
-                .orElse(Result.error("用户名或密码错误"));
+    @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Result<LoginResponse> loginByJson(@Valid @RequestBody LoginRequest request) {
+        return doLogin(request);
+    }
+
+    @PostMapping(value = "/login", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public Result<LoginResponse> loginByForm(@Valid @ModelAttribute LoginRequest request) {
+        return doLogin(request);
+    }
+
+    @PostMapping(value = "/login", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Result<LoginResponse> loginByMultipart(@Valid @ModelAttribute LoginRequest request) {
+        return doLogin(request);
     }
 
     @GetMapping("/me")
@@ -68,5 +85,11 @@ public class AuthController {
     @GetMapping("/check")
     public Result<Boolean> checkUsername(@RequestParam String username) {
         return Result.success(authService.existsByUsername(username));
+    }
+
+    private Result<LoginResponse> doLogin(LoginRequest request) {
+        return authService.login(request.getUsername(), request.getPassword())
+                .map(Result::success)
+                .orElse(Result.error("用户名或密码错误"));
     }
 }

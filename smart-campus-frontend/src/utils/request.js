@@ -39,18 +39,18 @@ request.interceptors.response.use(
           error.message = data.message || '请求参数错误'
           break
         case 401:
-          error.message = '未授权，请先登录'
+          error.message = data.message || '未授权，请先登录'
           clearAuthState()
           window.location.href = '/login'
           break
         case 403:
-          error.message = '无权访问'
+          error.message = data.message || '无权访问'
           break
         case 404:
-          error.message = '资源不存在'
+          error.message = data.message || '资源不存在'
           break
         case 500:
-          error.message = '服务器内部错误'
+          error.message = data.message || '服务器内部错误'
           break
         default:
           error.message = data.message || `请求失败 (${status})`

@@ -37,6 +37,9 @@ public class User {
     @Column(name = "role", nullable = false)
     private Short role = 1;
 
+    @Column(name = "status", nullable = false)
+    private Short status = 1;
+
     @Column(name = "avatar_url", length = 255)
     private String avatarUrl;
 
@@ -54,6 +57,9 @@ public class User {
         LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) {
             createdAt = now;
+        }
+        if (status == null) {
+            status = 1;
         }
         updatedAt = now;
     }

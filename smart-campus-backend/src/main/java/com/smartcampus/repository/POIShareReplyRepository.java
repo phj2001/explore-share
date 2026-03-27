@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -31,4 +32,11 @@ public interface POIShareReplyRepository extends JpaRepository<POIShareReply, Lo
 
     @Query("select r.share.id, count(r.id) from POIShareReply r where r.share.id in :shareIds group by r.share.id")
     List<Object[]> countGroupedByShareIds(@Param("shareIds") Collection<Long> shareIds);
+
+    long countByCreatedAtGreaterThanEqual(LocalDateTime createdAt);
+
+    @Query("select r.share.poi.id, count(r.id) from POIShareReply r where r.createdAt >= :start group by r.share.poi.id")
+    List<Object[]> countGroupedByPoiIdsSince(@Param("start") LocalDateTime start);
+
+    long countByUserId(Long userId);
 }

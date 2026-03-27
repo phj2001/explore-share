@@ -7,9 +7,17 @@
       </div>
 
       <nav class="nav-menu">
+        <router-link to="/admin/overview" class="nav-item">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>运营总览</span>
+        </router-link>
         <router-link to="/admin/poi" class="nav-item">
           <el-icon><Location /></el-icon>
           <span>POI 管理</span>
+        </router-link>
+        <router-link to="/admin/users" class="nav-item">
+          <el-icon><UserFilled /></el-icon>
+          <span>用户管理</span>
         </router-link>
       </nav>
     </aside>
@@ -39,7 +47,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { HomeFilled, Location } from '@element-plus/icons-vue'
+import { DataAnalysis, HomeFilled, Location, UserFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -61,74 +69,80 @@ const handleLogout = () => {
 .dashboard-container {
   display: flex;
   min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.14), transparent 26%),
+    linear-gradient(180deg, #edf4fb 0%, #f4f7fb 48%, #eef3f8 100%);
 }
 
 .sidebar {
-  width: 250px;
-  background: #304156;
+  width: 252px;
+  background: linear-gradient(180deg, #213246 0%, #162434 100%);
   color: #fff;
+  box-shadow: 12px 0 36px rgba(15, 23, 42, 0.16);
 }
 
 .logo {
-  padding: 30px 20px;
-  text-align: center;
-  border-bottom: 1px solid #434a58;
+  padding: 34px 24px 28px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .logo h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 26px;
+  letter-spacing: 0.04em;
 }
 
 .logo p {
-  margin: 5px 0 0;
-  font-size: 14px;
-  color: #aeb9c2;
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #9eb1c5;
 }
 
 .nav-menu {
-  padding: 20px 0;
+  padding: 18px 12px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 15px 25px;
-  color: #bfcbd9;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-radius: 16px;
+  color: #c8d5e3;
   text-decoration: none;
-  transition: all 0.3s;
+  transition: all 0.24s ease;
 }
 
 .nav-item:hover,
 .nav-item.router-link-active {
-  background: #263445;
-  color: #409eff;
-}
-
-.nav-item .el-icon {
-  margin-right: 10px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(59, 130, 246, 0.22));
+  color: #f8fbff;
+  transform: translateX(3px);
 }
 
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .top-bar {
-  height: 60px;
-  padding: 0 30px;
+  height: 72px;
+  padding: 0 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
   flex-shrink: 0;
 }
 
@@ -138,7 +152,7 @@ const handleLogout = () => {
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .username-highlight {
@@ -146,13 +160,51 @@ const handleLogout = () => {
   font-weight: 700;
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(59, 130, 246, 0.08));
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   line-height: 1;
 }
 
 .content {
   flex: 1;
-  padding: 30px;
-  background: #f0f2f5;
+  padding: 28px;
+}
+
+@media (max-width: 980px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .nav-menu {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+  }
+
+  .nav-item {
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .top-bar {
+    height: auto;
+    padding: 18px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .user-info {
+    justify-content: space-between;
+  }
+
+  .content {
+    padding: 16px;
+  }
 }
 </style>

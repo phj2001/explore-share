@@ -5,9 +5,7 @@ export const register = (username, password) => {
 }
 
 export const login = (username, password) => {
-  return request.post('/auth/login', null, {
-    params: { username, password }
-  })
+  return request.post('/auth/login', { username, password })
 }
 
 export const checkUsername = (username) => {

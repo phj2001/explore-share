@@ -26,13 +26,25 @@ const routes = [
     name: 'Admin',
     component: () => import('@/views/Admin/Dashboard.vue'),
     meta: { title: '管理后台', requiresAuth: true, requiresSuperAdmin: true },
-    redirect: '/admin/poi',
+    redirect: '/admin/overview',
     children: [
+      {
+        path: 'overview',
+        name: 'AdminOverview',
+        component: () => import('@/views/Admin/Overview.vue'),
+        meta: { title: '运营总览', requiresAuth: true, requiresSuperAdmin: true }
+      },
       {
         path: 'poi',
         name: 'POIList',
         component: () => import('@/views/Admin/POIList.vue'),
         meta: { title: 'POI 管理', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/Admin/UserList.vue'),
+        meta: { title: '用户管理', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
         path: 'poi/create',

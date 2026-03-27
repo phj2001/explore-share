@@ -5,10 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserProfileResponse {
+public class AdminUserListItemResponse {
 
     private Long id;
     private String username;
@@ -17,16 +19,18 @@ public class UserProfileResponse {
     private String bio;
     private Short role;
     private Short status;
+    private LocalDateTime createdAt;
 
-    public static UserProfileResponse fromUser(User user) {
-        return new UserProfileResponse(
+    public static AdminUserListItemResponse fromUser(User user) {
+        return new AdminUserListItemResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getDisplayName(),
                 user.getAvatarUrl(),
                 user.getBio(),
                 user.getRole(),
-                user.getStatus()
+                user.getStatus(),
+                user.getCreatedAt()
         );
     }
 }
