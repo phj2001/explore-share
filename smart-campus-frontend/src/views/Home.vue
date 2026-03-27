@@ -1,14 +1,13 @@
 <template>
   <div class="home-container">
-    <!-- 顶部导航 -->
     <Header />
 
-    <!-- 主内容区 - 地图展示 -->
     <div class="main-content">
       <MapContainer />
     </div>
 
-    <!-- 底部 -->
+    <AnnouncementSection />
+
     <Footer />
   </div>
 </template>
@@ -17,6 +16,7 @@
 import Header from '@/components/common/Header.vue'
 import Footer from '@/components/common/Footer.vue'
 import MapContainer from '@/components/map/MapContainer.vue'
+import AnnouncementSection from '@/components/announcement/AnnouncementSection.vue'
 </script>
 
 <style scoped>

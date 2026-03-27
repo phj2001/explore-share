@@ -99,6 +99,10 @@ const createPoiMarkerContent = () => {
       border: 3px solid #ffffff;
       background: linear-gradient(135deg, #0f766e, #0ea5e9);
       box-shadow: 0 10px 20px rgba(14, 165, 233, 0.32);
+      user-select: none;
+      -webkit-user-select: none;
+      caret-color: transparent;
+      outline: none;
     "></div>
   `
 }
@@ -118,8 +122,23 @@ const createEndpointMarkerContent = (label, colors) => {
       border: 3px solid rgba(255, 255, 255, 0.92);
       background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});
       box-shadow: 0 14px 24px rgba(15, 23, 42, 0.24);
+      user-select: none;
+      -webkit-user-select: none;
+      caret-color: transparent;
+      outline: none;
     ">${label}</div>
   `
+}
+
+const clearMarkerFocusArtifacts = () => {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur()
+  }
+
+  const selection = window.getSelection?.()
+  if (selection && selection.rangeCount > 0) {
+    selection.removeAllRanges()
+  }
 }
 
 const clearPoiMarkers = () => {
@@ -286,6 +305,7 @@ const renderMarkers = () => {
       })
 
       marker.on('click', () => {
+        clearMarkerFocusArtifacts()
         selectedPOI.value = poi
         showDetailDialog.value = true
         mapStore.selectPOI(poi)

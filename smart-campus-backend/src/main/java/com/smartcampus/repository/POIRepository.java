@@ -2,10 +2,12 @@ package com.smartcampus.repository;
 
 import com.smartcampus.entity.POI;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -41,4 +43,15 @@ public interface POIRepository extends JpaRepository<POI, Long> {
      */
     @Query("SELECT DISTINCT p.category FROM POI p")
     List<String> findAllCategories();
+
+    @Query("SELECT p.category, COUNT(p.id) FROM POI p GROUP BY p.category ORDER BY COUNT(p.id) DESC, p.category ASC")
+    List<Object[]> countGroupedByCategory();
+
+    long countByCategory(String category);
+
+    @Modifying
+    @Query("UPDATE POI p SET p.category = :newCategory, p.updatedAt = :updatedAt WHERE p.category = :oldCategory")
+    int renameCategory(@Param("oldCategory") String oldCategory,
+                       @Param("newCategory") String newCategory,
+                       @Param("updatedAt") LocalDateTime updatedAt);
 }

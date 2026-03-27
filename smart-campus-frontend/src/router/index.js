@@ -41,6 +41,12 @@ const routes = [
         meta: { title: 'POI 管理', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
+        path: 'poi-categories',
+        name: 'AdminPoiCategories',
+        component: () => import('@/views/Admin/POICategoryList.vue'),
+        meta: { title: 'POI 分类', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
         path: 'users',
         name: 'AdminUsers',
         component: () => import('@/views/Admin/UserList.vue'),
@@ -57,6 +63,12 @@ const routes = [
         name: 'AdminReplies',
         component: () => import('@/views/Admin/ReplyList.vue'),
         meta: { title: '回复管理', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'announcements',
+        name: 'AdminAnnouncements',
+        component: () => import('@/views/Admin/AnnouncementList.vue'),
+        meta: { title: '公告管理', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
         path: 'poi/create',

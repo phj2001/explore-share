@@ -82,12 +82,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { usePOIStore } from '@/stores/poi'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const poiStore = usePOIStore()
 
 const searchText = ref('')
@@ -124,6 +125,7 @@ const handlePageSizeChange = () => {
 
 onMounted(async () => {
   await loadData()
+  await applyRouteFilters()
 })
 
 const loadData = async () => {
@@ -135,6 +137,16 @@ const loadData = async () => {
   } catch (error) {
     ElMessage.error('加载数据失败')
   }
+}
+
+const applyRouteFilters = async () => {
+  const routeCategory = typeof route.query.category === 'string' ? route.query.category : ''
+  if (!routeCategory) {
+    return
+  }
+
+  selectedCategory.value = routeCategory
+  await handleCategoryChange()
 }
 
 const handleSearch = async () => {

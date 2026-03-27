@@ -6,6 +6,7 @@ import com.smartcampus.service.POIService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,6 +21,7 @@ public class POIServiceImpl implements POIService {
     @Override
     @Transactional
     public POI createPOI(POI poi) {
+        normalizePoi(poi);
         poi.setCreatedAt(LocalDateTime.now());
         poi.setUpdatedAt(LocalDateTime.now());
         return poiRepository.save(poi);
@@ -41,6 +43,7 @@ public class POIServiceImpl implements POIService {
         if (!poiRepository.existsById(poi.getId())) {
             throw new IllegalArgumentException("POI不存在，ID: " + poi.getId());
         }
+        normalizePoi(poi);
         poi.setUpdatedAt(LocalDateTime.now());
         return poiRepository.save(poi);
     }
@@ -77,6 +80,24 @@ public class POIServiceImpl implements POIService {
     @Override
     public List<String> getAllCategories() {
         return poiRepository.findAllCategories();
+    }
+
+    private void normalizePoi(POI poi) {
+        if (poi == null) {
+            return;
+        }
+
+        if (StringUtils.hasText(poi.getName())) {
+            poi.setName(poi.getName().trim());
+        }
+
+        if (StringUtils.hasText(poi.getCategory())) {
+            poi.setCategory(poi.getCategory().trim());
+        }
+
+        if (poi.getDescription() != null) {
+            poi.setDescription(poi.getDescription().trim());
+        }
     }
 }
 

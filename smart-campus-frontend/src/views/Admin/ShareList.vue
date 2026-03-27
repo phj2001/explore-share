@@ -21,7 +21,7 @@
         <el-input
           v-model="keyword"
           clearable
-          placeholder="搜索作者、POI 或分享内容"
+          placeholder="搜索作者、POI 名称或分享内容"
           class="filter-input"
           @keyup.enter="handleSearch"
           @clear="handleSearch"
@@ -35,7 +35,7 @@
           v-model="poiId"
           clearable
           filterable
-          placeholder="筛选 POI"
+          placeholder="筛选所属 POI"
           class="filter-select"
           @change="handleSearch"
         >
@@ -121,7 +121,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="POI" min-width="170" show-overflow-tooltip>
+        <el-table-column label="所属 POI" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">
             <button type="button" class="poi-card" @click="focusPoi(row.poiId)">
               <strong>{{ row.poiName }}</strong>
@@ -156,7 +156,7 @@
           <template #default="{ row }">
             <div class="action-group">
               <el-button size="small" @click="openDetail(row)">查看</el-button>
-              <el-button size="small" plain @click="goReplies(row.id)">回复管理</el-button>
+              <el-button size="small" plain @click="goReplies(row.id)">查看回复</el-button>
               <el-button
                 size="small"
                 type="danger"
@@ -375,16 +375,16 @@ const activeFilters = computed(() => {
   const items = []
 
   if (keyword.value.trim()) {
-    items.push({ key: 'keyword', label: `关键词: ${keyword.value.trim()}` })
+    items.push({ key: 'keyword', label: `关键词：${keyword.value.trim()}` })
   }
 
   if (poiId.value) {
     const poi = poiOptions.value.find((item) => item.id === poiId.value)
-    items.push({ key: 'poiId', label: `POI: ${poi?.name || poiId.value}` })
+    items.push({ key: 'poiId', label: `POI：${poi?.name || poiId.value}` })
   }
 
   if (timeRange.value?.length === 2) {
-    items.push({ key: 'timeRange', label: `时间: ${formatShortDate(timeRange.value[0])} - ${formatShortDate(timeRange.value[1])}` })
+    items.push({ key: 'timeRange', label: `时间：${formatShortDate(timeRange.value[0])} - ${formatShortDate(timeRange.value[1])}` })
   }
 
   return items

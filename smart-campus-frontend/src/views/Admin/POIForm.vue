@@ -14,7 +14,15 @@
       </el-form-item>
 
       <el-form-item label="分类" prop="category">
-        <el-select v-model="form.category" placeholder="请选择分类" style="width: 100%">
+        <el-select
+          v-model="form.category"
+          placeholder="请选择或输入分类"
+          style="width: 100%"
+          filterable
+          allow-create
+          default-first-option
+          clearable
+        >
           <el-option
             v-for="category in poiStore.categories"
             :key="category"
@@ -89,7 +97,7 @@ const isEdit = computed(() => !!route.params.id)
 
 const rules = {
   name: [{ required: true, message: '请输入 POI 名称', trigger: 'blur' }],
-  category: [{ required: true, message: '请选择分类', trigger: 'change' }],
+  category: [{ required: true, message: '请选择或输入分类', trigger: 'change' }],
   latitude: [{ required: true, message: '请输入纬度', trigger: 'blur' }],
   longitude: [{ required: true, message: '请输入经度', trigger: 'blur' }]
 }
@@ -122,11 +130,18 @@ const handleSubmit = async () => {
   await formRef.value.validate()
 
   try {
+    const payload = {
+      ...form,
+      name: form.name.trim(),
+      category: form.category.trim(),
+      description: form.description?.trim() || ''
+    }
+
     if (isEdit.value) {
-      await poiStore.update(route.params.id, form)
+      await poiStore.update(route.params.id, payload)
       ElMessage.success('更新成功')
     } else {
-      await poiStore.create(form)
+      await poiStore.create(payload)
       ElMessage.success('创建成功')
     }
     router.push('/admin/poi')

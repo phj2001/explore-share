@@ -21,7 +21,7 @@
         <el-input
           v-model="keyword"
           clearable
-          placeholder="搜索回复内容、作者或所属分享内容"
+          placeholder="搜索回复内容、回复作者或所属分享内容"
           class="filter-input"
           @keyup.enter="handleSearch"
           @clear="handleSearch"
@@ -35,7 +35,7 @@
           v-model="shareId"
           :min="1"
           :controls="false"
-          placeholder="筛选分享ID"
+          placeholder="筛选关联分享 ID"
           class="filter-number"
         />
 
@@ -114,7 +114,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="所属分享" min-width="300" show-overflow-tooltip>
+        <el-table-column label="关联分享" min-width="300" show-overflow-tooltip>
           <template #default="{ row }">
             <div class="share-meta">
               <strong>{{ row.shareContentPreview || '该分享未填写文字' }}</strong>
@@ -195,15 +195,15 @@ const activeFilters = computed(() => {
   const items = []
 
   if (keyword.value.trim()) {
-    items.push({ key: 'keyword', label: `关键词: ${keyword.value.trim()}` })
+    items.push({ key: 'keyword', label: `关键词：${keyword.value.trim()}` })
   }
 
   if (shareId.value) {
-    items.push({ key: 'shareId', label: `分享ID: ${shareId.value}` })
+    items.push({ key: 'shareId', label: `分享ID：${shareId.value}` })
   }
 
   if (timeRange.value?.length === 2) {
-    items.push({ key: 'timeRange', label: `时间: ${formatShortDate(timeRange.value[0])} - ${formatShortDate(timeRange.value[1])}` })
+    items.push({ key: 'timeRange', label: `时间：${formatShortDate(timeRange.value[0])} - ${formatShortDate(timeRange.value[1])}` })
   }
 
   return items

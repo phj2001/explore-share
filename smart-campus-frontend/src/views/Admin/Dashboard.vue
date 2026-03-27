@@ -15,6 +15,10 @@
           <el-icon><Location /></el-icon>
           <span>POI 管理</span>
         </router-link>
+        <router-link to="/admin/poi-categories" class="nav-item">
+          <el-icon><CollectionTag /></el-icon>
+          <span>POI 分类</span>
+        </router-link>
         <router-link to="/admin/users" class="nav-item">
           <el-icon><UserFilled /></el-icon>
           <span>用户管理</span>
@@ -26,6 +30,10 @@
         <router-link to="/admin/replies" class="nav-item">
           <el-icon><ChatDotRound /></el-icon>
           <span>回复管理</span>
+        </router-link>
+        <router-link to="/admin/announcements" class="nav-item">
+          <el-icon><Bell /></el-icon>
+          <span>公告管理</span>
         </router-link>
       </nav>
     </aside>
@@ -55,7 +63,16 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ChatDotRound, ChatLineSquare, DataAnalysis, HomeFilled, Location, UserFilled } from '@element-plus/icons-vue'
+import {
+  Bell,
+  ChatDotRound,
+  ChatLineSquare,
+  CollectionTag,
+  DataAnalysis,
+  HomeFilled,
+  Location,
+  UserFilled
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
