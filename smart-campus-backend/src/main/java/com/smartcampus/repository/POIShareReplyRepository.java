@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,7 +17,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface POIShareReplyRepository extends JpaRepository<POIShareReply, Long> {
+public interface POIShareReplyRepository extends JpaRepository<POIShareReply, Long>, JpaSpecificationExecutor<POIShareReply> {
+
+    @Override
+    @EntityGraph(attributePaths = {"user", "share", "share.user", "share.poi"})
+    Page<POIShareReply> findAll(Specification<POIShareReply> spec, Pageable pageable);
 
     @EntityGraph(attributePaths = {"user", "share"})
     Page<POIShareReply> findByShareIdOrderByCreatedAtAscIdAsc(Long shareId, Pageable pageable);
@@ -25,6 +31,9 @@ public interface POIShareReplyRepository extends JpaRepository<POIShareReply, Lo
 
     @EntityGraph(attributePaths = {"user", "share"})
     List<POIShareReply> findTop3ByShareIdOrderByCreatedAtAscIdAsc(Long shareId);
+
+    @EntityGraph(attributePaths = {"user", "share", "share.user", "share.poi"})
+    List<POIShareReply> findAllByShareIdOrderByCreatedAtAscIdAsc(Long shareId);
 
     long countByShareId(Long shareId);
 

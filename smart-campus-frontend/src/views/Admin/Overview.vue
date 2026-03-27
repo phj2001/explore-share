@@ -189,14 +189,14 @@ const metricCards = computed(() => {
       label: '分享总数',
       value: summary.shareCount || 0,
       helper: '累计分享内容',
-      route: ''
+      route: '/admin/shares'
     },
     {
       key: 'replies',
       label: '回复总数',
       value: summary.replyCount || 0,
       helper: '社区互动深度',
-      route: ''
+      route: '/admin/replies'
     },
     {
       key: 'likes',

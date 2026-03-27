@@ -19,6 +19,14 @@
           <el-icon><UserFilled /></el-icon>
           <span>用户管理</span>
         </router-link>
+        <router-link to="/admin/shares" class="nav-item">
+          <el-icon><ChatLineSquare /></el-icon>
+          <span>分享管理</span>
+        </router-link>
+        <router-link to="/admin/replies" class="nav-item">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>回复管理</span>
+        </router-link>
       </nav>
     </aside>
 
@@ -47,7 +55,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { DataAnalysis, HomeFilled, Location, UserFilled } from '@element-plus/icons-vue'
+import { ChatDotRound, ChatLineSquare, DataAnalysis, HomeFilled, Location, UserFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()

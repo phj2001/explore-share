@@ -47,6 +47,18 @@ const routes = [
         meta: { title: '用户管理', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
+        path: 'shares',
+        name: 'AdminShares',
+        component: () => import('@/views/Admin/ShareList.vue'),
+        meta: { title: '分享管理', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'replies',
+        name: 'AdminReplies',
+        component: () => import('@/views/Admin/ReplyList.vue'),
+        meta: { title: '回复管理', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
         path: 'poi/create',
         name: 'POICreate',
         component: () => import('@/views/Admin/POIForm.vue'),
