@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/check").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/announcements/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/system-configs/public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/poi-shares/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/pois/**").permitAll()

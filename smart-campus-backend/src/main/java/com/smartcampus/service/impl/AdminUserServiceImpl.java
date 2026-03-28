@@ -11,6 +11,7 @@ import com.smartcampus.repository.POIShareRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.security.UserRole;
 import com.smartcampus.security.UserStatus;
+import com.smartcampus.service.AdminOperationLogService;
 import com.smartcampus.service.AdminUserService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final POIShareRepository poiShareRepository;
     private final POIShareReplyRepository poiShareReplyRepository;
     private final POIShareLikeRepository poiShareLikeRepository;
+    private final AdminOperationLogService adminOperationLogService;
 
     @Override
     @Transactional(readOnly = true)
@@ -81,6 +83,14 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         targetUser.setRole(role);
         User savedUser = userRepository.save(targetUser);
+        adminOperationLogService.record(
+                operatorUserId,
+                "用户管理",
+                "更新用户角色",
+                "用户",
+                savedUser.getId(),
+                "将用户 @" + savedUser.getUsername() + " 的角色更新为" + (savedUser.getRole() == UserRole.SUPER_ADMIN.getCode() ? "超级管理员" : "普通用户")
+        );
         return buildUserDetail(savedUser);
     }
 
@@ -96,6 +106,14 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         targetUser.setStatus(status);
         User savedUser = userRepository.save(targetUser);
+        adminOperationLogService.record(
+                operatorUserId,
+                "用户管理",
+                "更新用户状态",
+                "用户",
+                savedUser.getId(),
+                "将用户 @" + savedUser.getUsername() + " 的账号状态更新为" + (savedUser.getStatus() == UserStatus.ACTIVE.getCode() ? "正常" : "禁用")
+        );
         return buildUserDetail(savedUser);
     }
 

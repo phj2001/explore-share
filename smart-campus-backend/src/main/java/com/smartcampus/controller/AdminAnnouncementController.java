@@ -7,6 +7,7 @@ import com.smartcampus.dto.response.AdminAnnouncementListItemResponse;
 import com.smartcampus.service.AdminAnnouncementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,9 +49,10 @@ public class AdminAnnouncementController {
             @RequestParam String content,
             @RequestParam(required = false) Boolean pinned,
             @RequestParam(required = false) Short status,
+            Authentication authentication,
             @RequestParam(required = false) MultipartFile coverImage
     ) {
-        return Result.success(adminAnnouncementService.createAnnouncement(title, summary, content, pinned, status, coverImage));
+        return Result.success(adminAnnouncementService.createAnnouncement(title, summary, content, pinned, status, getCurrentUserId(authentication), coverImage));
     }
 
     @PutMapping(value = "/{announcementId}", consumes = {"multipart/form-data"})
@@ -62,30 +64,40 @@ public class AdminAnnouncementController {
             @RequestParam(required = false) Boolean pinned,
             @RequestParam(required = false) Short status,
             @RequestParam(required = false) Boolean removeCoverImage,
+            Authentication authentication,
             @RequestParam(required = false) MultipartFile coverImage
     ) {
-        return Result.success(adminAnnouncementService.updateAnnouncement(announcementId, title, summary, content, pinned, status, removeCoverImage, coverImage));
+        return Result.success(adminAnnouncementService.updateAnnouncement(announcementId, title, summary, content, pinned, status, removeCoverImage, getCurrentUserId(authentication), coverImage));
     }
 
     @PutMapping("/{announcementId}/publish")
     public Result<AdminAnnouncementDetailResponse> updatePublishStatus(
             @PathVariable Long announcementId,
-            @RequestParam Boolean published
+            @RequestParam Boolean published,
+            Authentication authentication
     ) {
-        return Result.success(adminAnnouncementService.updatePublishStatus(announcementId, published));
+        return Result.success(adminAnnouncementService.updatePublishStatus(announcementId, published, getCurrentUserId(authentication)));
     }
 
     @PutMapping("/{announcementId}/pin")
     public Result<AdminAnnouncementDetailResponse> updatePinnedStatus(
             @PathVariable Long announcementId,
-            @RequestParam Boolean pinned
+            @RequestParam Boolean pinned,
+            Authentication authentication
     ) {
-        return Result.success(adminAnnouncementService.updatePinnedStatus(announcementId, pinned));
+        return Result.success(adminAnnouncementService.updatePinnedStatus(announcementId, pinned, getCurrentUserId(authentication)));
     }
 
     @DeleteMapping("/{announcementId}")
-    public Result<Void> deleteAnnouncement(@PathVariable Long announcementId) {
-        adminAnnouncementService.deleteAnnouncement(announcementId);
+    public Result<Void> deleteAnnouncement(@PathVariable Long announcementId, Authentication authentication) {
+        adminAnnouncementService.deleteAnnouncement(announcementId, getCurrentUserId(authentication));
         return Result.success();
+    }
+
+    private Long getCurrentUserId(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof Long userId) {
+            return userId;
+        }
+        throw new IllegalArgumentException("未登录或登录已失效");
     }
 }

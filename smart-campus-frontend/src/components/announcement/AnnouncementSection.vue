@@ -181,9 +181,11 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowLeftBold, ArrowRightBold, Bell } from '@element-plus/icons-vue'
 import { getAnnouncementDetail, getAnnouncementList } from '@/api/announcement'
+import { getPublicSystemConfigs } from '@/api/systemConfig'
 import { API_ORIGIN } from '@/utils/request'
 
 const MOBILE_BREAKPOINT = 900
+const HOME_ANNOUNCEMENT_DEFAULT_COLLAPSED = 'home.announcement.defaultCollapsed'
 
 const loading = ref(false)
 const detailLoading = ref(false)
@@ -205,10 +207,19 @@ const handleResize = () => {
   }
 }
 
+const loadPublicConfigs = async () => {
+  try {
+    const configMap = await getPublicSystemConfigs()
+    isCollapsed.value = configMap?.[HOME_ANNOUNCEMENT_DEFAULT_COLLAPSED] === 'true'
+  } catch {
+    isCollapsed.value = false
+  }
+}
+
 const loadAnnouncements = async () => {
   loading.value = true
   try {
-    announcements.value = await getAnnouncementList({ limit: 8 })
+    announcements.value = await getAnnouncementList()
   } catch (error) {
     ElMessage.error(error.message || '加载公告失败')
   } finally {
@@ -221,6 +232,7 @@ const openDetail = async (announcementId) => {
   detailLoading.value = true
   try {
     selectedAnnouncement.value = await getAnnouncementDetail(announcementId)
+    mobileDrawerVisible.value = false
   } catch (error) {
     detailVisible.value = false
     selectedAnnouncement.value = null
@@ -261,6 +273,7 @@ const formatDate = (value) => {
 
 onMounted(async () => {
   window.addEventListener('resize', handleResize)
+  await loadPublicConfigs()
   await loadAnnouncements()
 })
 
@@ -326,10 +339,6 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(18px);
   box-shadow: 18px 22px 48px rgba(15, 23, 42, 0.12);
   overflow: hidden;
-}
-
-.notice-rail:not(.collapsed) .rail-body {
-  border-radius: 0 28px 28px 0;
 }
 
 .mobile-shell {

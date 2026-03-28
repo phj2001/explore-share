@@ -7,6 +7,7 @@ import com.smartcampus.entity.Announcement;
 import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.AnnouncementRepository;
 import com.smartcampus.service.AdminAnnouncementService;
+import com.smartcampus.service.AdminOperationLogService;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
     private static final String IMAGE_URL_PREFIX = "/uploads/announcements/";
 
     private final AnnouncementRepository announcementRepository;
+    private final AdminOperationLogService adminOperationLogService;
 
     @Value("${app.upload.announcement-dir:uploads/announcements}")
     private String announcementUploadDir;
@@ -97,6 +99,7 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
             String content,
             Boolean pinned,
             Short status,
+            Long operatorUserId,
             MultipartFile coverImage
     ) {
         Announcement announcement = new Announcement();
@@ -107,6 +110,14 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
             savedImageUrl = saveImageIfPresent(coverImage);
             announcement.setCoverImageUrl(savedImageUrl);
             announcement = announcementRepository.save(announcement);
+            adminOperationLogService.record(
+                    operatorUserId,
+                    "公告管理",
+                    "创建公告",
+                    "公告",
+                    announcement.getId(),
+                    "创建公告《" + announcement.getTitle() + "》"
+            );
             return AdminAnnouncementDetailResponse.fromEntity(announcement);
         } catch (RuntimeException ex) {
             deleteImageQuietly(savedImageUrl);
@@ -124,6 +135,7 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
             Boolean pinned,
             Short status,
             Boolean removeCoverImage,
+            Long operatorUserId,
             MultipartFile coverImage
     ) {
         Announcement announcement = getRequiredAnnouncement(announcementId);
@@ -146,6 +158,14 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
                 deleteImageQuietly(originalCoverImageUrl);
             }
 
+            adminOperationLogService.record(
+                    operatorUserId,
+                    "公告管理",
+                    "更新公告",
+                    "公告",
+                    announcement.getId(),
+                    "更新公告《" + announcement.getTitle() + "》"
+            );
             return AdminAnnouncementDetailResponse.fromEntity(announcement);
         } catch (RuntimeException ex) {
             deleteImageQuietly(savedImageUrl);
@@ -163,7 +183,7 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
 
     @Override
     @Transactional
-    public AdminAnnouncementDetailResponse updatePublishStatus(Long announcementId, Boolean published) {
+    public AdminAnnouncementDetailResponse updatePublishStatus(Long announcementId, Boolean published, Long operatorUserId) {
         if (published == null) {
             throw new BusinessException(400, "发布状态不能为空");
         }
@@ -175,28 +195,56 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
         } else {
             announcement.setStatus(Announcement.STATUS_DRAFT);
         }
-        return AdminAnnouncementDetailResponse.fromEntity(announcementRepository.save(announcement));
+        Announcement savedAnnouncement = announcementRepository.save(announcement);
+        adminOperationLogService.record(
+                operatorUserId,
+                "公告管理",
+                published ? "发布公告" : "取消发布公告",
+                "公告",
+                savedAnnouncement.getId(),
+                (published ? "发布公告《" : "取消发布公告《") + savedAnnouncement.getTitle() + "》"
+        );
+        return AdminAnnouncementDetailResponse.fromEntity(savedAnnouncement);
     }
 
     @Override
     @Transactional
-    public AdminAnnouncementDetailResponse updatePinnedStatus(Long announcementId, Boolean pinned) {
+    public AdminAnnouncementDetailResponse updatePinnedStatus(Long announcementId, Boolean pinned, Long operatorUserId) {
         if (pinned == null) {
             throw new BusinessException(400, "置顶状态不能为空");
         }
 
         Announcement announcement = getRequiredAnnouncement(announcementId);
         announcement.setPinned(pinned);
-        return AdminAnnouncementDetailResponse.fromEntity(announcementRepository.save(announcement));
+        Announcement savedAnnouncement = announcementRepository.save(announcement);
+        adminOperationLogService.record(
+                operatorUserId,
+                "公告管理",
+                pinned ? "置顶公告" : "取消置顶公告",
+                "公告",
+                savedAnnouncement.getId(),
+                (pinned ? "置顶公告《" : "取消置顶公告《") + savedAnnouncement.getTitle() + "》"
+        );
+        return AdminAnnouncementDetailResponse.fromEntity(savedAnnouncement);
     }
 
     @Override
     @Transactional
-    public void deleteAnnouncement(Long announcementId) {
+    public void deleteAnnouncement(Long announcementId, Long operatorUserId) {
         Announcement announcement = getRequiredAnnouncement(announcementId);
+        Long targetId = announcement.getId();
+        String title = announcement.getTitle();
         String coverImageUrl = announcement.getCoverImageUrl();
         announcementRepository.delete(announcement);
         deleteImageQuietly(coverImageUrl);
+        adminOperationLogService.record(
+                operatorUserId,
+                "公告管理",
+                "删除公告",
+                "公告",
+                targetId,
+                "删除公告《" + title + "》"
+        );
     }
 
     private Specification<Announcement> buildSpecification(String keyword, Short status, Boolean pinned) {

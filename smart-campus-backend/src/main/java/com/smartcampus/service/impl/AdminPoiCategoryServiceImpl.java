@@ -3,6 +3,7 @@ package com.smartcampus.service.impl;
 import com.smartcampus.dto.response.AdminPoiCategoryListItemResponse;
 import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.POIRepository;
+import com.smartcampus.service.AdminOperationLogService;
 import com.smartcampus.service.AdminPoiCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class AdminPoiCategoryServiceImpl implements AdminPoiCategoryService {
     private static final int MAX_CATEGORY_LENGTH = 50;
 
     private final POIRepository poiRepository;
+    private final AdminOperationLogService adminOperationLogService;
 
     @Override
     @Transactional(readOnly = true)
@@ -30,7 +32,7 @@ public class AdminPoiCategoryServiceImpl implements AdminPoiCategoryService {
 
     @Override
     @Transactional
-    public void renameCategory(String oldName, String newName) {
+    public void renameCategory(String oldName, String newName, Long operatorUserId) {
         String normalizedOldName = normalizeCategoryName(oldName, "原分类名称不能为空");
         String normalizedNewName = normalizeCategoryName(newName, "新分类名称不能为空");
 
@@ -44,11 +46,19 @@ public class AdminPoiCategoryServiceImpl implements AdminPoiCategoryService {
         }
 
         poiRepository.renameCategory(normalizedOldName, normalizedNewName, LocalDateTime.now());
+        adminOperationLogService.record(
+                operatorUserId,
+                "POI分类",
+                "重命名分类",
+                "分类",
+                null,
+                "将分类“" + normalizedOldName + "”重命名为“" + normalizedNewName + "”"
+        );
     }
 
     @Override
     @Transactional
-    public void deleteCategory(String categoryName) {
+    public void deleteCategory(String categoryName, Long operatorUserId) {
         String normalizedCategoryName = normalizeCategoryName(categoryName, "分类名称不能为空");
         long poiCount = poiRepository.countByCategory(normalizedCategoryName);
 

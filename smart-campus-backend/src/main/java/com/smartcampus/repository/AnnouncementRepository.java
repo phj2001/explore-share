@@ -13,4 +13,6 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     List<Announcement> findByStatusOrderByPinnedDescPublishedAtDescIdDesc(Short status, Pageable pageable);
 
     Optional<Announcement> findByIdAndStatus(Long id, Short status);
+
+    List<Announcement> findByCoverImageUrl(String coverImageUrl);
 }

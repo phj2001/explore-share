@@ -321,6 +321,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, RefreshRight, Search } from '@element-plus/icons-vue'
 import {
@@ -336,6 +337,7 @@ import { API_ORIGIN } from '@/utils/request'
 
 const DRAFT_STATUS = 0
 const PUBLISHED_STATUS = 1
+const route = useRoute()
 
 const keyword = ref('')
 const statusFilter = ref()
@@ -720,6 +722,9 @@ const formatDate = (value) => {
 
 onMounted(async () => {
   await loadAnnouncements()
+  if (route.query.openAnnouncementId) {
+    await openDetail(Number(route.query.openAnnouncementId))
+  }
 })
 </script>
 

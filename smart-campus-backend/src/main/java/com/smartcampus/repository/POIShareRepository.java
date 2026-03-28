@@ -39,6 +39,9 @@ public interface POIShareRepository extends JpaRepository<POIShare, Long>, JpaSp
     @EntityGraph(attributePaths = {"poi", "user", "images"})
     List<POIShare> findTop5ByOrderByCreatedAtDesc();
 
+    @EntityGraph(attributePaths = {"poi", "user", "images"})
+    List<POIShare> findByOrderByCreatedAtDesc(Pageable pageable);
+
     @Query("select s.poi.id, count(s.id) from POIShare s where s.createdAt >= :start group by s.poi.id")
     List<Object[]> countGroupedByPoiIdsSince(@Param("start") LocalDateTime start);
 

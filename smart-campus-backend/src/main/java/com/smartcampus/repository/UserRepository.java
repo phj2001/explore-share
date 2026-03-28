@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -23,4 +24,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     boolean existsByRole(Short role);
 
     long countByCreatedAtGreaterThanEqual(java.time.LocalDateTime createdAt);
+
+    List<User> findByAvatarUrl(String avatarUrl);
 }

@@ -8,7 +8,7 @@ public interface AdminPoiCategoryService {
 
     List<AdminPoiCategoryListItemResponse> getCategories();
 
-    void renameCategory(String oldName, String newName);
+    void renameCategory(String oldName, String newName, Long operatorUserId);
 
-    void deleteCategory(String categoryName);
+    void deleteCategory(String categoryName, Long operatorUserId);
 }

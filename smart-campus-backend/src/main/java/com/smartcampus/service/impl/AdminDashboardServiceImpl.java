@@ -9,6 +9,7 @@ import com.smartcampus.repository.POIShareReplyRepository;
 import com.smartcampus.repository.POIShareRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.AdminDashboardService;
+import com.smartcampus.service.SystemConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final POIShareRepository poiShareRepository;
     private final POIShareReplyRepository poiShareReplyRepository;
     private final POIShareLikeRepository poiShareLikeRepository;
+    private final SystemConfigService systemConfigService;
 
     @Override
     @Transactional(readOnly = true)
@@ -90,6 +92,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     }
 
     private List<AdminOverviewResponse.OverviewHotPoi> buildHotPois(LocalDateTime rangeStart) {
+        int hotPoiLimit = systemConfigService.getIntValue(SystemConfigService.DASHBOARD_HOT_POI_LIMIT);
         Map<Long, Long> shareCountMap = toCountMap(poiShareRepository.countGroupedByPoiIdsSince(rangeStart));
         Map<Long, Long> replyCountMap = toCountMap(poiShareReplyRepository.countGroupedByPoiIdsSince(rangeStart));
 
@@ -120,12 +123,13 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                         .comparing(AdminOverviewResponse.OverviewHotPoi::getShareCount, Comparator.reverseOrder())
                         .thenComparing(AdminOverviewResponse.OverviewHotPoi::getReplyCount, Comparator.reverseOrder())
                         .thenComparing(AdminOverviewResponse.OverviewHotPoi::getPoiId))
-                .limit(10)
+                .limit(hotPoiLimit)
                 .toList();
     }
 
     private List<AdminOverviewResponse.OverviewRecentShare> buildRecentShares() {
-        List<POIShare> recentShares = poiShareRepository.findTop5ByOrderByCreatedAtDesc();
+        int recentShareLimit = systemConfigService.getIntValue(SystemConfigService.DASHBOARD_RECENT_SHARE_LIMIT);
+        List<POIShare> recentShares = poiShareRepository.findByOrderByCreatedAtDesc(org.springframework.data.domain.PageRequest.of(0, recentShareLimit));
         List<Long> shareIds = recentShares.stream().map(POIShare::getId).toList();
         Map<Long, Long> shareLikeCountMap = shareIds.isEmpty()
                 ? Map.of()

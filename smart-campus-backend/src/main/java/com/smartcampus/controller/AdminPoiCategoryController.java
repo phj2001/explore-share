@@ -7,6 +7,7 @@ import com.smartcampus.service.AdminPoiCategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,15 +34,23 @@ public class AdminPoiCategoryController {
     @PutMapping("/{categoryName}")
     public Result<Void> renameCategory(
             @PathVariable String categoryName,
-            @Valid @RequestBody AdminRenamePoiCategoryRequest request
+            @Valid @RequestBody AdminRenamePoiCategoryRequest request,
+            Authentication authentication
     ) {
-        adminPoiCategoryService.renameCategory(categoryName, request.getNewName());
+        adminPoiCategoryService.renameCategory(categoryName, request.getNewName(), getCurrentUserId(authentication));
         return Result.success();
     }
 
     @DeleteMapping("/{categoryName}")
-    public Result<Void> deleteCategory(@PathVariable String categoryName) {
-        adminPoiCategoryService.deleteCategory(categoryName);
+    public Result<Void> deleteCategory(@PathVariable String categoryName, Authentication authentication) {
+        adminPoiCategoryService.deleteCategory(categoryName, getCurrentUserId(authentication));
         return Result.success();
+    }
+
+    private Long getCurrentUserId(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof Long userId) {
+            return userId;
+        }
+        throw new IllegalArgumentException("未登录或登录已失效");
     }
 }

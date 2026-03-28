@@ -6,6 +6,7 @@ import com.smartcampus.entity.Announcement;
 import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.AnnouncementRepository;
 import com.smartcampus.service.AnnouncementService;
+import com.smartcampus.service.SystemConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -17,15 +18,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AnnouncementServiceImpl implements AnnouncementService {
 
-    private static final int DEFAULT_LIMIT = 6;
     private static final int MAX_LIMIT = 12;
 
     private final AnnouncementRepository announcementRepository;
+    private final SystemConfigService systemConfigService;
 
     @Override
     @Transactional(readOnly = true)
     public List<AnnouncementListItemResponse> getPublishedAnnouncements(Integer limit) {
-        int size = Math.min(Math.max(limit == null ? DEFAULT_LIMIT : limit, 1), MAX_LIMIT);
+        int configuredDefault = systemConfigService.getIntValue(SystemConfigService.HOME_ANNOUNCEMENT_LIMIT);
+        int size = Math.min(Math.max(limit == null ? configuredDefault : limit, 1), MAX_LIMIT);
         return announcementRepository
                 .findByStatusOrderByPinnedDescPublishedAtDescIdDesc(Announcement.STATUS_PUBLISHED, PageRequest.of(0, size))
                 .stream()

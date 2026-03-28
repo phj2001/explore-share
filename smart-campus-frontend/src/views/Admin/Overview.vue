@@ -89,7 +89,7 @@
         <div class="panel-head">
           <div>
             <span class="panel-kicker">排行</span>
-            <h2>热门 POI Top 10</h2>
+            <h2>热门 POI 排行</h2>
           </div>
           <span class="panel-note">按分享数、回复数排序</span>
         </div>
@@ -123,7 +123,7 @@
           <span class="panel-kicker">最近活动</span>
           <h2>最近新增分享</h2>
         </div>
-        <span class="panel-note">最新 5 条</span>
+        <span class="panel-note">按最新发布时间排序</span>
       </div>
 
       <div v-if="overview?.recentShares?.length" class="recent-list">

@@ -35,6 +35,22 @@
           <el-icon><Bell /></el-icon>
           <span>公告管理</span>
         </router-link>
+        <router-link to="/admin/reports" class="nav-item">
+          <el-icon><WarningFilled /></el-icon>
+          <span>举报审核</span>
+        </router-link>
+        <router-link to="/admin/logs" class="nav-item">
+          <el-icon><Tickets /></el-icon>
+          <span>系统日志</span>
+        </router-link>
+        <router-link to="/admin/files" class="nav-item">
+          <el-icon><Files /></el-icon>
+          <span>文件资源</span>
+        </router-link>
+        <router-link to="/admin/configs" class="nav-item">
+          <el-icon><Setting /></el-icon>
+          <span>系统配置</span>
+        </router-link>
       </nav>
     </aside>
 
@@ -69,8 +85,12 @@ import {
   ChatLineSquare,
   CollectionTag,
   DataAnalysis,
+  Files,
   HomeFilled,
   Location,
+  Setting,
+  Tickets,
+  WarningFilled,
   UserFilled
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'

@@ -196,6 +196,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import {
@@ -213,6 +214,7 @@ const ACTIVE_STATUS = 1
 const DISABLED_STATUS = 0
 
 const userStore = useUserStore()
+const route = useRoute()
 
 const keyword = ref('')
 const roleFilter = ref()
@@ -382,6 +384,9 @@ const formatDate = (value) => {
 
 onMounted(async () => {
   await loadUsers()
+  if (route.query.openUserId) {
+    await openDetail({ id: Number(route.query.openUserId) })
+  }
 })
 </script>
 

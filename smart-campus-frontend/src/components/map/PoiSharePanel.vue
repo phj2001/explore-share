@@ -84,15 +84,25 @@
             </div>
           </div>
 
-          <el-button
-            v-if="share.canDelete"
-            type="danger"
-            text
-            :loading="deletingId === share.id"
-            @click="removeShare(share)"
-          >
-            删除
-          </el-button>
+          <div class="card-actions">
+            <el-button
+              v-if="canReportShare(share)"
+              text
+              type="warning"
+              @click="openShareReportDialog(share)"
+            >
+              举报
+            </el-button>
+            <el-button
+              v-if="share.canDelete"
+              type="danger"
+              text
+              :loading="deletingId === share.id"
+              @click="removeShare(share)"
+            >
+              删除
+            </el-button>
+          </div>
         </div>
 
         <p v-if="share.content" class="share-content">{{ share.content }}</p>
@@ -150,6 +160,15 @@
               >
                 删除
               </el-button>
+              <el-button
+                v-else-if="canReportReply(reply)"
+                text
+                type="warning"
+                class="reply-delete"
+                @click="openReplyReportDialog(reply)"
+              >
+                举报
+              </el-button>
             </div>
           </div>
 
@@ -195,6 +214,55 @@
     <el-dialog v-model="previewVisible" title="图片预览" width="640px">
       <img :src="previewImageUrl" alt="预览图片" class="preview-image" />
     </el-dialog>
+
+    <el-dialog
+      v-model="reportDialogVisible"
+      title="举报内容"
+      width="520px"
+      destroy-on-close
+      @closed="resetReportDialog"
+    >
+      <div class="report-dialog">
+        <div class="report-target">
+          <span class="report-label">举报对象</span>
+          <strong>{{ reportTargetLabel }}</strong>
+          <p>{{ reportTargetPreview }}</p>
+        </div>
+
+        <el-form label-position="top">
+          <el-form-item label="举报理由" required>
+            <el-radio-group v-model="reportReasonCode">
+              <el-radio
+                v-for="option in REPORT_REASON_OPTIONS"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </el-radio>
+            </el-radio-group>
+          </el-form-item>
+
+          <el-form-item label="补充说明">
+            <el-input
+              v-model="reportReasonDetail"
+              type="textarea"
+              :rows="4"
+              maxlength="200"
+              show-word-limit
+              resize="none"
+              placeholder="可补充违规细节；若选择“其他”则必须填写"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <div class="dialog-actions">
+          <el-button @click="reportDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="reportSubmitting" @click="submitReport">提交举报</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
@@ -213,6 +281,8 @@ import {
   likePoiShare,
   unlikePoiShare
 } from '@/api/poiShare'
+import { createReplyReport, createShareReport } from '@/api/contentReport'
+import { REPORT_REASON_OPTIONS, REPORT_REASON_OTHER } from '@/constants/contentReport'
 import { useUserStore } from '@/stores/user'
 import { API_ORIGIN } from '@/utils/request'
 
@@ -238,8 +308,17 @@ const page = ref(0)
 const hasMore = ref(false)
 const previewVisible = ref(false)
 const previewImageUrl = ref('')
+const reportDialogVisible = ref(false)
+const reportSubmitting = ref(false)
+const reportTargetType = ref('')
+const reportTargetId = ref(null)
+const reportTargetLabel = ref('')
+const reportTargetPreview = ref('')
+const reportReasonCode = ref(REPORT_REASON_OPTIONS[0].value)
+const reportReasonDetail = ref('')
 
 const currentDisplayName = computed(() => userStore.displayName || userStore.username || '当前用户')
+const currentUserId = computed(() => userStore.userInfo?.id ?? null)
 const totalText = computed(() => `共 ${total.value} 条打卡分享`)
 
 const resolveMediaUrl = (value) => {
@@ -301,6 +380,7 @@ const resetPanel = () => {
   previewVisible.value = false
   previewImageUrl.value = ''
   clearUploadFiles()
+  resetReportDialog()
 }
 
 const sanitizeUploadList = (fileList) => {
@@ -463,6 +543,78 @@ const ensureLoggedInForInteraction = () => {
   }
   ElMessage.warning('登录后可参与互动')
   return false
+}
+
+const canReportShare = (share) => {
+  return Boolean(userStore.isLoggedIn && currentUserId.value && share.authorUserId !== currentUserId.value)
+}
+
+const canReportReply = (reply) => {
+  return Boolean(userStore.isLoggedIn && currentUserId.value && reply.authorUserId !== currentUserId.value)
+}
+
+const openShareReportDialog = (share) => {
+  if (!ensureLoggedInForInteraction()) {
+    return
+  }
+  reportTargetType.value = 'share'
+  reportTargetId.value = share.id
+  reportTargetLabel.value = `分享 #${share.id}`
+  reportTargetPreview.value = share.content || '该分享未填写文字，仅包含图片'
+  reportDialogVisible.value = true
+}
+
+const openReplyReportDialog = (reply) => {
+  if (!ensureLoggedInForInteraction()) {
+    return
+  }
+  reportTargetType.value = 'reply'
+  reportTargetId.value = reply.id
+  reportTargetLabel.value = `回复 #${reply.id}`
+  reportTargetPreview.value = reply.content || '该回复未填写文字'
+  reportDialogVisible.value = true
+}
+
+const resetReportDialog = () => {
+  reportTargetType.value = ''
+  reportTargetId.value = null
+  reportTargetLabel.value = ''
+  reportTargetPreview.value = ''
+  reportReasonCode.value = REPORT_REASON_OPTIONS[0].value
+  reportReasonDetail.value = ''
+  reportSubmitting.value = false
+}
+
+const submitReport = async () => {
+  if (!reportTargetType.value || !reportTargetId.value) {
+    return
+  }
+
+  if (reportReasonCode.value === REPORT_REASON_OTHER && !reportReasonDetail.value.trim()) {
+    ElMessage.warning('选择“其他”时请填写补充说明')
+    return
+  }
+
+  reportSubmitting.value = true
+  try {
+    const payload = {
+      reasonCode: reportReasonCode.value,
+      reasonDetail: reportReasonDetail.value.trim() || undefined
+    }
+
+    if (reportTargetType.value === 'share') {
+      await createShareReport(reportTargetId.value, payload)
+    } else {
+      await createReplyReport(reportTargetId.value, payload)
+    }
+
+    reportDialogVisible.value = false
+    ElMessage.success('举报已提交，等待管理员处理')
+  } catch (error) {
+    ElMessage.error(error.message || '提交举报失败')
+  } finally {
+    reportSubmitting.value = false
+  }
 }
 
 const toggleLike = async (share) => {
@@ -692,6 +844,13 @@ onBeforeUnmount(() => {
   gap: 16px;
 }
 
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .author-meta,
 .reply-body {
   min-width: 0;
@@ -807,6 +966,37 @@ onBeforeUnmount(() => {
   display: block;
 }
 
+.report-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.report-target {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.report-label {
+  display: inline-flex;
+  margin-bottom: 10px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.report-target strong {
+  display: block;
+  color: #0f172a;
+}
+
+.report-target p {
+  margin: 10px 0 0;
+  color: #475569;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 900px) {
   .composer-actions,
   .login-tip,
@@ -823,6 +1013,10 @@ onBeforeUnmount(() => {
   .reply-item {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .card-actions {
+    justify-content: flex-end;
   }
 
   .share-images {

@@ -17,6 +17,7 @@ public interface AdminAnnouncementService {
             String content,
             Boolean pinned,
             Short status,
+            Long operatorUserId,
             MultipartFile coverImage
     );
 
@@ -28,12 +29,13 @@ public interface AdminAnnouncementService {
             Boolean pinned,
             Short status,
             Boolean removeCoverImage,
+            Long operatorUserId,
             MultipartFile coverImage
     );
 
-    AdminAnnouncementDetailResponse updatePublishStatus(Long announcementId, Boolean published);
+    AdminAnnouncementDetailResponse updatePublishStatus(Long announcementId, Boolean published, Long operatorUserId);
 
-    AdminAnnouncementDetailResponse updatePinnedStatus(Long announcementId, Boolean pinned);
+    AdminAnnouncementDetailResponse updatePinnedStatus(Long announcementId, Boolean pinned, Long operatorUserId);
 
-    void deleteAnnouncement(Long announcementId);
+    void deleteAnnouncement(Long announcementId, Long operatorUserId);
 }

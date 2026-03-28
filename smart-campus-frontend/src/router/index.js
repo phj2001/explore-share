@@ -71,6 +71,30 @@ const routes = [
         meta: { title: '公告管理', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
+        path: 'reports',
+        name: 'AdminReports',
+        component: () => import('@/views/Admin/ReportList.vue'),
+        meta: { title: '举报审核', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'logs',
+        name: 'AdminLogs',
+        component: () => import('@/views/Admin/OperationLogList.vue'),
+        meta: { title: '系统日志', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'files',
+        name: 'AdminFiles',
+        component: () => import('@/views/Admin/FileResourceList.vue'),
+        meta: { title: '文件资源', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'configs',
+        name: 'AdminConfigs',
+        component: () => import('@/views/Admin/SystemConfigList.vue'),
+        meta: { title: '系统配置', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
         path: 'poi/create',
         name: 'POICreate',
         component: () => import('@/views/Admin/POIForm.vue'),
