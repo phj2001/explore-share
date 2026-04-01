@@ -4,7 +4,7 @@
       <div class="hero-copy">
         <span class="hero-kicker">系统日志</span>
         <h1>统一追踪后台关键操作，补齐治理与运营留痕</h1>
-        <p>记录管理员在公告、用户、内容、举报审核和 POI 分类上的关键动作，方便回溯平台治理与维护过程。</p>
+        <p>记录管理员在公告、用户、内容、举报审核和地点分类上的关键动作，方便回溯平台治理与维护过程。</p>
       </div>
 
       <div class="hero-stats">
@@ -120,7 +120,7 @@ import { ElMessage } from 'element-plus'
 import { RefreshRight, Search } from '@element-plus/icons-vue'
 import { getAdminOperationLogPage } from '@/api/adminOperationLog'
 
-const moduleOptions = ['公告管理', '用户管理', '内容管理', '举报审核', 'POI分类']
+const moduleOptions = ['公告管理', '活动管理', '路线管理', '用户管理', '内容管理', '举报审核', '地点分类']
 
 const keyword = ref('')
 const moduleName = ref()

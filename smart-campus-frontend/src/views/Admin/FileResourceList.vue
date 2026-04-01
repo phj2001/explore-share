@@ -1,10 +1,13 @@
 <template>
-  <div class="file-page">
+  <div class="resource-page">
     <section class="page-hero">
       <div class="hero-copy">
         <span class="hero-kicker">文件资源</span>
-        <h1>统一管理头像、分享图片和公告封面</h1>
-        <p>集中查看上传资源的引用情况、磁盘状态和异常文件，并可直接跳转回对应业务对象进行治理。</p>
+        <h1>统一查看头像、分享图片与公告封面资源</h1>
+        <p>
+          这里会汇总业务正在使用的文件、磁盘残留文件和已缺失的资源引用，
+          方便运营后台统一排查、预览和删除异常资源。
+        </p>
       </div>
 
       <div class="hero-stats">
@@ -22,7 +25,7 @@
           v-model="keyword"
           clearable
           class="filter-input"
-          placeholder="搜索文件名、资源类型、归属对象或状态"
+          placeholder="搜索文件名、归属对象或资源类型"
           @keyup.enter="handleSearch"
           @clear="handleSearch"
         >
@@ -31,12 +34,34 @@
           </template>
         </el-input>
 
-        <el-select v-model="resourceType" clearable class="filter-select" placeholder="筛选资源类型" @change="handleSearch">
-          <el-option v-for="item in resourceTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+        <el-select
+          v-model="resourceType"
+          clearable
+          class="filter-select"
+          placeholder="筛选资源类型"
+          @change="handleSearch"
+        >
+          <el-option
+            v-for="item in resourceTypeOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </el-select>
 
-        <el-select v-model="status" clearable class="filter-select" placeholder="筛选资源状态" @change="handleSearch">
-          <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+        <el-select
+          v-model="status"
+          clearable
+          class="filter-select"
+          placeholder="筛选资源状态"
+          @change="handleSearch"
+        >
+          <el-option
+            v-for="item in statusOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </el-select>
 
         <el-button :icon="RefreshRight" @click="resetFilters">重置</el-button>
@@ -46,44 +71,53 @@
     <section class="table-panel">
       <div class="panel-head">
         <div>
-          <span class="panel-kicker">资源清单</span>
-          <h2>上传资源列表</h2>
+          <span class="panel-kicker">资源列表</span>
+          <h2>文件资源台账</h2>
         </div>
         <el-button text @click="loadResources">刷新列表</el-button>
       </div>
 
       <el-table :data="resources" v-loading="loading" stripe>
         <template #empty>
-          <el-empty description="当前筛选条件下暂无文件资源" />
+          <el-empty description="当前筛选条件下暂无文件资源记录" />
         </template>
 
-        <el-table-column label="预览" width="92">
+        <el-table-column label="预览" width="108">
           <template #default="{ row }">
             <el-image
-              v-if="row.fileExists"
+              v-if="resolveAssetUrl(row.resourceUrl)"
               :src="resolveAssetUrl(row.resourceUrl)"
               fit="cover"
               class="resource-thumb"
               :preview-src-list="[resolveAssetUrl(row.resourceUrl)]"
               preview-teleported
             />
-            <div v-else class="resource-thumb missing-thumb">缺失</div>
+            <span v-else class="muted-text">暂无预览</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="filename" label="文件名" min-width="220" show-overflow-tooltip />
-
-        <el-table-column label="资源类型" width="120">
+        <el-table-column label="文件信息" min-width="260">
           <template #default="{ row }">
-            <el-tag effect="plain">{{ getResourceTypeLabel(row.resourceType) }}</el-tag>
+            <div class="file-meta">
+              <strong>{{ row.filename || '-' }}</strong>
+              <span>{{ row.resourceUrl || '-' }}</span>
+            </div>
           </template>
         </el-table-column>
 
-        <el-table-column label="归属对象" min-width="220" show-overflow-tooltip>
+        <el-table-column label="资源类型" width="130">
           <template #default="{ row }">
-            <div class="meta-block">
-              <strong>{{ row.ownerName || '残留文件' }}</strong>
-              <span>{{ row.ownerType ? `${row.ownerType} · ID ${row.ownerId ?? '-'}` : '未绑定业务对象' }}</span>
+            <el-tag effect="plain" :type="resourceTagType(row.resourceType)">
+              {{ getResourceTypeLabel(row.resourceType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="归属对象" min-width="220">
+          <template #default="{ row }">
+            <div class="file-meta compact">
+              <strong>{{ row.ownerName || '未关联业务对象' }}</strong>
+              <span>{{ getOwnerTypeLabel(row.ownerType) }}{{ row.ownerId ? ` #${row.ownerId}` : '' }}</span>
             </div>
           </template>
         </el-table-column>
@@ -94,31 +128,31 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="状态" width="130">
+        <el-table-column label="状态" width="120">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)" effect="plain">
+            <el-tag effect="plain" :type="statusTagType(row.status)">
               {{ getStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column label="修改时间" width="180">
+        <el-table-column label="最后修改时间" width="180">
           <template #default="{ row }">
             {{ formatDate(row.lastModifiedAt) }}
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="210" fixed="right">
           <template #default="{ row }">
             <div class="action-group">
-              <el-button size="small" plain :disabled="!row.ownerType" @click="goToOwner(row)">查看业务</el-button>
+              <el-button size="small" plain @click="goToOwner(row)">查看归属</el-button>
               <el-button
                 size="small"
                 type="danger"
                 :loading="deletingKey === buildDeleteKey(row)"
                 @click="handleDelete(row)"
               >
-                删除资源
+                删除
               </el-button>
             </div>
           </template>
@@ -130,7 +164,7 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
+          :page-sizes="[10, 20, 50]"
           :total="total"
           layout="sizes, prev, pager, next"
           @current-change="loadResources"
@@ -151,18 +185,6 @@ import { API_ORIGIN } from '@/utils/request'
 
 const router = useRouter()
 
-const resourceTypeOptions = [
-  { label: '头像', value: 'AVATAR' },
-  { label: '分享图片', value: 'SHARE_IMAGE' },
-  { label: '公告封面', value: 'ANNOUNCEMENT_COVER' }
-]
-
-const statusOptions = [
-  { label: '正常', value: 'NORMAL' },
-  { label: '残留文件', value: 'ORPHAN_FILE' },
-  { label: '文件缺失', value: 'MISSING_FILE' }
-]
-
 const keyword = ref('')
 const resourceType = ref()
 const status = ref()
@@ -173,16 +195,25 @@ const resources = ref([])
 const loading = ref(false)
 const deletingKey = ref('')
 
-const heroStats = computed(() => {
-  const normalCount = resources.value.filter((item) => item.status === 'NORMAL').length
-  const orphanCount = resources.value.filter((item) => item.status === 'ORPHAN_FILE').length
-  const missingCount = resources.value.filter((item) => item.status === 'MISSING_FILE').length
+const resourceTypeOptions = [
+  { label: '用户头像', value: 'AVATAR' },
+  { label: '分享图片', value: 'SHARE_IMAGE' },
+  { label: '公告封面', value: 'ANNOUNCEMENT_COVER' }
+]
 
+const statusOptions = [
+  { label: '正常资源', value: 'NORMAL' },
+  { label: '残留文件', value: 'ORPHAN_FILE' },
+  { label: '文件缺失', value: 'MISSING_FILE' }
+]
+
+const heroStats = computed(() => {
+  const list = resources.value
   return [
     { label: '当前总量', value: `${total.value}`, helper: '符合当前筛选条件的资源数量' },
-    { label: '本页正常', value: `${normalCount}`, helper: '磁盘文件和业务引用均正常' },
-    { label: '本页残留', value: `${orphanCount}`, helper: '文件还在，但业务已经不再使用' },
-    { label: '本页缺失', value: `${missingCount}`, helper: '业务仍在引用，但磁盘文件已经不存在' }
+    { label: '本页头像', value: `${list.filter((item) => item.resourceType === 'AVATAR').length}`, helper: '用户资料相关的头像资源' },
+    { label: '本页残留', value: `${list.filter((item) => item.status === 'ORPHAN_FILE').length}`, helper: '文件还在，但业务已不再使用' },
+    { label: '本页缺失', value: `${list.filter((item) => item.status === 'MISSING_FILE').length}`, helper: '业务仍在引用，但磁盘文件已不存在' }
   ]
 })
 
@@ -191,8 +222,8 @@ const loadResources = async () => {
   try {
     const data = await getAdminFileResourcePage({
       keyword: keyword.value.trim() || undefined,
-      resourceType: resourceType.value || undefined,
-      status: status.value || undefined,
+      resourceType: resourceType.value,
+      status: status.value,
       page: currentPage.value - 1,
       size: pageSize.value
     })
@@ -224,19 +255,26 @@ const resetFilters = async () => {
   await loadResources()
 }
 
+const buildDeleteKey = (row) => `${row.resourceType}|${row.resourceUrl}|${row.ownerId ?? '-'}`
+
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm('删除资源后将同步清理业务引用。该操作不可恢复，是否继续？', '删除资源', {
-      type: 'warning',
-      confirmButtonText: '确认删除',
-      cancelButtonText: '取消'
-    })
+    await ElMessageBox.confirm(
+      '删除资源后，会同步清理对应的业务引用。此操作不可恢复，是否继续？',
+      '删除文件资源',
+      {
+        type: 'warning',
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消'
+      }
+    )
   } catch {
     return
   }
 
-  const key = buildDeleteKey(row)
-  deletingKey.value = key
+  const deleteKey = buildDeleteKey(row)
+  deletingKey.value = deleteKey
+
   try {
     await deleteAdminFileResource({
       resourceType: row.resourceType,
@@ -244,16 +282,17 @@ const handleDelete = async (row) => {
       ownerId: row.ownerId ?? undefined
     })
     await loadResources()
-    ElMessage.success('资源已删除')
+    ElMessage.success('文件资源已删除')
   } catch (error) {
-    ElMessage.error(error.message || '删除资源失败')
+    ElMessage.error(error.message || '删除文件资源失败')
   } finally {
     deletingKey.value = ''
   }
 }
 
 const goToOwner = (row) => {
-  if (!row.ownerType || !row.ownerId) {
+  if (!row.ownerId) {
+    ElMessage.info('该资源未关联具体业务对象')
     return
   }
 
@@ -262,30 +301,45 @@ const goToOwner = (row) => {
     return
   }
 
+  if (row.ownerType === 'SHARE') {
+    router.push({ path: '/admin/shares', query: { openShareId: String(row.ownerId) } })
+    return
+  }
+
   if (row.ownerType === 'ANNOUNCEMENT') {
     router.push({ path: '/admin/announcements', query: { openAnnouncementId: String(row.ownerId) } })
     return
   }
 
-  if (row.ownerType === 'SHARE') {
-    router.push({ path: '/admin/shares', query: { openShareId: String(row.ownerId) } })
-  }
+  ElMessage.info('暂不支持跳转到该资源的归属对象')
 }
 
-const buildDeleteKey = (row) => `${row.resourceType}|${row.resourceUrl}|${row.ownerId ?? '-'}`
-
 const getResourceTypeLabel = (value) => {
-  if (value === 'AVATAR') return '头像'
+  if (value === 'AVATAR') return '用户头像'
   if (value === 'SHARE_IMAGE') return '分享图片'
   if (value === 'ANNOUNCEMENT_COVER') return '公告封面'
-  return value || '资源'
+  return '未知资源'
+}
+
+const getOwnerTypeLabel = (value) => {
+  if (value === 'USER') return '用户'
+  if (value === 'SHARE') return '分享'
+  if (value === 'ANNOUNCEMENT') return '公告'
+  return '未关联'
 }
 
 const getStatusLabel = (value) => {
-  if (value === 'NORMAL') return '正常'
+  if (value === 'NORMAL') return '正常资源'
   if (value === 'ORPHAN_FILE') return '残留文件'
   if (value === 'MISSING_FILE') return '文件缺失'
-  return value || '未知'
+  return '未知状态'
+}
+
+const resourceTagType = (value) => {
+  if (value === 'AVATAR') return 'primary'
+  if (value === 'SHARE_IMAGE') return 'success'
+  if (value === 'ANNOUNCEMENT_COVER') return 'warning'
+  return 'info'
 }
 
 const statusTagType = (value) => {
@@ -295,11 +349,11 @@ const statusTagType = (value) => {
   return 'info'
 }
 
-const formatFileSize = (size) => {
-  if (size == null) return '未知'
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${(size / (1024 * 1024)).toFixed(2)} MB`
+const formatFileSize = (value) => {
+  if (value == null) return '未知'
+  if (value < 1024) return `${value} B`
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`
 }
 
 const formatDate = (value) => {
@@ -325,12 +379,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.file-page {
+.resource-page {
   --panel-bg: rgba(255, 255, 255, 0.9);
   --panel-border: rgba(148, 163, 184, 0.18);
   --ink: #0f172a;
   --muted: #64748b;
-  --accent: #2563eb;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -349,11 +402,11 @@ onMounted(async () => {
   border-radius: 30px;
   padding: 28px 30px;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.9fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.9fr);
   gap: 20px;
   background:
     radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 26%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.94));
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.92));
 }
 
 .hero-kicker,
@@ -363,10 +416,11 @@ onMounted(async () => {
   padding: 6px 12px;
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.08);
-  color: var(--accent);
+  color: #1d4ed8;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .hero-copy h1 {
@@ -380,6 +434,7 @@ onMounted(async () => {
   margin: 0;
   color: var(--muted);
   line-height: 1.8;
+  max-width: 640px;
 }
 
 .hero-stats {
@@ -391,8 +446,8 @@ onMounted(async () => {
 .hero-stat {
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid rgba(191, 219, 254, 0.8);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 248, 255, 0.92));
+  border: 1px solid rgba(147, 197, 253, 0.55);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.92));
 }
 
 .hero-stat span,
@@ -402,12 +457,21 @@ onMounted(async () => {
   font-style: normal;
 }
 
+.hero-stat span {
+  font-size: 12px;
+}
+
 .hero-stat strong {
   display: block;
   margin: 12px 0 10px;
   font-size: 30px;
   line-height: 1;
   color: var(--ink);
+}
+
+.hero-stat em {
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .filter-panel {
@@ -428,7 +492,7 @@ onMounted(async () => {
 }
 
 .filter-select {
-  width: 200px;
+  width: 180px;
 }
 
 .table-panel {
@@ -451,32 +515,29 @@ onMounted(async () => {
 }
 
 .resource-thumb {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  width: 70px;
+  height: 70px;
+  border-radius: 16px;
   overflow: hidden;
-  background: #f1f5f9;
+  background: #f8fafc;
 }
 
-.missing-thumb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ef4444;
-  font-size: 12px;
-}
-
-.meta-block {
+.file-meta {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.meta-block strong {
+.file-meta.compact {
+  gap: 2px;
+}
+
+.file-meta strong {
   color: var(--ink);
 }
 
-.meta-block span {
+.file-meta span,
+.muted-text {
   color: var(--muted);
   font-size: 12px;
 }
@@ -489,7 +550,7 @@ onMounted(async () => {
   color: var(--muted);
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1180px) {
   .page-hero {
     grid-template-columns: 1fr;
   }
@@ -503,6 +564,12 @@ onMounted(async () => {
 @media (max-width: 760px) {
   .hero-stats {
     grid-template-columns: 1fr;
+  }
+
+  .page-hero,
+  .filter-panel,
+  .table-panel {
+    border-radius: 22px;
   }
 
   .pagination-bar,

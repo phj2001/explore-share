@@ -25,7 +25,7 @@ const routes = [
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/Admin/Dashboard.vue'),
-    meta: { title: '管理后台', requiresAuth: true, requiresSuperAdmin: true },
+    meta: { title: '运营后台', requiresAuth: true, requiresSuperAdmin: true },
     redirect: '/admin/overview',
     children: [
       {
@@ -38,13 +38,13 @@ const routes = [
         path: 'poi',
         name: 'POIList',
         component: () => import('@/views/Admin/POIList.vue'),
-        meta: { title: 'POI 管理', requiresAuth: true, requiresSuperAdmin: true }
+        meta: { title: '地点管理', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
         path: 'poi-categories',
         name: 'AdminPoiCategories',
         component: () => import('@/views/Admin/POICategoryList.vue'),
-        meta: { title: 'POI 分类', requiresAuth: true, requiresSuperAdmin: true }
+        meta: { title: '地点分类', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
         path: 'users',
@@ -68,7 +68,25 @@ const routes = [
         path: 'announcements',
         name: 'AdminAnnouncements',
         component: () => import('@/views/Admin/AnnouncementList.vue'),
-        meta: { title: '公告管理', requiresAuth: true, requiresSuperAdmin: true }
+        meta: { title: '平台公告', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'activities',
+        name: 'AdminActivities',
+        component: () => import('@/views/Admin/ActivityList.vue'),
+        meta: { title: '活动管理', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'routes',
+        name: 'AdminRoutes',
+        component: () => import('@/views/Admin/RouteList.vue'),
+        meta: { title: '路线管理', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'recommendations',
+        name: 'AdminRecommendations',
+        component: () => import('@/views/Admin/RecommendedShareList.vue'),
+        meta: { title: '推荐内容', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
         path: 'reports',
@@ -98,13 +116,13 @@ const routes = [
         path: 'poi/create',
         name: 'POICreate',
         component: () => import('@/views/Admin/POIForm.vue'),
-        meta: { title: '创建 POI', requiresAuth: true, requiresSuperAdmin: true }
+        meta: { title: '创建地点', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
         path: 'poi/edit/:id',
         name: 'POIEdit',
         component: () => import('@/views/Admin/POIForm.vue'),
-        meta: { title: '编辑 POI', requiresAuth: true, requiresSuperAdmin: true }
+        meta: { title: '编辑地点', requiresAuth: true, requiresSuperAdmin: true }
       }
     ]
   },
@@ -120,19 +138,17 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach(async (to, from, next) => {
-  document.title = to.meta.title ? `${to.meta.title} - 智慧校园` : '智慧校园'
+router.beforeEach(async (to) => {
+  document.title = to.meta.title ? `${to.meta.title} - 地点探索` : '地点探索'
 
   const authenticated = isAuthenticated()
 
   if (to.meta.requiresAuth && !authenticated) {
-    next({ name: 'Login', query: { redirect: to.fullPath } })
-    return
+    return { name: 'Login', query: { redirect: to.fullPath } }
   }
 
   if (to.meta.hideAuth && authenticated) {
-    next({ name: 'Home' })
-    return
+    return { name: 'Home' }
   }
 
   if (to.meta.requiresSuperAdmin) {
@@ -142,18 +158,16 @@ router.beforeEach(async (to, from, next) => {
       try {
         await userStore.syncCurrentUser()
       } catch {
-        next({ name: 'Login', query: { redirect: to.fullPath } })
-        return
+        return { name: 'Login', query: { redirect: to.fullPath } }
       }
     }
 
     if (!userStore.isSuperAdmin) {
-      next({ name: 'Home' })
-      return
+      return { name: 'Home' }
     }
   }
 
-  next()
+  return true
 })
 
 export default router

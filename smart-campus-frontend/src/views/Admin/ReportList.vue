@@ -3,7 +3,7 @@
     <section class="page-hero">
       <div class="hero-copy">
         <span class="hero-kicker">举报审核</span>
-        <h1>统一处理分享与回复的用户举报，形成内容治理闭环</h1>
+        <h1>统一处理分享与回复举报，形成内容治理闭环</h1>
         <p>支持按对象类型、处理状态和举报理由筛选，并在详情中直接完成驳回或处理动作。</p>
       </div>
 
@@ -22,7 +22,7 @@
           v-model="keyword"
           clearable
           class="filter-input"
-          placeholder="搜索举报内容、被举报作者、举报人或 POI 名称"
+          placeholder="搜索举报内容、被举报作者、举报人或地点名称"
           @keyup.enter="handleSearch"
           @clear="handleSearch"
         >
@@ -147,7 +147,7 @@
                 </el-tag>
               </div>
               <h2>举报 #{{ selectedReport.id }}</h2>
-              <p>{{ selectedReport.targetPoiName || '未关联 POI' }}</p>
+              <p>{{ selectedReport.targetPoiName || '未关联地点' }}</p>
             </div>
 
             <div class="drawer-actions">
@@ -231,11 +231,7 @@
 
           <el-form-item v-if="reviewStatus === REPORT_STATUS_PROCESSED" label="处理动作">
             <el-radio-group v-model="reviewAction">
-              <el-radio
-                v-for="item in REPORT_ACTION_OPTIONS"
-                :key="item.value"
-                :label="item.value"
-              >
+              <el-radio v-for="item in REPORT_ACTION_OPTIONS" :key="item.value" :label="item.value">
                 {{ item.label }}
               </el-radio>
             </el-radio-group>
@@ -284,7 +280,6 @@ import {
   REPORT_STATUS_PROCESSED,
   REPORT_STATUS_REJECTED,
   REPORT_TARGET_OPTIONS,
-  REPORT_TARGET_REPLY,
   REPORT_TARGET_SHARE
 } from '@/constants/contentReport'
 
@@ -311,14 +306,12 @@ const reviewAction = ref(REPORT_ACTION_NONE)
 const reviewNote = ref('')
 const reviewSubmitting = ref(false)
 
-const heroStats = computed(() => {
-  return [
-    { label: '当前总量', value: `${total.value}`, helper: '符合当前筛选条件的举报数量' },
-    { label: '本页待处理', value: `${reports.value.filter((item) => item.status === REPORT_STATUS_PENDING).length}`, helper: '优先处理这些内容风险' },
-    { label: '本页已处理', value: `${reports.value.filter((item) => item.status === REPORT_STATUS_PROCESSED).length}`, helper: '已完成审核处置' },
-    { label: '本页已驳回', value: `${reports.value.filter((item) => item.status === REPORT_STATUS_REJECTED).length}`, helper: '已确认无需进一步操作' }
-  ]
-})
+const heroStats = computed(() => ([
+  { label: '当前总量', value: `${total.value}`, helper: '符合当前筛选条件的举报数量' },
+  { label: '本页待处理', value: `${reports.value.filter((item) => item.status === REPORT_STATUS_PENDING).length}`, helper: '优先处理这些内容风险' },
+  { label: '本页已处理', value: `${reports.value.filter((item) => item.status === REPORT_STATUS_PROCESSED).length}`, helper: '已完成审核处置' },
+  { label: '本页已驳回', value: `${reports.value.filter((item) => item.status === REPORT_STATUS_REJECTED).length}`, helper: '已确认无需进一步操作' }
+]))
 
 const loadReports = async () => {
   loading.value = true
@@ -447,12 +440,8 @@ const formatDate = (value) => {
 }
 
 const statusTagType = (value) => {
-  if (value === REPORT_STATUS_PENDING) {
-    return 'warning'
-  }
-  if (value === REPORT_STATUS_PROCESSED) {
-    return 'success'
-  }
+  if (value === REPORT_STATUS_PENDING) return 'warning'
+  if (value === REPORT_STATUS_PROCESSED) return 'success'
   return 'info'
 }
 

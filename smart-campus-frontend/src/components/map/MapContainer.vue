@@ -5,13 +5,13 @@
     <RoutePolyline />
 
     <div v-if="mapStore.isPickingRoutePoint" class="map-pick-tip">
-      请在地图上点击，设置{{ mapStore.routePickMode === 'start' ? '起点' : '终点' }}。
+      请在地图中点击，设置{{ mapStore.routePickMode === 'start' ? '起点' : '终点' }}。
     </div>
 
     <div v-if="sdkError" class="map-error">
       <h3>高德地图加载失败</h3>
       <p>{{ sdkError }}</p>
-      <p>请检查 `VITE_AMAP_JS_KEY` 和高德地图白名单配置。</p>
+      <p>请检查 `VITE_AMAP_JS_KEY` 与高德地图白名单配置。</p>
     </div>
 
     <el-dialog
@@ -20,6 +20,7 @@
       width="920px"
       destroy-on-close
       class="poi-dialog"
+      @closed="handleDialogClosed"
     >
       <div v-if="selectedPOI" class="poi-dialog-content">
         <section class="poi-overview">
@@ -87,7 +88,7 @@ let routePolyline = null
 let routeEndpointMarkers = []
 
 const getFitViewPadding = () => {
-  return window.innerWidth <= 768 ? [80, 80, 320, 80] : [80, 420, 80, 80]
+  return window.innerWidth <= 768 ? [80, 80, 340, 80] : [80, 420, 80, 80]
 }
 
 const createPoiMarkerContent = () => {
@@ -107,15 +108,20 @@ const createPoiMarkerContent = () => {
   `
 }
 
-const createEndpointMarkerContent = (label, colors) => {
+const createEndpointMarkerContent = (label, colors, size = 36, pointName = '') => {
+  const compactName = pointName
+    ? `<span style="max-width:${size * 2.4}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:600;opacity:0.95;">${pointName}</span>`
+    : ''
   return `
     <div style="
-      width: 36px;
-      height: 36px;
+      min-width: ${size}px;
+      min-height: ${size}px;
+      padding: 0 10px;
       border-radius: 999px;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
       color: #ffffff;
       font-size: 14px;
       font-weight: 700;
@@ -126,7 +132,10 @@ const createEndpointMarkerContent = (label, colors) => {
       -webkit-user-select: none;
       caret-color: transparent;
       outline: none;
-    ">${label}</div>
+    ">
+      <span>${label}</span>
+      ${compactName}
+    </div>
   `
 }
 
@@ -174,8 +183,8 @@ const getPoiMapPosition = (poi) => {
 const syncMapCenterToStore = () => {
   if (!map) return
 
-  const center = map.getCenter()
-  const convertedCenter = fromAmapCoordinate(center.getLat(), center.getLng())
+  const currentCenter = map.getCenter()
+  const convertedCenter = fromAmapCoordinate(currentCenter.getLat(), currentCenter.getLng())
   if (convertedCenter) {
     mapStore.setCenter(convertedCenter.lat, convertedCenter.lng)
   }
@@ -255,15 +264,15 @@ const handleMapClick = (event) => {
 const initMap = async () => {
   AMapRef = await loadAmapSdk()
 
-  const center = toAmapCoordinate(mapStore.center.lat, mapStore.center.lng)
-  if (!center) {
+  const currentCenter = toAmapCoordinate(mapStore.center.lat, mapStore.center.lng)
+  if (!currentCenter) {
     throw new Error('默认地图中心坐标无效')
   }
 
   map = new AMapRef.Map(mapRoot.value, {
     viewMode: '2D',
     zoom: mapStore.zoom,
-    center: [center.lng, center.lat],
+    center: [currentCenter.lng, currentCenter.lat],
     resizeEnable: true,
     zooms: [3, 20]
   })
@@ -278,8 +287,8 @@ const loadPOIs = async () => {
   try {
     await Promise.all([poiStore.fetchAllPOIs(), poiStore.fetchCategories()])
     renderMarkers()
-  } catch (error) {
-    ElMessage.error('加载 POI 失败')
+  } catch {
+    ElMessage.error('加载地点失败')
   }
 }
 
@@ -326,32 +335,32 @@ const drawRouteEndpoints = () => {
 
   clearRouteEndpoints()
 
-  const start = mapStore.routeStart
-  const end = mapStore.routeEnd
-
-  if (start) {
-    routeEndpointMarkers.push(
-      new AMapRef.Marker({
-        position: [Number(start.lng), Number(start.lat)],
-        anchor: 'center',
-        content: createEndpointMarkerContent('S', ['#15803d', '#22c55e']),
-        offset: new AMapRef.Pixel(-18, -18),
-        title: start.name || 'Start'
-      })
-    )
+  const points = mapStore.activeRoutePoints
+  if (!points.length) {
+    return
   }
 
-  if (end) {
-    routeEndpointMarkers.push(
-      new AMapRef.Marker({
-        position: [Number(end.lng), Number(end.lat)],
-        anchor: 'center',
-        content: createEndpointMarkerContent('E', ['#b91c1c', '#ef4444']),
-        offset: new AMapRef.Pixel(-18, -18),
-        title: end.name || 'End'
-      })
-    )
-  }
+  routeEndpointMarkers = points.map((point, index) => {
+    const isStart = index === 0
+    const isEnd = index === points.length - 1
+    const label = isStart ? '起' : isEnd ? '终' : String(index)
+    const colors = isStart
+      ? ['#15803d', '#22c55e']
+      : isEnd
+        ? ['#b91c1c', '#ef4444']
+        : ['#0f766e', '#0ea5e9']
+
+    const size = isStart || isEnd ? 36 : 32
+    const offset = isStart || isEnd ? -18 : -16
+
+    return new AMapRef.Marker({
+      position: [Number(point.lng), Number(point.lat)],
+      anchor: 'center',
+      content: createEndpointMarkerContent(label, colors, size, point.name),
+      offset: new AMapRef.Pixel(offset, offset),
+      title: point.name || (isStart ? '起点' : isEnd ? '终点' : '途经点')
+    })
+  })
 
   if (routeEndpointMarkers.length) {
     map.add(routeEndpointMarkers)
@@ -389,7 +398,7 @@ const setAsRoutePoint = (type) => {
 
   const mapCoordinate = toAmapCoordinate(selectedPOI.value.latitude, selectedPOI.value.longitude)
   if (!mapCoordinate) {
-    ElMessage.error('POI 坐标无效')
+    ElMessage.error('地点坐标无效')
     return
   }
 
@@ -412,6 +421,11 @@ const setAsRoutePoint = (type) => {
   }
 
   showDetailDialog.value = false
+}
+
+const handleDialogClosed = () => {
+  selectedPOI.value = null
+  mapStore.clearSelectedPOI()
 }
 
 const handleMapMove = async () => {
@@ -437,7 +451,7 @@ const handleMapMove = async () => {
       convertedNorthEast.lng
     )
   } catch {
-    // 保持视图交互流畅，不在这里打断用户操作。
+    // 保持地图交互流畅，这里不打断用户操作。
   }
 }
 
@@ -483,7 +497,7 @@ watch(
 )
 
 watch(
-  () => [mapStore.routeStart, mapStore.routeEnd],
+  () => mapStore.activeRoutePoints,
   () => {
     drawRouteEndpoints()
   },
@@ -494,7 +508,11 @@ watch(
   () => mapStore.selectedPOI,
   (poi) => {
     if (poi) {
+      selectedPOI.value = poi
+      showDetailDialog.value = true
       focusSelectedPoi(poi)
+    } else {
+      selectedPOI.value = null
     }
   },
   { deep: true }

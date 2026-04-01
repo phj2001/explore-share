@@ -3,7 +3,7 @@
     <section class="page-hero">
       <div class="hero-copy">
         <span class="hero-kicker">公告管理</span>
-        <h1>统一发布校园通知、临时提醒和首页推荐信息</h1>
+        <h1>统一发布平台通知、临时提醒和首页展示信息</h1>
         <p>支持草稿保存、正式发布、置顶展示和封面图管理，后台编辑完成后会直接同步到前台首页公告区。</p>
       </div>
 
@@ -63,7 +63,7 @@
       <div class="panel-head">
         <div>
           <span class="panel-kicker">发布列表</span>
-          <h2>校园公告</h2>
+          <h2>平台公告</h2>
         </div>
         <el-button text @click="loadAnnouncements">刷新列表</el-button>
       </div>
@@ -298,7 +298,7 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="其它设置">
+        <el-form-item label="其他设置">
           <div class="switch-group">
             <el-switch v-model="form.pinned" inline-prompt active-text="置顶" inactive-text="普通" />
             <span class="switch-tip">置顶公告会优先展示在前台首页</span>

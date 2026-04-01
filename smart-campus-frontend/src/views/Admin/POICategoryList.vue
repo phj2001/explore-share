@@ -2,9 +2,9 @@
   <div class="category-page">
     <section class="page-hero">
       <div class="hero-copy">
-        <span class="hero-kicker">POI 分类</span>
-        <h1>统一管理校园空间分类，避免 POI 分类命名持续发散</h1>
-        <p>当前版本直接基于已有 POI 分类聚合展示，支持批量重命名，并可一键跳到对应分类的 POI 列表继续处理。</p>
+        <span class="hero-kicker">地点分类</span>
+        <h1>统一管理地点分类，避免命名持续发散</h1>
+        <p>当前版本直接基于已有地点分类聚合展示，支持批量重命名，并可一键跳到对应分类的地点列表继续处理。</p>
       </div>
 
       <div class="hero-stats">
@@ -14,14 +14,14 @@
           <em>当前正在被使用的分类数</em>
         </article>
         <article class="hero-stat">
-          <span>POI 总量</span>
+          <span>地点总量</span>
           <strong>{{ totalPoiCount }}</strong>
-          <em>所有分类下的 POI 合计</em>
+          <em>所有分类下的地点合计</em>
         </article>
         <article class="hero-stat">
           <span>最大分类</span>
           <strong>{{ hottestCategory?.name || '--' }}</strong>
-          <em>{{ hottestCategory ? `${hottestCategory.poiCount} 个 POI` : '暂无数据' }}</em>
+          <em>{{ hottestCategory ? `${hottestCategory.poiCount} 个地点` : '暂无数据' }}</em>
         </article>
       </div>
     </section>
@@ -56,7 +56,7 @@
           <span class="panel-kicker">分类列表</span>
           <h2>当前分类清单</h2>
         </div>
-        <el-button type="primary" plain @click="goCreatePoi">新增带新分类的 POI</el-button>
+        <el-button type="primary" plain @click="goCreatePoi">新增带新分类的地点</el-button>
       </div>
 
       <el-table :data="filteredCategories" v-loading="loading" stripe>
@@ -70,12 +70,12 @@
           <template #default="{ row }">
             <div class="category-main">
               <strong>{{ row.name }}</strong>
-              <span>已被 {{ row.poiCount }} 个 POI 使用</span>
+              <span>已被 {{ row.poiCount }} 个地点使用</span>
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column label="POI 数量" width="120">
+        <el-table-column label="地点数量" width="120">
           <template #default="{ row }">
             <el-tag effect="plain" type="info">{{ row.poiCount }}</el-tag>
           </template>
@@ -85,7 +85,7 @@
           <template #default="{ row }">
             <div class="action-group">
               <el-button size="small" @click="openRenameDialog(row)">重命名</el-button>
-              <el-button size="small" plain @click="goPoiList(row.name)">查看 POI</el-button>
+              <el-button size="small" plain @click="goPoiList(row.name)">查看地点</el-button>
               <el-tooltip content="当前版本仅展示正在被使用的分类，因此这里不支持直接删除" placement="top">
                 <span class="disabled-wrap">
                   <el-button size="small" type="danger" disabled>删除</el-button>

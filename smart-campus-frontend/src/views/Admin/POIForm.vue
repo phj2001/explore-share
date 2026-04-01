@@ -1,6 +1,6 @@
 <template>
   <div class="poi-form-container">
-    <h2>{{ isEdit ? '编辑 POI' : '新增 POI' }}</h2>
+    <h2>{{ isEdit ? '编辑地点' : '新增地点' }}</h2>
 
     <el-form
       ref="formRef"
@@ -9,8 +9,8 @@
       label-width="120px"
       style="max-width: 600px; margin-top: 30px"
     >
-      <el-form-item label="POI 名称" prop="name">
-        <el-input v-model="form.name" placeholder="请输入 POI 名称" />
+      <el-form-item label="地点名称" prop="name">
+        <el-input v-model="form.name" placeholder="请输入地点名称" />
       </el-form-item>
 
       <el-form-item label="分类" prop="category">
@@ -96,7 +96,7 @@ const form = reactive({
 const isEdit = computed(() => !!route.params.id)
 
 const rules = {
-  name: [{ required: true, message: '请输入 POI 名称', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入地点名称', trigger: 'blur' }],
   category: [{ required: true, message: '请选择或输入分类', trigger: 'change' }],
   latitude: [{ required: true, message: '请输入纬度', trigger: 'blur' }],
   longitude: [{ required: true, message: '请输入经度', trigger: 'blur' }]
@@ -121,7 +121,7 @@ const loadPOI = async () => {
       description: poi.description
     })
   } catch (error) {
-    ElMessage.error('加载 POI 失败')
+    ElMessage.error('加载地点失败')
     router.back()
   }
 }

@@ -1,5 +1,23 @@
-# Vue 3 + Vite
+# 地点探索前端
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+基于 `Vue 3 + Vite + Element Plus` 构建的地点探索与打卡分享平台前端。
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## 主要能力
+
+- 探索地图与地点浏览
+- 地点打卡分享、回复互动与举报
+- 平台公告、近期活动、精选分享与精选路线展示
+- 运营后台：地点、内容、活动、路线、资源、配置等管理能力
+
+## 本地开发
+
+```bash
+npm install
+npm run dev
+```
+
+## 生产构建
+
+```bash
+npm run build
+```

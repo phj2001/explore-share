@@ -3,9 +3,10 @@
     <section class="page-hero">
       <div class="hero-copy">
         <span class="hero-kicker">系统配置</span>
-        <h1>集中管理首页展示规则与后台默认阈值</h1>
+        <h1>集中维护首页展示规则与系统默认参数</h1>
         <p>
-          这里统一维护首页公告、热门 POI 榜单和总览分享数量等关键参数，修改后会直接影响对应模块的默认展示效果。
+          这里统一管理首页公告数量、默认展开状态、热门地点榜单数量等关键参数，
+          修改后会直接影响对应模块的默认展示效果。
         </p>
       </div>
 
@@ -148,10 +149,10 @@ const heroStats = computed(() => {
   const integerCount = configs.value.filter((item) => item.valueType === 'INTEGER').length
 
   return [
-    { label: '配置总数', value: `${total}`, helper: '当前可直接在后台维护的系统参数' },
+    { label: '配置总数', value: `${total}`, helper: '当前可在后台直接维护的系统参数' },
     { label: '公开配置', value: `${publicCount}`, helper: '前台页面可直接读取的公开参数' },
     { label: '布尔配置', value: `${booleanCount}`, helper: '适用于开关类策略，例如默认收起' },
-    { label: '整数配置', value: `${integerCount}`, helper: '适用于数量阈值，例如榜单和列表条数' }
+    { label: '整数配置', value: `${integerCount}`, helper: '适用于数量阈值，例如榜单数量' }
   ]
 })
 

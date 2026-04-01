@@ -2,10 +2,10 @@
   <section class="share-panel">
     <div class="share-header">
       <div>
-        <h3>打卡分享</h3>
+        <h3>地点打卡</h3>
         <p>{{ totalText }}</p>
       </div>
-      <el-tag type="info" effect="plain">最新优先</el-tag>
+      <el-tag type="info" effect="plain">最新互动</el-tag>
     </div>
 
     <div class="composer-card">
@@ -16,7 +16,7 @@
           </el-avatar>
           <div>
             <strong>{{ currentDisplayName }}</strong>
-            <p>在这里写下你的打卡体验，最多 300 字</p>
+            <p>在这里写下你的地点体验，最多 300 字。</p>
           </div>
         </div>
 
@@ -27,7 +27,7 @@
           maxlength="300"
           show-word-limit
           resize="none"
-          placeholder="可以分享地点感受、风景体验或推荐内容"
+          placeholder="可以分享地点感受、路线体验或推荐理由"
         />
 
         <el-upload
@@ -50,16 +50,16 @@
         </el-upload>
 
         <div class="composer-actions">
-          <span class="upload-tip">支持 JPG / PNG / WEBP，单张不超过 5MB，最多 3 张</span>
-          <el-button type="primary" :loading="submitting" @click="submitShare">发布分享</el-button>
+          <span class="upload-tip">支持 JPG / PNG / WEBP，单张不超过 5MB，最多 3 张。</span>
+          <el-button type="primary" :loading="submitting" @click="submitShare">发布打卡</el-button>
         </div>
       </template>
 
       <template v-else>
         <div class="login-tip">
           <div>
-            <strong>登录后可参与打卡分享</strong>
-            <p>你可以查看其他用户的内容，登录后即可发布、点赞和回复。</p>
+            <strong>登录后即可参与地点互动</strong>
+            <p>你可以先浏览其他用户的内容，登录后即可发布打卡、点赞和回复。</p>
           </div>
           <el-button type="primary" @click="goLogin">前往登录</el-button>
         </div>
@@ -188,7 +188,7 @@
                 placeholder="写下你的回复"
               />
               <div class="reply-composer-actions">
-                <span>回复按时间顺序展示</span>
+                <span>回复会按时间顺序展示。</span>
                 <el-button type="primary" size="small" :loading="share.replySubmitting" @click="submitReply(share)">
                   发送回复
                 </el-button>
@@ -196,7 +196,7 @@
             </template>
 
             <div v-else class="reply-login-tip">
-              <span>登录后可回复这条分享</span>
+              <span>登录后可回复这条打卡。</span>
               <el-button type="primary" link @click="goLogin">前往登录</el-button>
             </div>
           </div>
@@ -209,7 +209,7 @@
       </div>
     </div>
 
-    <el-empty v-else description="这个 POI 还没有分享，来发布第一条吧" />
+    <el-empty v-else description="这个地点还没有打卡内容，来发布第一条吧" />
 
     <el-dialog v-model="previewVisible" title="图片预览" width="640px">
       <img :src="previewImageUrl" alt="预览图片" class="preview-image" />
@@ -319,7 +319,7 @@ const reportReasonDetail = ref('')
 
 const currentDisplayName = computed(() => userStore.displayName || userStore.username || '当前用户')
 const currentUserId = computed(() => userStore.userInfo?.id ?? null)
-const totalText = computed(() => `共 ${total.value} 条打卡分享`)
+const totalText = computed(() => `共 ${total.value} 条地点打卡`)
 
 const resolveMediaUrl = (value) => {
   if (!value) {
@@ -369,6 +369,16 @@ const clearUploadFiles = () => {
     }
   })
   uploadFileList.value = []
+}
+
+const resetReportDialog = () => {
+  reportTargetType.value = ''
+  reportTargetId.value = null
+  reportTargetLabel.value = ''
+  reportTargetPreview.value = ''
+  reportReasonCode.value = REPORT_REASON_OPTIONS[0].value
+  reportReasonDetail.value = ''
+  reportSubmitting.value = false
 }
 
 const resetPanel = () => {
@@ -456,7 +466,7 @@ const loadShares = async (reset = false) => {
     const data = await getPoiSharePage(props.poi.id, { page: nextPage, size: 10 })
     applySharePage(data, reset)
   } catch (error) {
-    ElMessage.error(error.message || '加载分享失败')
+    ElMessage.error(error.message || '加载打卡内容失败')
   } finally {
     loadingRef.value = false
   }
@@ -502,12 +512,12 @@ const submitShare = async () => {
       content: trimmedContent,
       images
     })
-    ElMessage.success('分享发布成功')
+    ElMessage.success('打卡发布成功')
     shareContent.value = ''
     clearUploadFiles()
     await loadShares(true)
   } catch (error) {
-    ElMessage.error(error.message || '分享发布失败')
+    ElMessage.error(error.message || '打卡发布失败')
   } finally {
     submitting.value = false
   }
@@ -515,7 +525,7 @@ const submitShare = async () => {
 
 const removeShare = async (share) => {
   try {
-    await ElMessageBox.confirm('删除后无法恢复，是否继续？', '删除分享', {
+    await ElMessageBox.confirm('删除后无法恢复，是否继续？', '删除打卡', {
       type: 'warning',
       confirmButtonText: '删除',
       cancelButtonText: '取消'
@@ -529,9 +539,9 @@ const removeShare = async (share) => {
     await deletePoiShare(share.id)
     shares.value = shares.value.filter((item) => item.id !== share.id)
     total.value = Math.max(total.value - 1, 0)
-    ElMessage.success('分享已删除')
+    ElMessage.success('打卡已删除')
   } catch (error) {
-    ElMessage.error(error.message || '删除分享失败')
+    ElMessage.error(error.message || '删除打卡失败')
   } finally {
     deletingId.value = null
   }
@@ -545,13 +555,11 @@ const ensureLoggedInForInteraction = () => {
   return false
 }
 
-const canReportShare = (share) => {
-  return Boolean(userStore.isLoggedIn && currentUserId.value && share.authorUserId !== currentUserId.value)
-}
+const canReportShare = (share) =>
+  Boolean(userStore.isLoggedIn && currentUserId.value && share.authorUserId !== currentUserId.value)
 
-const canReportReply = (reply) => {
-  return Boolean(userStore.isLoggedIn && currentUserId.value && reply.authorUserId !== currentUserId.value)
-}
+const canReportReply = (reply) =>
+  Boolean(userStore.isLoggedIn && currentUserId.value && reply.authorUserId !== currentUserId.value)
 
 const openShareReportDialog = (share) => {
   if (!ensureLoggedInForInteraction()) {
@@ -559,8 +567,8 @@ const openShareReportDialog = (share) => {
   }
   reportTargetType.value = 'share'
   reportTargetId.value = share.id
-  reportTargetLabel.value = `分享 #${share.id}`
-  reportTargetPreview.value = share.content || '该分享未填写文字，仅包含图片'
+  reportTargetLabel.value = `打卡 #${share.id}`
+  reportTargetPreview.value = share.content || '该打卡未填写文字，仅包含图片。'
   reportDialogVisible.value = true
 }
 
@@ -571,18 +579,8 @@ const openReplyReportDialog = (reply) => {
   reportTargetType.value = 'reply'
   reportTargetId.value = reply.id
   reportTargetLabel.value = `回复 #${reply.id}`
-  reportTargetPreview.value = reply.content || '该回复未填写文字'
+  reportTargetPreview.value = reply.content || '该回复未填写文字。'
   reportDialogVisible.value = true
-}
-
-const resetReportDialog = () => {
-  reportTargetType.value = ''
-  reportTargetId.value = null
-  reportTargetLabel.value = ''
-  reportTargetPreview.value = ''
-  reportReasonCode.value = REPORT_REASON_OPTIONS[0].value
-  reportReasonDetail.value = ''
-  reportSubmitting.value = false
 }
 
 const submitReport = async () => {

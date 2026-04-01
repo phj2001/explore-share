@@ -2,26 +2,26 @@
   <footer class="footer">
     <div class="footer-content">
       <div class="footer-section">
-        <h3>智慧校园</h3>
-        <p>基于地图的校园信息服务平台</p>
+        <h3>地点探索</h3>
+        <p>基于地图的地点发现、打卡分享与内容互动平台。</p>
       </div>
 
       <div class="footer-section">
-        <h4>快速链接</h4>
+        <h4>快速入口</h4>
         <ul>
           <li><router-link to="/">首页</router-link></li>
-          <li v-if="userStore.isSuperAdmin"><router-link to="/admin/overview">管理后台</router-link></li>
+          <li v-if="userStore.isSuperAdmin"><router-link to="/admin/overview">运营后台</router-link></li>
         </ul>
       </div>
 
       <div class="footer-section">
-        <h4>关于我们</h4>
-        <p>提供校园地图导航、POI 查询等服务</p>
+        <h4>关于平台</h4>
+        <p>提供地图探索、地点浏览、路线发现、打卡分享与内容互动等服务。</p>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; 2024 智慧校园. All rights reserved.</p>
+      <p>&copy; 2024 地点探索. All rights reserved.</p>
     </div>
   </footer>
 </template>

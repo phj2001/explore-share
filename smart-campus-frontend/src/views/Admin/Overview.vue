@@ -3,9 +3,9 @@
     <section class="hero-panel">
       <div class="hero-copy">
         <span class="eyebrow">运营总览</span>
-        <h1>校园地图、用户互动与内容活跃度一屏掌握</h1>
+        <h1>地图探索、用户互动与内容活跃度一屏掌握</h1>
         <p>
-          这里展示后台的核心运营指标、分享趋势和热门 POI 排行，帮助你快速判断当前平台的活跃状态。
+          这里展示平台的核心运营指标、分享趋势和热门地点排行，帮助你快速判断当前平台的活跃状态。
         </p>
       </div>
 
@@ -89,7 +89,7 @@
         <div class="panel-head">
           <div>
             <span class="panel-kicker">排行</span>
-            <h2>热门 POI 排行</h2>
+            <h2>热门地点排行</h2>
           </div>
           <span class="panel-note">按分享数、回复数排序</span>
         </div>
@@ -113,14 +113,14 @@
           </div>
         </div>
 
-        <el-empty v-else description="当前时间范围内暂无热门 POI" />
+        <el-empty v-else description="当前时间范围内暂无热门地点" />
       </article>
     </section>
 
     <section class="panel recent-panel">
       <div class="panel-head">
         <div>
-          <span class="panel-kicker">最近活动</span>
+          <span class="panel-kicker">最近动态</span>
           <h2>最近新增分享</h2>
         </div>
         <span class="panel-note">按最新发布时间排序</span>
@@ -172,9 +172,9 @@ const metricCards = computed(() => {
   return [
     {
       key: 'pois',
-      label: 'POI 总数',
+      label: '地点总数',
       value: summary.poiCount || 0,
-      helper: '校园空间数据总量',
+      helper: '地点数据总量',
       route: '/admin/poi'
     },
     {

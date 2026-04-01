@@ -4,7 +4,7 @@
     <div class="toolbar">
       <el-input
         v-model="searchText"
-        placeholder="搜索 POI 名称"
+        placeholder="搜索地点名称"
         style="width: 300px"
         clearable
         @clear="handleSearch"
@@ -30,7 +30,7 @@
       </el-select>
 
       <el-button type="primary" @click="handleCreate" style="margin-left: auto">
-        新增 POI
+        新增地点
       </el-button>
     </div>
 
@@ -183,7 +183,7 @@ const handleEdit = (row) => {
 
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm('确定要删除这个 POI 吗？', '提示', {
+    await ElMessageBox.confirm('确定要删除这个地点吗？', '提示', {
       type: 'warning'
     })
 

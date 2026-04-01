@@ -15,6 +15,7 @@ import com.smartcampus.repository.POIRepository;
 import com.smartcampus.repository.POIShareLikeRepository;
 import com.smartcampus.repository.POIShareReplyRepository;
 import com.smartcampus.repository.POIShareRepository;
+import com.smartcampus.repository.RecommendedShareRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.security.UserRole;
 import com.smartcampus.service.POIShareService;
@@ -64,6 +65,7 @@ public class POIShareServiceImpl implements POIShareService {
     private final POIShareReplyRepository poiShareReplyRepository;
     private final POIRepository poiRepository;
     private final UserRepository userRepository;
+    private final RecommendedShareRepository recommendedShareRepository;
 
     @Value("${app.upload.poi-share-dir:uploads/poi-shares}")
     private String poiShareUploadDir;
@@ -179,6 +181,7 @@ public class POIShareServiceImpl implements POIShareService {
 
         poiShareLikeRepository.deleteByShareId(shareId);
         poiShareReplyRepository.deleteByShareId(shareId);
+        recommendedShareRepository.deleteByShareId(shareId);
         poiShareRepository.delete(share);
         imageUrls.forEach(this::deleteImageQuietly);
     }

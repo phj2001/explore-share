@@ -5,18 +5,18 @@
         v-if="isCollapsed"
         type="button"
         class="collapsed-trigger"
-        aria-label="展开校园公告"
+        aria-label="展开平台公告"
         @click="toggleDesktopRail"
       >
         <el-icon><ArrowRightBold /></el-icon>
-        <span>校园公告</span>
+        <span>平台公告</span>
       </button>
 
       <aside v-else class="notice-rail">
         <button
           type="button"
           class="rail-toggle"
-          aria-label="折叠校园公告"
+          aria-label="收起平台公告"
           @click="toggleDesktopRail"
         >
           <el-icon><ArrowLeftBold /></el-icon>
@@ -26,8 +26,8 @@
         <div class="rail-body">
           <div class="rail-head">
             <div>
-              <span class="rail-kicker">校园公告</span>
-              <h2>首页信息栏</h2>
+              <span class="rail-kicker">平台公告</span>
+              <h2>平台信息栏</h2>
             </div>
             <el-button text class="refresh-button" @click="loadAnnouncements">刷新</el-button>
           </div>
@@ -65,11 +65,11 @@
               </div>
             </template>
 
-            <el-empty v-else description="暂时还没有已发布的校园公告" />
+            <el-empty v-else description="暂时还没有已发布的平台公告" />
           </div>
 
           <div class="rail-footer">
-            <span>已发布公告会自动展示在这里</span>
+            <span>已发布的平台公告会展示在这里</span>
           </div>
         </div>
       </aside>
@@ -78,7 +78,7 @@
     <template v-else>
       <button type="button" class="mobile-trigger" @click="mobileDrawerVisible = true">
         <el-icon><Bell /></el-icon>
-        <span>校园公告</span>
+        <span>平台公告</span>
       </button>
 
       <el-drawer
@@ -91,8 +91,8 @@
         <div class="mobile-shell">
           <div class="rail-head mobile-head">
             <div>
-              <span class="rail-kicker">校园公告</span>
-              <h2>首页信息栏</h2>
+              <span class="rail-kicker">平台公告</span>
+              <h2>平台信息栏</h2>
             </div>
             <el-button text class="refresh-button" @click="loadAnnouncements">刷新</el-button>
           </div>
@@ -130,7 +130,7 @@
               </div>
             </template>
 
-            <el-empty v-else description="暂时还没有已发布的校园公告" />
+            <el-empty v-else description="暂时还没有已发布的平台公告" />
           </div>
         </div>
       </el-drawer>
@@ -157,7 +157,7 @@
 
           <div class="detail-meta">
             <el-tag :type="selectedAnnouncement.pinned ? 'warning' : 'info'" effect="plain">
-              {{ selectedAnnouncement.pinned ? '置顶公告' : '校园公告' }}
+              {{ selectedAnnouncement.pinned ? '置顶公告' : '平台公告' }}
             </el-tag>
             <span>{{ formatDate(selectedAnnouncement.publishedAt) }}</span>
           </div>

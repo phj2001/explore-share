@@ -4,6 +4,9 @@
 
     <div class="main-content">
       <MapContainer />
+      <RecommendedShareSection />
+      <ActivitySection />
+      <RecommendedRouteSection />
     </div>
 
     <AnnouncementSection />
@@ -17,6 +20,9 @@ import Header from '@/components/common/Header.vue'
 import Footer from '@/components/common/Footer.vue'
 import MapContainer from '@/components/map/MapContainer.vue'
 import AnnouncementSection from '@/components/announcement/AnnouncementSection.vue'
+import RecommendedShareSection from '@/components/recommendation/RecommendedShareSection.vue'
+import ActivitySection from '@/components/activity/ActivitySection.vue'
+import RecommendedRouteSection from '@/components/route/RecommendedRouteSection.vue'
 </script>
 
 <style scoped>
@@ -28,5 +34,7 @@ import AnnouncementSection from '@/components/announcement/AnnouncementSection.v
 
 .main-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 </style>

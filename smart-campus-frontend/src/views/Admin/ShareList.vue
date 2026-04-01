@@ -3,8 +3,8 @@
     <section class="page-hero">
       <div class="hero-copy">
         <span class="hero-kicker">分享管理</span>
-        <h1>集中治理校园打卡分享、图片内容与互动数据</h1>
-        <p>支持按作者、POI 和发布时间筛选分享，查看详情、图片和回复，并能和回复管理页联动处理异常内容。</p>
+        <h1>集中治理地点打卡分享、图片内容与互动数据</h1>
+        <p>支持按作者、地点和发布时间筛选分享，查看详情、图片和回复，并可与回复管理页联动处理异常内容。</p>
       </div>
 
       <div class="hero-stats">
@@ -21,7 +21,7 @@
         <el-input
           v-model="keyword"
           clearable
-          placeholder="搜索作者、POI 名称或分享内容"
+          placeholder="搜索作者、地点名称或分享内容"
           class="filter-input"
           @keyup.enter="handleSearch"
           @clear="handleSearch"
@@ -35,7 +35,7 @@
           v-model="poiId"
           clearable
           filterable
-          placeholder="筛选所属 POI"
+          placeholder="筛选所属地点"
           class="filter-select"
           @change="handleSearch"
         >
@@ -121,7 +121,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="所属 POI" min-width="170" show-overflow-tooltip>
+        <el-table-column label="所属地点" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">
             <button type="button" class="poi-card" @click="focusPoi(row.poiId)">
               <strong>{{ row.poiName }}</strong>
@@ -267,7 +267,7 @@
                 <strong>{{ selectedShare.id }}</strong>
               </div>
               <div class="info-item">
-                <span>POI ID</span>
+                <span>地点 ID</span>
                 <strong>{{ selectedShare.poiId }}</strong>
               </div>
               <div class="info-item">
@@ -380,7 +380,7 @@ const activeFilters = computed(() => {
 
   if (poiId.value) {
     const poi = poiOptions.value.find((item) => item.id === poiId.value)
-    items.push({ key: 'poiId', label: `POI：${poi?.name || poiId.value}` })
+    items.push({ key: 'poiId', label: `地点：${poi?.name || poiId.value}` })
   }
 
   if (timeRange.value?.length === 2) {
@@ -395,7 +395,7 @@ const heroStats = computed(() => {
   const pageReplyCount = shares.value.reduce((sum, item) => sum + (item.replyCount || 0), 0)
 
   return [
-    { label: '当前总量', value: `${total.value}`, helper: '符合当前筛选的分享数' },
+    { label: '当前总量', value: `${total.value}`, helper: '符合当前筛选的分享数量' },
     { label: '本页点赞', value: `${pageLikeCount}`, helper: '当前页聚合互动热度' },
     { label: '本页回复', value: `${pageReplyCount}`, helper: '当前页累计回复量' },
     { label: '筛选条件', value: `${activeFilters.value.length}`, helper: activeFilters.value.length ? '可点击下方条件单独移除' : '当前为全量浏览' }
@@ -406,7 +406,7 @@ const loadPois = async () => {
   try {
     poiOptions.value = await getAllPOIs()
   } catch (error) {
-    ElMessage.error(error.message || '加载 POI 列表失败')
+    ElMessage.error(error.message || '加载地点列表失败')
   }
 }
 

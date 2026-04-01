@@ -3,7 +3,7 @@
     <section class="page-hero">
       <div class="hero-copy">
         <span class="hero-kicker">回复管理</span>
-        <h1>全局查看校园社区回复，快速定位并清理问题互动</h1>
+        <h1>全局查看平台互动回复，快速定位并清理问题内容</h1>
         <p>支持按作者、所属分享和时间范围筛选回复，并可一键跳回分享详情，形成内容治理闭环。</p>
       </div>
 
@@ -211,7 +211,7 @@ const activeFilters = computed(() => {
 
 const heroStats = computed(() => {
   return [
-    { label: '当前总量', value: `${total.value}`, helper: '符合当前筛选的回复数' },
+    { label: '当前总量', value: `${total.value}`, helper: '符合当前筛选的回复数量' },
     { label: '本页回复', value: `${replies.value.length}`, helper: '当前分页中实际加载数量' },
     { label: '聚焦分享', value: shareId.value ? `#${shareId.value}` : '全部', helper: shareId.value ? '仅查看某条分享下的回复' : '当前为全局回复巡检' },
     { label: '筛选条件', value: `${activeFilters.value.length}`, helper: activeFilters.value.length ? '支持单独移除条件' : '当前为全量浏览' }

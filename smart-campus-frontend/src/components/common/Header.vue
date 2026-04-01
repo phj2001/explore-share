@@ -2,7 +2,7 @@
   <header class="header">
     <div class="header-content">
       <div class="logo">
-        <h1>智慧校园</h1>
+        <h1>地点探索</h1>
       </div>
 
       <div class="search-section">
@@ -39,7 +39,7 @@
         <nav class="nav-menu">
           <router-link to="/" class="nav-item">首页</router-link>
           <router-link v-if="userStore.isLoggedIn" to="/settings" class="nav-item">设置</router-link>
-          <router-link v-if="userStore.isSuperAdmin" to="/admin/overview" class="nav-item">管理后台</router-link>
+          <router-link v-if="userStore.isSuperAdmin" to="/admin/overview" class="nav-item">运营后台</router-link>
         </nav>
 
         <div class="user-actions">

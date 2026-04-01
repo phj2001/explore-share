@@ -2,55 +2,25 @@
   <div class="dashboard-container">
     <aside class="sidebar">
       <div class="logo">
-        <h2>智慧校园</h2>
-        <p>管理后台</p>
+        <h2>地点探索</h2>
+        <p>运营后台</p>
       </div>
 
       <nav class="nav-menu">
-        <router-link to="/admin/overview" class="nav-item">
-          <el-icon><DataAnalysis /></el-icon>
-          <span>运营总览</span>
-        </router-link>
-        <router-link to="/admin/poi" class="nav-item">
-          <el-icon><Location /></el-icon>
-          <span>POI 管理</span>
-        </router-link>
-        <router-link to="/admin/poi-categories" class="nav-item">
-          <el-icon><CollectionTag /></el-icon>
-          <span>POI 分类</span>
-        </router-link>
-        <router-link to="/admin/users" class="nav-item">
-          <el-icon><UserFilled /></el-icon>
-          <span>用户管理</span>
-        </router-link>
-        <router-link to="/admin/shares" class="nav-item">
-          <el-icon><ChatLineSquare /></el-icon>
-          <span>分享管理</span>
-        </router-link>
-        <router-link to="/admin/replies" class="nav-item">
-          <el-icon><ChatDotRound /></el-icon>
-          <span>回复管理</span>
-        </router-link>
-        <router-link to="/admin/announcements" class="nav-item">
-          <el-icon><Bell /></el-icon>
-          <span>公告管理</span>
-        </router-link>
-        <router-link to="/admin/reports" class="nav-item">
-          <el-icon><WarningFilled /></el-icon>
-          <span>举报审核</span>
-        </router-link>
-        <router-link to="/admin/logs" class="nav-item">
-          <el-icon><Tickets /></el-icon>
-          <span>系统日志</span>
-        </router-link>
-        <router-link to="/admin/files" class="nav-item">
-          <el-icon><Files /></el-icon>
-          <span>文件资源</span>
-        </router-link>
-        <router-link to="/admin/configs" class="nav-item">
-          <el-icon><Setting /></el-icon>
-          <span>系统配置</span>
-        </router-link>
+        <router-link to="/admin/overview" class="nav-item"><el-icon><DataAnalysis /></el-icon><span>运营总览</span></router-link>
+        <router-link to="/admin/poi" class="nav-item"><el-icon><Location /></el-icon><span>地点管理</span></router-link>
+        <router-link to="/admin/poi-categories" class="nav-item"><el-icon><CollectionTag /></el-icon><span>地点分类</span></router-link>
+        <router-link to="/admin/users" class="nav-item"><el-icon><UserFilled /></el-icon><span>用户管理</span></router-link>
+        <router-link to="/admin/shares" class="nav-item"><el-icon><ChatLineSquare /></el-icon><span>分享管理</span></router-link>
+        <router-link to="/admin/replies" class="nav-item"><el-icon><ChatDotRound /></el-icon><span>回复管理</span></router-link>
+        <router-link to="/admin/announcements" class="nav-item"><el-icon><Bell /></el-icon><span>平台公告</span></router-link>
+        <router-link to="/admin/activities" class="nav-item"><el-icon><Calendar /></el-icon><span>活动管理</span></router-link>
+        <router-link to="/admin/routes" class="nav-item"><el-icon><Guide /></el-icon><span>路线管理</span></router-link>
+        <router-link to="/admin/recommendations" class="nav-item"><el-icon><Star /></el-icon><span>推荐内容</span></router-link>
+        <router-link to="/admin/reports" class="nav-item"><el-icon><WarningFilled /></el-icon><span>举报审核</span></router-link>
+        <router-link to="/admin/logs" class="nav-item"><el-icon><Tickets /></el-icon><span>系统日志</span></router-link>
+        <router-link to="/admin/files" class="nav-item"><el-icon><Files /></el-icon><span>文件资源</span></router-link>
+        <router-link to="/admin/configs" class="nav-item"><el-icon><Setting /></el-icon><span>系统配置</span></router-link>
       </nav>
     </aside>
 
@@ -61,10 +31,7 @@
           返回首页
         </el-button>
         <div class="user-info">
-          <span class="welcome-text">
-            欢迎，
-            <span class="username-highlight">{{ displayName }}</span>
-          </span>
+          <span class="welcome-text">欢迎，<span class="username-highlight">{{ displayName }}</span></span>
           <el-button @click="handleLogout" text>退出登录</el-button>
         </div>
       </header>
@@ -81,14 +48,17 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Bell,
+  Calendar,
   ChatDotRound,
   ChatLineSquare,
   CollectionTag,
   DataAnalysis,
   Files,
+  Guide,
   HomeFilled,
   Location,
   Setting,
+  Star,
   Tickets,
   WarningFilled,
   UserFilled
