@@ -1,17 +1,19 @@
 <template>
-  <div class="map-container">
-    <div ref="mapRoot" class="map-view"></div>
+  <section class="map-shell">
+    <div class="map-container">
+      <div ref="mapRoot" class="map-view"></div>
 
-    <RoutePolyline />
+      <RoutePolyline />
 
-    <div v-if="mapStore.isPickingRoutePoint" class="map-pick-tip">
-      请在地图中点击，设置{{ mapStore.routePickMode === 'start' ? '起点' : '终点' }}。
-    </div>
+      <div v-if="mapStore.isPickingRoutePoint" class="map-pick-tip">
+        请在地图中点击，设置{{ mapStore.routePickMode === 'start' ? '起点' : '终点' }}。
+      </div>
 
-    <div v-if="sdkError" class="map-error">
-      <h3>高德地图加载失败</h3>
-      <p>{{ sdkError }}</p>
-      <p>请检查 `VITE_AMAP_JS_KEY` 与高德地图白名单配置。</p>
+      <div v-if="sdkError" class="map-error">
+        <h3>地图加载失败</h3>
+        <p>{{ sdkError }}</p>
+        <p>请检查 `VITE_AMAP_JS_KEY` 与高德地图白名单配置。</p>
+      </div>
     </div>
 
     <el-dialog
@@ -56,7 +58,7 @@
         </div>
       </template>
     </el-dialog>
-  </div>
+  </section>
 </template>
 
 <script setup>
@@ -530,15 +532,19 @@ watch(
 .map-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - 60px);
+  min-height: calc(100vh - 96px);
+  overflow: hidden;
   background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.15), transparent 28%),
-    linear-gradient(180deg, #f8fafc, #e2e8f0);
+    radial-gradient(circle at top right, rgba(23, 135, 166, 0.12), transparent 28%),
+    linear-gradient(180deg, #f9fcfd, #e7f0f3);
 }
 
 .map-view {
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 96px);
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.15), transparent 28%),
+    linear-gradient(180deg, #f8fafc, #e2e8f0);
 }
 
 .map-pick-tip {
@@ -546,12 +552,12 @@ watch(
   top: 20px;
   left: 20px;
   z-index: 1100;
-  padding: 12px 14px;
+  padding: 11px 14px;
   border-radius: 14px;
-  background: rgba(15, 23, 42, 0.9);
-  color: #e2e8f0;
+  background: rgba(23, 50, 60, 0.88);
+  color: #eff8fa;
   font-size: 13px;
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.24);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
 }
 
 .map-error {
@@ -561,10 +567,10 @@ watch(
   z-index: 1200;
   max-width: 360px;
   padding: 16px 18px;
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.92);
-  color: #e2e8f0;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.28);
+  border-radius: 18px;
+  background: rgba(23, 50, 60, 0.92);
+  color: #eff8fa;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
   backdrop-filter: blur(10px);
 }
 
@@ -592,18 +598,18 @@ watch(
 .poi-overview {
   padding: 24px;
   border-radius: 28px;
-  background: linear-gradient(135deg, rgba(191, 219, 254, 0.55), rgba(255, 255, 255, 0.92));
+  background: linear-gradient(135deg, rgba(216, 238, 244, 0.92), rgba(255, 255, 255, 0.96));
 }
 
 .poi-overview-card h3 {
   margin: 14px 0 8px;
-  font-size: 28px;
-  color: #0f172a;
+  font-size: 24px;
+  color: var(--front-text);
 }
 
 .poi-overview-card p {
   margin: 0;
-  color: #475569;
+  color: var(--front-text-soft);
   line-height: 1.7;
 }
 
@@ -611,10 +617,10 @@ watch(
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.12);
-  color: #1d4ed8;
-  font-size: 13px;
-  font-weight: 600;
+  background: var(--front-accent-soft);
+  color: var(--front-accent-strong);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .poi-meta-grid {
@@ -628,19 +634,20 @@ watch(
   padding: 16px 18px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.84);
+  border: 1px solid var(--front-border);
 }
 
 .meta-card span {
   display: block;
-  color: #64748b;
-  font-size: 13px;
+  color: var(--front-text-muted);
+  font-size: 12px;
 }
 
 .meta-card strong {
   display: block;
   margin-top: 8px;
-  color: #0f172a;
-  font-size: 18px;
+  color: var(--front-text);
+  font-size: 16px;
 }
 
 .poi-actions {
@@ -656,7 +663,11 @@ watch(
 
 @media (max-width: 768px) {
   .map-container {
-    height: calc(100vh - 56px);
+    min-height: calc(100vh - 88px);
+  }
+
+  .map-view {
+    height: calc(100vh - 88px);
   }
 
   .map-pick-tip {

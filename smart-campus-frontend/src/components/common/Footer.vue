@@ -1,27 +1,38 @@
 <template>
-  <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-section">
-        <h3>地点探索</h3>
-        <p>基于地图的地点发现、打卡分享与内容互动平台。</p>
-      </div>
+  <footer class="site-footer">
+    <div class="front-shell footer-shell">
+      <section class="footer-hero front-panel">
+        <div class="footer-brand">
+          <span class="front-kicker">地点探索与分享</span>
+          <h2 class="front-title">把地点、体验和路线组织成可以持续分享的发现系统</h2>
+          <p class="front-description">
+            从地图上的一个点开始，延展到分享、活动、推荐路线和公共公告，让探索变成一套完整的地点内容体验。
+          </p>
+        </div>
 
-      <div class="footer-section">
-        <h4>快速入口</h4>
-        <ul>
-          <li><router-link to="/">首页</router-link></li>
-          <li v-if="userStore.isSuperAdmin"><router-link to="/admin/overview">运营后台</router-link></li>
-        </ul>
-      </div>
+        <div class="footer-actions">
+          <router-link to="/" class="footer-link-pill">回到探索首页</router-link>
+          <router-link v-if="userStore.isLoggedIn" to="/settings" class="footer-link-pill">进入个人中心</router-link>
+          <router-link v-if="userStore.isSuperAdmin" to="/admin/overview" class="footer-link-pill">进入运营后台</router-link>
+        </div>
+      </section>
 
-      <div class="footer-section">
-        <h4>关于平台</h4>
-        <p>提供地图探索、地点浏览、路线发现、打卡分享与内容互动等服务。</p>
-      </div>
-    </div>
+      <div class="footer-grid">
+        <section class="footer-column">
+          <h3>探索能力</h3>
+          <p>地点浏览、分类筛选、路线串联、地图定位与内容发现。</p>
+        </section>
 
-    <div class="footer-bottom">
-      <p>&copy; 2024 地点探索. All rights reserved.</p>
+        <section class="footer-column">
+          <h3>分享互动</h3>
+          <p>地点打卡、图片分享、推荐内容、活动信息与社区互动。</p>
+        </section>
+
+        <section class="footer-column">
+          <h3>项目标识</h3>
+          <p>清忧@凡辰</p>
+        </section>
+      </div>
     </div>
   </footer>
 </template>
@@ -33,75 +44,83 @@ const userStore = useUserStore()
 </script>
 
 <style scoped>
-.footer {
-  background: #2c3e50;
-  color: #ecf0f1;
-  padding: 40px 0 20px;
+.site-footer {
+  padding: 24px 0 30px;
 }
 
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+.footer-shell {
   display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.footer-hero {
+  display: flex;
+  align-items: flex-end;
   justify-content: space-between;
+  gap: 18px;
+  padding: 24px 26px;
+  border-radius: var(--front-radius-xl);
+}
+
+.footer-actions {
+  display: flex;
+  gap: 10px;
   flex-wrap: wrap;
-  gap: 40px;
+  justify-content: flex-end;
 }
 
-.footer-section {
-  flex: 1;
-  min-width: 200px;
-}
-
-.footer-section h3 {
-  margin: 0 0 15px;
-  font-size: 20px;
-  color: #409eff;
-}
-
-.footer-section h4 {
-  margin: 0 0 15px;
-  font-size: 16px;
-}
-
-.footer-section p {
-  margin: 0;
-  color: #bdc3c7;
-  line-height: 1.6;
-}
-
-.footer-section ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.footer-section li {
-  margin-bottom: 8px;
-}
-
-.footer-section a {
-  color: #bdc3c7;
+.footer-link-pill {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--front-accent-strong);
   text-decoration: none;
-  transition: color 0.3s;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--front-accent-soft);
 }
 
-.footer-section a:hover {
-  color: #409eff;
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.footer-bottom {
-  max-width: 1200px;
-  margin: 40px auto 0;
-  padding: 20px;
-  text-align: center;
-  border-top: 1px solid #34495e;
+.footer-column {
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid var(--front-border);
+  background: rgba(255, 255, 255, 0.7);
 }
 
-.footer-bottom p {
+.footer-column h3 {
+  margin: 0 0 10px;
+  color: var(--front-text);
+  font-size: 15px;
+}
+
+.footer-column p {
   margin: 0;
-  color: #7f8c8d;
-  font-size: 14px;
+  color: var(--front-text-soft);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+@media (max-width: 960px) {
+  .footer-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .footer-actions {
+    justify-content: flex-start;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

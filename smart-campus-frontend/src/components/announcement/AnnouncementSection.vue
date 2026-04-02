@@ -306,15 +306,15 @@ onBeforeUnmount(() => {
   width: 34px;
   border: none;
   border-radius: 0 18px 18px 0;
-  background: linear-gradient(180deg, #f97316, #ea580c);
-  color: #fff7ed;
+  background: linear-gradient(180deg, var(--front-accent), var(--front-accent-strong));
+  color: #f2fbfd;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
   cursor: pointer;
-  box-shadow: 12px 16px 30px rgba(234, 88, 12, 0.28);
+  box-shadow: 12px 16px 30px rgba(23, 135, 166, 0.22);
 }
 
 .rail-toggle span {
@@ -331,13 +331,13 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border: 1px solid rgba(251, 191, 36, 0.18);
+  border: 1px solid var(--front-border);
   border-left: none;
   background:
-    linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(255, 255, 255, 0.94)),
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 28%);
+    linear-gradient(180deg, rgba(244, 250, 251, 0.98), rgba(255, 255, 255, 0.96)),
+    radial-gradient(circle at top left, rgba(23, 135, 166, 0.12), transparent 28%);
   backdrop-filter: blur(18px);
-  box-shadow: 18px 22px 48px rgba(15, 23, 42, 0.12);
+  box-shadow: 18px 22px 48px rgba(15, 23, 42, 0.1);
   overflow: hidden;
 }
 
@@ -346,8 +346,8 @@ onBeforeUnmount(() => {
   border: none;
   box-shadow: none;
   background:
-    linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(255, 255, 255, 0.96)),
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 28%);
+    linear-gradient(180deg, rgba(244, 250, 251, 0.98), rgba(255, 255, 255, 0.96)),
+    radial-gradient(circle at top left, rgba(23, 135, 166, 0.12), transparent 28%);
 }
 
 .rail-head {
@@ -368,22 +368,22 @@ onBeforeUnmount(() => {
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(249, 115, 22, 0.12);
-  color: #c2410c;
-  font-size: 12px;
+  background: var(--front-accent-soft);
+  color: var(--front-accent-strong);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .rail-head h2 {
   margin: 14px 0 0;
-  color: #0f172a;
-  font-size: 26px;
+  color: var(--front-text);
+  font-size: 22px;
   line-height: 1.05;
 }
 
 .refresh-button {
-  color: #c2410c;
+  color: var(--front-accent-strong);
 }
 
 .rail-scroll {
@@ -403,14 +403,14 @@ onBeforeUnmount(() => {
 
 .featured-card,
 .notice-card {
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--front-border);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
 }
 
 .featured-card {
   padding: 18px;
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(255, 237, 213, 0.92), rgba(255, 255, 255, 0.98));
+  background: linear-gradient(135deg, rgba(224, 244, 248, 0.94), rgba(255, 255, 255, 0.98));
   cursor: pointer;
 }
 
@@ -429,21 +429,21 @@ onBeforeUnmount(() => {
   display: inline-flex;
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(249, 115, 22, 0.12);
-  color: #c2410c;
+  background: var(--front-accent-soft);
+  color: var(--front-accent-strong);
   font-size: 12px;
   font-weight: 700;
 }
 
 .featured-time,
 .notice-meta {
-  color: #64748b;
+  color: var(--front-text-muted);
   font-size: 12px;
 }
 
 .featured-card h3,
 .notice-card strong {
-  color: #0f172a;
+  color: var(--front-text);
 }
 
 .featured-card h3 {
@@ -456,7 +456,7 @@ onBeforeUnmount(() => {
 .notice-card p,
 .detail-summary,
 .detail-content {
-  color: #475569;
+  color: var(--front-text-soft);
   line-height: 1.7;
 }
 
@@ -517,9 +517,9 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  color: #fff7ed;
-  box-shadow: 0 18px 36px rgba(234, 88, 12, 0.28);
+  background: linear-gradient(135deg, var(--front-accent), var(--front-accent-strong));
+  color: #f2fbfd;
+  box-shadow: 0 18px 36px rgba(23, 135, 166, 0.24);
 }
 
 .collapsed-trigger {
@@ -536,10 +536,10 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: linear-gradient(180deg, #f97316, #ea580c);
-  color: #fff7ed;
+  background: linear-gradient(180deg, var(--front-accent), var(--front-accent-strong));
+  color: #f2fbfd;
   cursor: pointer;
-  box-shadow: 12px 16px 30px rgba(234, 88, 12, 0.28);
+  box-shadow: 12px 16px 30px rgba(23, 135, 166, 0.24);
   animation: trigger-enter 0.2s ease;
 }
 

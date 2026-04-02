@@ -1,0 +1,310 @@
+.admin-shell,
+body.admin-theme-active {
+  --admin-accent: #1787a6;
+  --admin-accent-strong: #0d6b85;
+  --admin-accent-soft: rgba(23, 135, 166, 0.1);
+  --admin-accent-soft-strong: rgba(23, 135, 166, 0.16);
+  --admin-bg: #f1f6f8;
+  --admin-bg-deep: #e8f0f3;
+  --admin-panel: rgba(255, 255, 255, 0.88);
+  --admin-panel-solid: #ffffff;
+  --admin-panel-tint: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 251, 252, 0.94));
+  --admin-border: rgba(24, 68, 84, 0.12);
+  --admin-border-strong: rgba(24, 68, 84, 0.18);
+  --admin-text: #18333d;
+  --admin-text-soft: #45616c;
+  --admin-text-muted: #6f8790;
+  --admin-shadow: 0 16px 36px rgba(17, 36, 46, 0.06);
+  --admin-shadow-soft: 0 10px 24px rgba(17, 36, 46, 0.04);
+  --admin-radius-xl: 24px;
+  --admin-radius-lg: 20px;
+  --admin-radius-md: 16px;
+}
+
+.admin-shell {
+  color: var(--admin-text);
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+}
+
+.admin-shell .content {
+  color: var(--admin-text);
+}
+
+.admin-shell .content .page-hero,
+.admin-shell .content .hero-panel,
+.admin-shell .content .filter-panel,
+.admin-shell .content .table-panel,
+.admin-shell .content .panel,
+.admin-shell .content .summary,
+.admin-shell .content .table-wrap,
+.admin-shell .content .toolbar,
+.admin-shell .content .form-panel,
+.admin-shell .content .info-panel {
+  border-color: var(--admin-border) !important;
+  background: var(--admin-panel-tint) !important;
+  box-shadow: var(--admin-shadow) !important;
+}
+
+.admin-shell .content .page-hero,
+.admin-shell .content .hero-panel {
+  border-radius: var(--admin-radius-xl) !important;
+  padding: 24px 26px !important;
+}
+
+.admin-shell .content .filter-panel,
+.admin-shell .content .toolbar {
+  border-radius: var(--admin-radius-lg) !important;
+  padding: 16px !important;
+  gap: 10px !important;
+}
+
+.admin-shell .content .table-panel,
+.admin-shell .content .table-wrap,
+.admin-shell .content .panel,
+.admin-shell .content .form-panel,
+.admin-shell .content .info-panel {
+  border-radius: 22px !important;
+  padding: 16px 16px 10px !important;
+}
+
+.admin-shell .content .page-hero h1,
+.admin-shell .content .hero-panel h1 {
+  font-size: clamp(22px, 2.3vw, 28px) !important;
+  line-height: 1.18 !important;
+  letter-spacing: -0.02em;
+}
+
+.admin-shell .content .page-hero p,
+.admin-shell .content .hero-panel p,
+.admin-shell .content .description-cell,
+.admin-shell .content .recent-preview,
+.admin-shell .content .route-meta p,
+.admin-shell .content .text-card p {
+  color: var(--admin-text-soft) !important;
+  font-size: 13.5px !important;
+  line-height: 1.72 !important;
+}
+
+.admin-shell .content .hero-kicker,
+.admin-shell .content .panel-kicker,
+.admin-shell .content .eyebrow {
+  padding: 5px 10px !important;
+  border-radius: 999px !important;
+  background: var(--admin-accent-soft) !important;
+  color: var(--admin-accent-strong) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.admin-shell .content .panel-head,
+.admin-shell .content .pagination-bar,
+.admin-shell .content .pagination,
+.admin-shell .content .pagination-container {
+  gap: 10px;
+}
+
+.admin-shell .content .panel-head h2 {
+  margin-top: 8px !important;
+  font-size: 18px !important;
+  line-height: 1.25 !important;
+  color: var(--admin-text) !important;
+}
+
+.admin-shell .content .panel-note,
+.admin-shell .content .filter-label,
+.admin-shell .content .total-text,
+.admin-shell .content .recent-time,
+.admin-shell .content .metric-foot,
+.admin-shell .content .hero-stat em,
+.admin-shell .content .summary-card em,
+.admin-shell .content .active-filter-list {
+  color: var(--admin-text-muted) !important;
+  font-size: 12px !important;
+}
+
+.admin-shell .content .hero-stat,
+.admin-shell .content .summary-card,
+.admin-shell .content .metric-card,
+.admin-shell .content .recent-card,
+.admin-shell .content .info-card,
+.admin-shell .content .text-card,
+.admin-shell .content .stat-card,
+.admin-shell .content .meta-row,
+.admin-shell .content .poi-row,
+.admin-shell .content .poi-edit-row,
+.admin-shell .content .info-item {
+  border: 1px solid rgba(24, 68, 84, 0.1) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 252, 0.95)) !important;
+  box-shadow: none !important;
+}
+
+.admin-shell .content .hero-stat strong,
+.admin-shell .content .summary-card strong,
+.admin-shell .content .metric-value,
+.admin-shell .content .stat-card strong {
+  font-size: clamp(22px, 1.95vw, 28px) !important;
+  line-height: 1 !important;
+  color: var(--admin-text) !important;
+}
+
+.admin-shell .content .metric-card {
+  min-height: 138px !important;
+  border-radius: 20px !important;
+  padding: 18px !important;
+}
+
+.admin-shell .content .metric-label,
+.admin-shell .content .hero-stat span,
+.admin-shell .content .summary-card span,
+.admin-shell .content .info-card span,
+.admin-shell .content .info-item span,
+.admin-shell .content .stat-card span {
+  color: var(--admin-text-muted) !important;
+  font-size: 12px !important;
+}
+
+.admin-shell .content .recent-top h3,
+.admin-shell .content .drawer-profile h2 {
+  font-size: 18px !important;
+}
+
+.admin-shell .content .hot-rank,
+.admin-shell .content .idx,
+.admin-shell .content .range-chip.active {
+  box-shadow: none !important;
+}
+
+.admin-shell .content .range-chip {
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+}
+
+.admin-shell .content .el-button {
+  --el-button-font-size: 13px;
+  border-radius: 12px;
+  height: 36px;
+  padding: 0 14px;
+}
+
+.admin-shell .content .el-button--small {
+  height: 30px;
+  padding: 0 12px;
+}
+
+.admin-shell .content .el-input__wrapper,
+.admin-shell .content .el-textarea__inner,
+.admin-shell .content .el-select__wrapper,
+.admin-shell .content .el-input-number,
+.admin-shell .content .el-segmented,
+body.admin-theme-active .el-dialog .el-input__wrapper,
+body.admin-theme-active .el-dialog .el-textarea__inner,
+body.admin-theme-active .el-dialog .el-select__wrapper,
+body.admin-theme-active .el-dialog .el-input-number,
+body.admin-theme-active .el-drawer .el-input__wrapper,
+body.admin-theme-active .el-drawer .el-textarea__inner,
+body.admin-theme-active .el-drawer .el-select__wrapper,
+body.admin-theme-active .el-drawer .el-input-number {
+  border-radius: 12px !important;
+}
+
+.admin-shell .content .el-input__wrapper,
+.admin-shell .content .el-select__wrapper,
+body.admin-theme-active .el-dialog .el-input__wrapper,
+body.admin-theme-active .el-dialog .el-select__wrapper,
+body.admin-theme-active .el-drawer .el-input__wrapper,
+body.admin-theme-active .el-drawer .el-select__wrapper {
+  min-height: 40px;
+}
+
+.admin-shell .content .el-table {
+  --el-table-border-color: rgba(24, 68, 84, 0.1);
+  --el-table-row-hover-bg-color: rgba(23, 135, 166, 0.05);
+  --el-table-header-bg-color: rgba(236, 245, 247, 0.92);
+  --el-table-text-color: var(--admin-text);
+  --el-table-header-text-color: #42616d;
+  font-size: 13px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.admin-shell .content .el-table th.el-table__cell {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.admin-shell .content .el-table .el-table__cell {
+  padding: 11px 0;
+}
+
+.admin-shell .content .el-tag {
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+.admin-shell .content .el-pagination {
+  --el-pagination-font-size: 13px;
+}
+
+body.admin-theme-active .el-dialog,
+body.admin-theme-active .el-drawer {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 252, 0.98));
+  color: var(--admin-text);
+}
+
+body.admin-theme-active .el-dialog {
+  border-radius: 24px;
+  box-shadow: 0 22px 56px rgba(17, 36, 46, 0.16);
+  overflow: hidden;
+}
+
+body.admin-theme-active .el-drawer {
+  box-shadow: -24px 0 48px rgba(17, 36, 46, 0.16);
+}
+
+body.admin-theme-active .el-dialog__header,
+body.admin-theme-active .el-dialog__footer,
+body.admin-theme-active .el-drawer__header {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+body.admin-theme-active .el-dialog__body,
+body.admin-theme-active .el-drawer__body {
+  color: var(--admin-text);
+}
+
+body.admin-theme-active .el-overlay {
+  background: rgba(11, 28, 35, 0.34);
+  backdrop-filter: blur(6px);
+}
+
+@media (max-width: 768px) {
+  .admin-shell .content .page-hero,
+  .admin-shell .content .hero-panel,
+  .admin-shell .content .filter-panel,
+  .admin-shell .content .toolbar,
+  .admin-shell .content .table-panel,
+  .admin-shell .content .table-wrap,
+  .admin-shell .content .panel,
+  .admin-shell .content .form-panel,
+  .admin-shell .content .info-panel {
+    border-radius: 18px !important;
+  }
+
+  .admin-shell .content .page-hero,
+  .admin-shell .content .hero-panel {
+    padding: 18px !important;
+  }
+
+  .admin-shell .content .table-panel,
+  .admin-shell .content .table-wrap,
+  .admin-shell .content .panel,
+  .admin-shell .content .form-panel,
+  .admin-shell .content .info-panel {
+    padding: 14px 14px 8px !important;
+  }
+}

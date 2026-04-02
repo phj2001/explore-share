@@ -1,5 +1,5 @@
 <template>
-  <section class="activity-section">
+  <section class="front-shell activity-section">
     <div class="section-head">
       <div>
         <span class="section-kicker">近期活动</span>
@@ -235,10 +235,7 @@ onMounted(async () => {
 
 <style scoped>
 .activity-section {
-  padding: 32px 28px 42px;
-  background:
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.1), transparent 24%),
-    linear-gradient(180deg, rgba(255, 251, 235, 0.94), rgba(248, 250, 252, 0.98));
+  padding: 8px 0 0;
 }
 
 .section-head {
@@ -253,23 +250,23 @@ onMounted(async () => {
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(249, 115, 22, 0.12);
-  color: #c2410c;
-  font-size: 12px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .section-head h2 {
   margin: 14px 0 10px;
-  color: #0f172a;
-  font-size: clamp(28px, 4vw, 38px);
+  color: var(--front-text);
+  font-size: clamp(24px, 3vw, 32px);
 }
 
 .section-head p {
   margin: 0;
   max-width: 720px;
-  color: #64748b;
+  color: var(--front-text-soft);
   line-height: 1.8;
 }
 
@@ -281,17 +278,17 @@ onMounted(async () => {
 
 .activity-card {
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 26px;
   background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--front-border);
+  box-shadow: var(--front-shadow-soft);
   cursor: pointer;
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .activity-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 28px 56px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--front-shadow);
 }
 
 .card-cover {
@@ -303,9 +300,9 @@ onMounted(async () => {
 .card-cover-placeholder {
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(251, 191, 36, 0.16));
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(251, 191, 36, 0.14));
   color: #7c2d12;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
 }
 
@@ -329,26 +326,26 @@ onMounted(async () => {
 
 .card-meta,
 .card-footer {
-  color: #64748b;
+  color: var(--front-text-muted);
   font-size: 13px;
 }
 
 .card-body h3 {
   margin: 0;
-  color: #0f172a;
-  font-size: 20px;
+  color: var(--front-text);
+  font-size: 18px;
   line-height: 1.35;
 }
 
 .summary {
   margin: 0;
-  color: #475569;
+  color: var(--front-text-soft);
   line-height: 1.75;
   min-height: 76px;
 }
 
 .card-action {
-  color: #2563eb;
+  color: var(--front-accent-strong);
   font-weight: 600;
 }
 
@@ -372,7 +369,7 @@ onMounted(async () => {
 
 .detail-summary {
   margin: 0;
-  color: #334155;
+  color: var(--front-text-soft);
   line-height: 1.8;
 }
 
@@ -385,8 +382,8 @@ onMounted(async () => {
 .info-card {
   padding: 16px;
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 247, 237, 0.92), rgba(255, 255, 255, 0.96));
-  border: 1px solid rgba(251, 191, 36, 0.18);
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.94), rgba(255, 255, 255, 0.96));
+  border: 1px solid rgba(245, 158, 11, 0.14);
 }
 
 .info-card span {
@@ -405,7 +402,7 @@ onMounted(async () => {
   padding: 18px;
   border-radius: 20px;
   background: rgba(248, 250, 252, 0.96);
-  color: #334155;
+  color: var(--front-text-soft);
   line-height: 1.85;
   white-space: pre-wrap;
 }
@@ -418,7 +415,7 @@ onMounted(async () => {
 
 @media (max-width: 760px) {
   .activity-section {
-    padding: 22px 16px 30px;
+    padding-top: 0;
   }
 
   .section-head,

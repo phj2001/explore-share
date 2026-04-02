@@ -1,65 +1,96 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <h1>{{ isLogin ? '用户登录' : '用户注册' }}</h1>
+  <div class="auth-page front-page">
+    <div class="front-shell auth-shell">
+      <section class="auth-intro">
+        <span class="front-kicker">地点探索与分享</span>
+        <h1 class="intro-title">把地点发现、体验分享和路线探索放进同一张地图里</h1>
+        <p class="intro-description">
+          登录后可以继续探索地点、查看推荐内容、参与分享互动，并维护自己的个人资料与头像信息。
+        </p>
 
-      <el-form :model="form" :rules="rules" ref="formRef">
-        <el-form-item prop="username">
-          <el-input
-            v-model="form.username"
-            placeholder="请输入用户名"
-            size="large"
-          />
-        </el-form-item>
+        <div class="intro-grid">
+          <article class="intro-card">
+            <span>地点发现</span>
+            <strong>从地图进入内容</strong>
+            <p>搜索地点、筛选分类，直接查看对应介绍与互动信息。</p>
+          </article>
+          <article class="intro-card">
+            <span>内容分享</span>
+            <strong>沉淀真实体验</strong>
+            <p>把图文分享和推荐内容关联到地点，而不是停留在单纯导航。</p>
+          </article>
+          <article class="intro-card">
+            <span>路线探索</span>
+            <strong>把多个地点串联</strong>
+            <p>基于地点组织路线，形成完整的探索路径与推荐体验。</p>
+          </article>
+        </div>
+      </section>
 
-        <el-form-item prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="请输入密码"
-            size="large"
-            show-password
-          />
-        </el-form-item>
+      <section class="auth-panel front-panel">
+        <div class="panel-head">
+          <div>
+            <span class="front-kicker">{{ isLogin ? '账号登录' : '创建账号' }}</span>
+            <h2>{{ isLogin ? '登录你的探索空间' : '注册并开始探索' }}</h2>
+            <p>{{ isLogin ? '使用账号继续进入地点探索与分享平台。' : '创建账号后将自动登录并进入首页。' }}</p>
+          </div>
+          <router-link to="/" class="back-home">返回首页</router-link>
+        </div>
 
-        <el-form-item v-if="!isLogin" prop="confirmPassword">
-          <el-input
-            v-model="form.confirmPassword"
-            type="password"
-            placeholder="请确认密码"
-            size="large"
-            show-password
-          />
-        </el-form-item>
+        <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="auth-form">
+          <el-form-item label="用户名" prop="username">
+            <el-input
+              v-model="form.username"
+              placeholder="请输入用户名"
+              autocomplete="username"
+            />
+          </el-form-item>
 
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            :loading="isLoading"
-            @click="handleSubmit"
-            style="width: 100%"
-          >
-            {{ isLogin ? '登录' : '注册' }}
-          </el-button>
-        </el-form-item>
-      </el-form>
+          <el-form-item label="密码" prop="password">
+            <el-input
+              v-model="form.password"
+              type="password"
+              placeholder="请输入密码"
+              autocomplete="current-password"
+              show-password
+            />
+          </el-form-item>
 
-      <div class="footer-links">
-        <el-button type="text" @click="toggleMode">
-          {{ isLogin ? '没有账号？去注册' : '已有账号？去登录' }}
-        </el-button>
-        <router-link to="/">返回首页</router-link>
-      </div>
+          <el-form-item v-if="!isLogin" label="确认密码" prop="confirmPassword">
+            <el-input
+              v-model="form.confirmPassword"
+              type="password"
+              placeholder="请再次输入密码"
+              autocomplete="new-password"
+              show-password
+            />
+          </el-form-item>
+
+          <div class="submit-zone">
+            <el-button
+              type="primary"
+              :loading="isLoading"
+              class="submit-button"
+              @click="handleSubmit"
+            >
+              {{ isLogin ? '登录并进入首页' : '注册并开始探索' }}
+            </el-button>
+
+            <button type="button" class="mode-switch" @click="toggleMode">
+              {{ isLogin ? '没有账号？切换到注册' : '已有账号？切换到登录' }}
+            </button>
+          </div>
+        </el-form>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -79,7 +110,7 @@ const validateConfirmPassword = (rule, value, callback) => {
     if (value === '') {
       callback(new Error('请再次输入密码'))
     } else if (value !== form.password) {
-      callback(new Error('两次输入密码不一致'))
+      callback(new Error('两次输入的密码不一致'))
     } else {
       callback()
     }
@@ -93,7 +124,7 @@ const rules = computed(() => {
     username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
     password: [
       { required: true, message: '请输入密码', trigger: 'blur' },
-      { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+      { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' }
     ]
   }
 
@@ -113,7 +144,10 @@ const toggleMode = () => {
 }
 
 const handleSubmit = async () => {
-  await formRef.value.validate()
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) {
+    return
+  }
 
   isLoading.value = true
   try {
@@ -122,7 +156,6 @@ const handleSubmit = async () => {
       ElMessage.success('登录成功')
     } else {
       await userStore.register(form.username, form.password)
-      // 注册成功后自动登录
       await userStore.login(form.username, form.password)
       ElMessage.success('注册成功')
     }
@@ -138,42 +171,173 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.auth-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.login-box {
-  width: 400px;
-  padding: 40px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.login-box h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-}
-
-.footer-links {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
+  padding: 28px 0;
+  background:
+    radial-gradient(circle at top left, rgba(23, 135, 166, 0.14), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(13, 107, 133, 0.1), transparent 18%),
+    linear-gradient(135deg, #edf5f7 0%, #f7fbfc 50%, #eef5f6 100%);
 }
 
-.footer-links a {
-  color: #409eff;
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.82fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.auth-intro {
+  padding: 34px 12px 34px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+}
+
+.intro-title {
+  margin: 0;
+  color: var(--front-text);
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.intro-description {
+  margin: 0;
+  max-width: 640px;
+  color: var(--front-text-soft);
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.intro-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.intro-card {
+  min-height: 180px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid var(--front-border);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: var(--front-shadow-soft);
+}
+
+.intro-card span {
+  display: block;
+  color: var(--front-text-muted);
+  font-size: 12px;
+}
+
+.intro-card strong {
+  display: block;
+  margin: 12px 0 10px;
+  color: var(--front-text);
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.intro-card p {
+  margin: 0;
+  color: var(--front-text-soft);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.auth-panel {
+  padding: 28px;
+  border-radius: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.panel-head h2 {
+  margin: 14px 0 8px;
+  color: var(--front-text);
+  font-size: 26px;
+}
+
+.panel-head p {
+  margin: 0;
+  color: var(--front-text-soft);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.back-home {
+  color: var(--front-accent-strong);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.footer-links a:hover {
-  text-decoration: underline;
+.auth-form :deep(.el-form-item__label) {
+  color: var(--front-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.submit-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.submit-button {
+  width: 100%;
+  height: 44px;
+}
+
+.mode-switch {
+  border: none;
+  background: transparent;
+  color: var(--front-accent-strong);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 1120px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-intro {
+    padding: 10px 0 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .auth-page {
+    padding: 16px 0;
+  }
+
+  .intro-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-panel {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .panel-head {
+    flex-direction: column;
+  }
 }
 </style>

@@ -1,5 +1,36 @@
 <template>
   <div class="route-page">
+    <section class="page-hero">
+      <div class="hero-copy">
+        <span class="hero-kicker">路线管理</span>
+        <h1>维护推荐路线、地点顺序与发布状态</h1>
+        <p>
+          这里集中管理路线标题、摘要、封面、路径结构和展示顺序，发布后的内容会同步展示到前台推荐路线区域。
+        </p>
+
+        <div v-if="activeFilters.length" class="active-filter-list">
+          <span class="filter-label">当前筛选</span>
+          <button
+            v-for="item in activeFilters"
+            :key="item.key"
+            type="button"
+            class="active-filter-chip"
+            @click="resetFilters"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="hero-stats">
+        <article v-for="item in heroStats" :key="item.label" class="hero-stat">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <em>{{ item.helper }}</em>
+        </article>
+      </div>
+    </section>
+
     <section class="toolbar">
       <el-input
         v-model="keyword"
@@ -25,14 +56,6 @@
 
       <el-button type="primary" :icon="Plus" @click="openCreateDialog">新建路线</el-button>
       <el-button :icon="RefreshRight" @click="resetFilters">重置</el-button>
-    </section>
-
-    <section class="summary">
-      <article v-for="item in heroStats" :key="item.label" class="summary-card">
-        <span>{{ item.label }}</span>
-        <strong>{{ item.value }}</strong>
-        <em>{{ item.helper }}</em>
-      </article>
     </section>
 
     <section class="table-wrap">
@@ -622,8 +645,8 @@ onMounted(async () => {
   gap: 18px;
 }
 
+.page-hero,
 .toolbar,
-.summary,
 .table-wrap {
   padding: 18px;
   border-radius: 24px;
@@ -632,8 +655,13 @@ onMounted(async () => {
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
 }
 
+.page-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.95fr);
+  gap: 18px;
+}
+
 .toolbar,
-.summary,
 .actions,
 .tags,
 .editor-bar,
@@ -648,29 +676,57 @@ onMounted(async () => {
   width: 340px;
 }
 
-.summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.hero-copy p {
+  max-width: 640px;
 }
 
-.summary-card {
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-stat {
   padding: 18px;
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(239, 246, 255, 0.92));
 }
 
-.summary-card span,
-.summary-card em {
+.hero-stat span,
+.hero-stat em {
   display: block;
   color: #64748b;
   font-style: normal;
 }
 
-.summary-card strong {
+.hero-stat strong {
   display: block;
   margin: 10px 0 8px;
   color: #0f172a;
   font-size: 28px;
+}
+
+.active-filter-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.filter-label {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.active-filter-chip {
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(23, 135, 166, 0.1);
+  color: #0d6b85;
+  font-size: 12px;
 }
 
 .pagination {
@@ -801,14 +857,18 @@ onMounted(async () => {
 }
 
 @media (max-width: 1024px) {
-  .summary {
+  .page-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 768px) {
+  .page-hero,
   .toolbar,
-  .summary,
   .pagination,
   .detail-grid,
   .cover-meta,
@@ -819,7 +879,7 @@ onMounted(async () => {
     align-items: stretch;
   }
 
-  .summary,
+  .hero-stats,
   .detail-grid {
     grid-template-columns: 1fr;
   }

@@ -1,5 +1,5 @@
 <template>
-  <section class="recommendation-section">
+  <section class="front-shell recommendation-section">
     <div class="section-head">
       <div>
         <span class="section-kicker">推荐打卡</span>
@@ -122,10 +122,7 @@ onMounted(async () => {
 
 <style scoped>
 .recommendation-section {
-  padding: 32px 28px 42px;
-  background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 26%),
-    linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.98));
+  padding: 8px 0 0;
 }
 
 .section-head {
@@ -133,30 +130,30 @@ onMounted(async () => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .section-kicker {
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.1);
-  color: #0284c7;
-  font-size: 12px;
+  background: var(--front-accent-soft);
+  color: var(--front-accent-strong);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .section-head h2 {
   margin: 14px 0 10px;
-  color: #0f172a;
-  font-size: clamp(28px, 4vw, 38px);
+  color: var(--front-text);
+  font-size: clamp(24px, 3vw, 32px);
 }
 
 .section-head p {
   margin: 0;
   max-width: 720px;
-  color: #64748b;
+  color: var(--front-text-soft);
   line-height: 1.8;
 }
 
@@ -168,17 +165,17 @@ onMounted(async () => {
 
 .recommendation-card {
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 26px;
   background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--front-border);
+  box-shadow: var(--front-shadow-soft);
   cursor: pointer;
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .recommendation-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 28px 56px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--front-shadow);
 }
 
 .card-cover-wrap {
@@ -194,9 +191,9 @@ onMounted(async () => {
 .card-cover-placeholder {
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(37, 99, 235, 0.16));
-  color: #0f172a;
-  font-size: 22px;
+  background: linear-gradient(135deg, rgba(23, 135, 166, 0.16), rgba(13, 107, 133, 0.14));
+  color: var(--front-text);
+  font-size: 20px;
   font-weight: 700;
 }
 
@@ -214,14 +211,14 @@ onMounted(async () => {
   display: inline-flex;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.78);
+  background: rgba(18, 41, 49, 0.74);
   color: #f8fafc;
   font-size: 12px;
 }
 
 .badge-soft {
   background: rgba(255, 255, 255, 0.92);
-  color: #334155;
+  color: var(--front-text-soft);
 }
 
 .card-body {
@@ -238,18 +235,18 @@ onMounted(async () => {
 }
 
 .author-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--front-accent), var(--front-accent-strong));
   color: #fff;
   font-weight: 700;
 }
 
 .author-row strong {
-  color: #0f172a;
+  color: var(--front-text);
 }
 
 .author-row p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--front-text-muted);
   font-size: 13px;
 }
 
@@ -257,14 +254,14 @@ onMounted(async () => {
   margin: 0;
   padding: 12px 14px;
   border-radius: 18px;
-  background: rgba(250, 204, 21, 0.12);
-  color: #92400e;
+  background: rgba(23, 135, 166, 0.08);
+  color: var(--front-accent-strong);
   line-height: 1.65;
 }
 
 .content-preview {
   margin: 0;
-  color: #334155;
+  color: var(--front-text-soft);
   line-height: 1.75;
   min-height: 88px;
 }
@@ -274,7 +271,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: #64748b;
+  color: var(--front-text-muted);
   font-size: 13px;
 }
 
@@ -285,7 +282,7 @@ onMounted(async () => {
 }
 
 .card-action {
-  color: #2563eb;
+  color: var(--front-accent-strong);
   font-weight: 600;
 }
 
@@ -297,7 +294,7 @@ onMounted(async () => {
 
 @media (max-width: 720px) {
   .recommendation-section {
-    padding: 22px 16px 30px;
+    padding-top: 0;
   }
 
   .section-head,

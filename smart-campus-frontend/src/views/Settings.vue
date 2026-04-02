@@ -1,20 +1,31 @@
 <template>
-  <div class="settings-page">
+  <div class="settings-page front-page">
     <Header />
 
     <main class="settings-main">
-      <section class="settings-shell">
-        <div class="hero-card">
-          <div class="hero-info">
-            <el-avatar :size="88" :src="userStore.avatarUrl || undefined" class="hero-avatar">
+      <div class="front-shell settings-shell">
+        <section class="profile-hero front-panel">
+          <div class="hero-main">
+            <el-avatar :size="94" :src="userStore.avatarUrl || undefined" class="hero-avatar">
               {{ displayName.slice(0, 1).toUpperCase() }}
             </el-avatar>
-            <div>
-              <h1>用户设置</h1>
-              <p>管理你的头像、展示名、个性签名和账号安全信息。</p>
+
+            <div class="hero-copy">
+              <span class="front-kicker">个人中心</span>
+              <h1 class="front-title">管理你的探索身份、展示资料与账号安全</h1>
+              <p class="front-description">
+                在这里维护头像、展示名、个性签名和密码信息，让你在地点探索与分享中的个人形象保持完整一致。
+              </p>
             </div>
           </div>
-          <div class="hero-actions">
+
+          <div class="hero-side">
+            <div class="hero-info-card">
+              <span>当前账号</span>
+              <strong>{{ userStore.username || '未登录账号' }}</strong>
+              <p>{{ profileForm.bio || '还没有填写个性签名，可以写一句你的探索偏好。' }}</p>
+            </div>
+
             <el-upload
               class="hidden-uploader"
               :show-file-list="false"
@@ -23,28 +34,28 @@
               accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
             >
               <template #trigger>
-                <el-button type="primary" :loading="avatarUploading">更换头像</el-button>
+                <el-button type="primary" :loading="avatarUploading">更新头像</el-button>
               </template>
             </el-upload>
           </div>
-        </div>
+        </section>
 
         <div class="settings-grid">
-          <el-card shadow="hover" class="settings-card">
-            <template #header>
-              <div class="card-header">
-                <span>基本资料</span>
-                <el-button type="primary" :loading="profileSaving" @click="submitProfile">
-                  保存资料
-                </el-button>
+          <section class="settings-card front-panel">
+            <div class="card-head">
+              <div>
+                <span class="front-kicker">资料编辑</span>
+                <h2>基本资料</h2>
               </div>
-            </template>
+              <el-button type="primary" :loading="profileSaving" @click="submitProfile">保存资料</el-button>
+            </div>
 
             <el-form
               ref="profileFormRef"
               :model="profileForm"
               :rules="profileRules"
               label-position="top"
+              class="settings-form"
             >
               <el-form-item label="登录账号">
                 <el-input :model-value="userStore.username" disabled />
@@ -63,38 +74,35 @@
                 <el-input
                   v-model="profileForm.bio"
                   type="textarea"
-                  :rows="4"
+                  :rows="5"
                   maxlength="150"
                   show-word-limit
-                  placeholder="写一句介绍自己的话"
+                  placeholder="写一句你想留在个人资料里的探索说明"
                 />
               </el-form-item>
             </el-form>
-          </el-card>
+          </section>
 
-          <el-card shadow="hover" class="settings-card">
-            <template #header>
-              <div class="card-header">
-                <span>账号安全</span>
-                <el-button type="danger" :loading="passwordSaving" @click="submitPassword">
-                  修改密码
-                </el-button>
+          <section class="settings-card front-panel">
+            <div class="card-head">
+              <div>
+                <span class="front-kicker">安全设置</span>
+                <h2>账号安全</h2>
               </div>
-            </template>
+              <el-button type="danger" :loading="passwordSaving" @click="submitPassword">更新密码</el-button>
+            </div>
 
-            <el-alert
-              title="修改密码成功后会自动退出登录，请使用新密码重新登录。"
-              type="warning"
-              :closable="false"
-              show-icon
-              class="password-tip"
-            />
+            <div class="safety-note">
+              <strong>修改密码后将自动退出登录</strong>
+              <p>请使用新密码重新登录，以确保账号安全状态即时生效。</p>
+            </div>
 
             <el-form
               ref="passwordFormRef"
               :model="passwordForm"
               :rules="passwordRules"
               label-position="top"
+              class="settings-form"
             >
               <el-form-item label="旧密码" prop="oldPassword">
                 <el-input v-model="passwordForm.oldPassword" type="password" show-password />
@@ -108,9 +116,9 @@
                 <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
               </el-form-item>
             </el-form>
-          </el-card>
+          </section>
         </div>
-      </section>
+      </div>
     </main>
 
     <Footer />
@@ -159,8 +167,8 @@ const passwordForm = reactive({
 const displayName = computed(() => userStore.displayName || '当前用户')
 
 const profileRules = {
-  displayName: [{ max: 100, message: '展示名不能超过100个字符', trigger: 'blur' }],
-  bio: [{ max: 150, message: '个性签名不能超过150个字符', trigger: 'blur' }]
+  displayName: [{ max: 100, message: '展示名不能超过 100 个字符', trigger: 'blur' }],
+  bio: [{ max: 150, message: '个性签名不能超过 150 个字符', trigger: 'blur' }]
 }
 
 const validateConfirmPassword = (rule, value, callback) => {
@@ -181,18 +189,10 @@ const passwordRules = {
   oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 100, message: '新密码长度必须在6到100个字符之间', trigger: 'blur' }
+    { min: 6, max: 100, message: '新密码长度必须在 6 到 100 个字符之间', trigger: 'blur' }
   ],
   confirmPassword: [{ validator: validateConfirmPassword, trigger: 'blur' }]
 }
-
-onMounted(async () => {
-  await loadProfile()
-})
-
-onBeforeUnmount(() => {
-  revokeCropperUrl()
-})
 
 const loadProfile = async () => {
   try {
@@ -253,7 +253,7 @@ const handleAvatarSelect = (uploadFile) => {
   }
 
   if (rawFile.size > 2 * 1024 * 1024) {
-    ElMessage.error('头像大小不能超过2MB')
+    ElMessage.error('头像大小不能超过 2MB')
     return
   }
 
@@ -287,6 +287,14 @@ const revokeCropperUrl = () => {
     cropperImageUrl.value = ''
   }
 }
+
+onMounted(async () => {
+  await loadProfile()
+})
+
+onBeforeUnmount(() => {
+  revokeCropperUrl()
+})
 </script>
 
 <style scoped>
@@ -294,116 +302,150 @@ const revokeCropperUrl = () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 28%),
-    linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
 }
 
 .settings-main {
   flex: 1;
-  padding: 40px 20px 56px;
+  padding: 22px 0 30px;
 }
 
 .settings-shell {
-  max-width: 1180px;
-  margin: 0 auto;
-}
-
-.hero-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 28px 32px;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 24px 60px rgba(37, 99, 235, 0.12);
-}
-
-.hero-info {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 20px;
 }
 
+.profile-hero {
+  padding: 26px;
+  border-radius: var(--front-radius-xl);
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.68fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.hero-main {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
 .hero-avatar {
-  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  background: linear-gradient(135deg, var(--front-accent), var(--front-accent-strong));
   color: #fff;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
-  border: 4px solid rgba(255, 255, 255, 0.95);
+  border: 4px solid rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 30px rgba(23, 135, 166, 0.16);
 }
 
-.hero-info h1 {
-  margin: 0 0 6px;
-  font-size: 32px;
-  color: #0f172a;
+.hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
 }
 
-.hero-info p {
-  margin: 0;
-  color: #64748b;
+.hero-info-card,
+.safety-note {
+  width: 100%;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid var(--front-border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.hero-info-card span,
+.safety-note strong {
+  display: block;
+}
+
+.hero-info-card span {
+  color: var(--front-text-muted);
+  font-size: 12px;
+}
+
+.hero-info-card strong {
+  margin-top: 10px;
+  color: var(--front-text);
+  font-size: 18px;
+}
+
+.hero-info-card p,
+.safety-note p {
+  margin: 10px 0 0;
+  color: var(--front-text-soft);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.safety-note {
+  background: rgba(255, 247, 237, 0.78);
+  border-color: rgba(245, 158, 11, 0.16);
+}
+
+.safety-note strong {
+  color: #9a3412;
+  font-size: 14px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.settings-card {
+  padding: 22px;
+  border-radius: 28px;
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.card-head h2 {
+  margin: 12px 0 0;
+  color: var(--front-text);
+  font-size: 22px;
+}
+
+.settings-form :deep(.el-form-item__label) {
+  color: var(--front-text);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .hidden-uploader {
   display: inline-flex;
 }
 
-.settings-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-  margin-top: 28px;
-}
-
-.settings-card {
-  border-radius: 24px;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.password-tip {
-  margin-bottom: 20px;
-}
-
-@media (max-width: 960px) {
-  .hero-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
+@media (max-width: 1080px) {
+  .profile-hero,
   .settings-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .settings-main {
-    padding: 24px 12px 40px;
+    padding-top: 16px;
   }
 
-  .hero-card {
-    padding: 24px 20px;
+  .profile-hero,
+  .settings-card {
+    padding: 18px;
+    border-radius: 24px;
   }
 
-  .hero-info {
+  .hero-main,
+  .card-head {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .hero-info h1 {
-    font-size: 28px;
-  }
-
-  .card-header {
-    flex-direction: column;
-    align-items: stretch;
   }
 }
 </style>

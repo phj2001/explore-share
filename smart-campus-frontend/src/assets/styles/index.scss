@@ -1,6 +1,8 @@
 // 导入变量定义
 @use 'sass:color';
 @use './variables.scss' as *;
+@use './admin-theme.scss';
+@use './public-theme.scss';
 
 // 导入重置样式
 @use './reset.scss';

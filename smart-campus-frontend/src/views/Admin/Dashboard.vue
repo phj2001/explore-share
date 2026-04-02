@@ -1,38 +1,93 @@
 <template>
-  <div class="dashboard-container">
+  <div class="dashboard-container admin-shell">
     <aside class="sidebar">
       <div class="logo">
-        <h2>地点探索</h2>
-        <p>运营后台</p>
+        <div class="logo-mark">FC</div>
+        <div class="logo-copy">
+          <h2>地点探索与分享</h2>
+          <p>内容与运营控制台</p>
+        </div>
       </div>
 
       <nav class="nav-menu">
-        <router-link to="/admin/overview" class="nav-item"><el-icon><DataAnalysis /></el-icon><span>运营总览</span></router-link>
-        <router-link to="/admin/poi" class="nav-item"><el-icon><Location /></el-icon><span>地点管理</span></router-link>
-        <router-link to="/admin/poi-categories" class="nav-item"><el-icon><CollectionTag /></el-icon><span>地点分类</span></router-link>
-        <router-link to="/admin/users" class="nav-item"><el-icon><UserFilled /></el-icon><span>用户管理</span></router-link>
-        <router-link to="/admin/shares" class="nav-item"><el-icon><ChatLineSquare /></el-icon><span>分享管理</span></router-link>
-        <router-link to="/admin/replies" class="nav-item"><el-icon><ChatDotRound /></el-icon><span>回复管理</span></router-link>
-        <router-link to="/admin/announcements" class="nav-item"><el-icon><Bell /></el-icon><span>平台公告</span></router-link>
-        <router-link to="/admin/activities" class="nav-item"><el-icon><Calendar /></el-icon><span>活动管理</span></router-link>
-        <router-link to="/admin/routes" class="nav-item"><el-icon><Guide /></el-icon><span>路线管理</span></router-link>
-        <router-link to="/admin/recommendations" class="nav-item"><el-icon><Star /></el-icon><span>推荐内容</span></router-link>
-        <router-link to="/admin/reports" class="nav-item"><el-icon><WarningFilled /></el-icon><span>举报审核</span></router-link>
-        <router-link to="/admin/logs" class="nav-item"><el-icon><Tickets /></el-icon><span>系统日志</span></router-link>
-        <router-link to="/admin/files" class="nav-item"><el-icon><Files /></el-icon><span>文件资源</span></router-link>
-        <router-link to="/admin/configs" class="nav-item"><el-icon><Setting /></el-icon><span>系统配置</span></router-link>
+        <router-link to="/admin/overview" class="nav-item">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>运营总览</span>
+        </router-link>
+        <router-link to="/admin/poi" class="nav-item">
+          <el-icon><Location /></el-icon>
+          <span>地点管理</span>
+        </router-link>
+        <router-link to="/admin/poi-categories" class="nav-item">
+          <el-icon><CollectionTag /></el-icon>
+          <span>地点分类</span>
+        </router-link>
+        <router-link to="/admin/users" class="nav-item">
+          <el-icon><UserFilled /></el-icon>
+          <span>用户管理</span>
+        </router-link>
+        <router-link to="/admin/shares" class="nav-item">
+          <el-icon><ChatLineSquare /></el-icon>
+          <span>分享管理</span>
+        </router-link>
+        <router-link to="/admin/replies" class="nav-item">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>回复管理</span>
+        </router-link>
+        <router-link to="/admin/announcements" class="nav-item">
+          <el-icon><Bell /></el-icon>
+          <span>平台公告</span>
+        </router-link>
+        <router-link to="/admin/activities" class="nav-item">
+          <el-icon><Calendar /></el-icon>
+          <span>活动管理</span>
+        </router-link>
+        <router-link to="/admin/routes" class="nav-item">
+          <el-icon><Guide /></el-icon>
+          <span>路线管理</span>
+        </router-link>
+        <router-link to="/admin/recommendations" class="nav-item">
+          <el-icon><Star /></el-icon>
+          <span>推荐内容</span>
+        </router-link>
+        <router-link to="/admin/reports" class="nav-item">
+          <el-icon><WarningFilled /></el-icon>
+          <span>举报审核</span>
+        </router-link>
+        <router-link to="/admin/logs" class="nav-item">
+          <el-icon><Tickets /></el-icon>
+          <span>系统日志</span>
+        </router-link>
+        <router-link to="/admin/files" class="nav-item">
+          <el-icon><Files /></el-icon>
+          <span>文件资源</span>
+        </router-link>
+        <router-link to="/admin/configs" class="nav-item">
+          <el-icon><Setting /></el-icon>
+          <span>系统配置</span>
+        </router-link>
       </nav>
     </aside>
 
     <main class="main-content">
       <header class="top-bar">
-        <el-button @click="handleBackHome" text>
-          <el-icon><HomeFilled /></el-icon>
-          返回首页
-        </el-button>
+        <div class="top-bar-copy">
+          <span class="top-bar-kicker">地点探索后台</span>
+          <strong>地点内容与运营工作区</strong>
+        </div>
+
         <div class="user-info">
-          <span class="welcome-text">欢迎，<span class="username-highlight">{{ displayName }}</span></span>
-          <el-button @click="handleLogout" text>退出登录</el-button>
+          <el-button class="header-action" text @click="handleBackHome">
+            <el-icon><HomeFilled /></el-icon>
+            返回首页
+          </el-button>
+          <span class="welcome-text">
+            当前用户
+            <span class="username-highlight">{{ displayName }}</span>
+          </span>
+          <el-button class="header-action danger" text @click="handleLogout">
+            退出登录
+          </el-button>
         </div>
       </header>
 
@@ -44,7 +99,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Bell,
@@ -68,7 +123,7 @@ import { useUserStore } from '@/stores/user'
 const router = useRouter()
 const userStore = useUserStore()
 
-const displayName = computed(() => userStore.displayName || '当前用户')
+const displayName = computed(() => userStore.displayName || '当前管理员')
 
 const handleBackHome = () => {
   router.push('/')
@@ -78,6 +133,14 @@ const handleLogout = () => {
   userStore.logout()
   router.push('/login')
 }
+
+onMounted(() => {
+  document.body.classList.add('admin-theme-active')
+})
+
+onUnmounted(() => {
+  document.body.classList.remove('admin-theme-active')
+})
 </script>
 
 <style scoped>
@@ -85,133 +148,207 @@ const handleLogout = () => {
   display: flex;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.14), transparent 26%),
-    linear-gradient(180deg, #edf4fb 0%, #f4f7fb 48%, #eef3f8 100%);
+    radial-gradient(circle at top left, rgba(23, 135, 166, 0.08), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(14, 116, 144, 0.06), transparent 18%),
+    linear-gradient(180deg, #eef4f6 0%, #f4f8f9 42%, #eef4f6 100%);
 }
 
 .sidebar {
-  width: 252px;
-  background: linear-gradient(180deg, #213246 0%, #162434 100%);
-  color: #fff;
-  box-shadow: 12px 0 36px rgba(15, 23, 42, 0.16);
+  width: 244px;
+  padding: 18px 14px;
+  background: linear-gradient(180deg, #14303a 0%, #11262e 100%);
+  color: #f3fbfd;
+  box-shadow: 16px 0 36px rgba(10, 25, 31, 0.12);
+  display: flex;
+  flex-direction: column;
 }
 
 .logo {
-  padding: 34px 24px 28px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 18px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(168, 216, 226, 0.12);
 }
 
-.logo h2 {
+.logo-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #f6feff;
+  background: linear-gradient(135deg, #1ba4c6, #0e708d);
+}
+
+.logo-copy h2 {
   margin: 0;
-  font-size: 26px;
-  letter-spacing: 0.04em;
+  font-size: 18px;
+  letter-spacing: 0.01em;
 }
 
-.logo p {
-  margin: 8px 0 0;
-  font-size: 13px;
-  color: #9eb1c5;
+.logo-copy p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: rgba(214, 238, 243, 0.68);
 }
 
 .nav-menu {
-  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  border-radius: 16px;
-  color: #c8d5e3;
+  gap: 11px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 14px;
+  color: rgba(220, 240, 245, 0.8);
   text-decoration: none;
-  transition: all 0.24s ease;
+  transition: background-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
 }
 
-.nav-item:hover,
+.nav-item:hover {
+  color: #f4fdff;
+  background: rgba(24, 144, 176, 0.14);
+  transform: translateX(2px);
+}
+
 .nav-item.router-link-active {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(59, 130, 246, 0.22));
-  color: #f8fbff;
-  transform: translateX(3px);
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(27, 164, 198, 0.2), rgba(14, 112, 141, 0.22));
+  box-shadow: inset 0 0 0 1px rgba(122, 206, 225, 0.14);
+}
+
+.nav-item :deep(.el-icon) {
+  font-size: 16px;
 }
 
 .main-content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
 .top-bar {
-  height: 72px;
-  padding: 0 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  gap: 18px;
+  padding: 18px 28px;
+  margin: 18px 20px 0;
+  border: 1px solid rgba(24, 68, 84, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 14px 28px rgba(17, 36, 46, 0.05);
+}
+
+.top-bar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.top-bar-kicker {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(23, 135, 166, 0.1);
+  color: #0d6b85;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.top-bar-copy strong {
+  font-size: 17px;
+  color: #18333d;
+  letter-spacing: 0.01em;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-action {
+  color: #45616c;
+}
+
+.header-action.danger {
+  color: #9b5151;
 }
 
 .welcome-text {
-  color: #475569;
-  font-size: 14px;
-  white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  font-size: 13px;
+  color: #59727c;
+  white-space: nowrap;
 }
 
 .username-highlight {
-  color: #0f172a;
-  font-weight: 700;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(59, 130, 246, 0.08));
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
   border-radius: 999px;
-  padding: 5px 12px;
-  line-height: 1;
+  background: rgba(23, 135, 166, 0.08);
+  color: #17333c;
+  font-weight: 700;
 }
 
 .content {
   flex: 1;
-  padding: 28px;
+  padding: 20px;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1180px) {
   .dashboard-container {
     flex-direction: column;
   }
 
   .sidebar {
     width: 100%;
+    box-shadow: none;
   }
 
   .nav-menu {
-    display: flex;
-    gap: 12px;
+    flex-direction: row;
+    flex-wrap: nowrap;
     overflow-x: auto;
+    padding-bottom: 4px;
   }
 
   .nav-item {
-    margin-bottom: 0;
     white-space: nowrap;
+    min-width: max-content;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .top-bar {
-    height: auto;
-    padding: 18px;
-    flex-direction: column;
+    margin: 14px 14px 0;
+    padding: 14px;
     align-items: stretch;
-    gap: 12px;
+    flex-direction: column;
   }
 
   .user-info {
@@ -219,7 +356,7 @@ const handleLogout = () => {
   }
 
   .content {
-    padding: 16px;
+    padding: 14px;
   }
 }
 </style>

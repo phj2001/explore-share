@@ -1,5 +1,5 @@
 <template>
-  <div class="home-container">
+  <div class="home-container front-page">
     <Header />
 
     <div class="main-content">
@@ -36,5 +36,7 @@ import RecommendedRouteSection from '@/components/route/RecommendedRouteSection.
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 22px;
+  padding: 18px 0 0;
 }
 </style>

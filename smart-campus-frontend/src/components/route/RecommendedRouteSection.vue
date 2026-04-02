@@ -1,5 +1,5 @@
 <template>
-  <section class="route-section">
+  <section class="front-shell route-section">
     <div class="section-header">
       <div>
         <span class="section-kicker">精选路线</span>
@@ -202,10 +202,10 @@ onMounted(loadRoutes)
 
 <style scoped>
 .route-section {
-  padding: 30px 28px 10px;
+  padding: 8px 0 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .section-header {
@@ -219,23 +219,23 @@ onMounted(loadRoutes)
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.1);
-  color: #0369a1;
-  font-size: 12px;
+  background: rgba(20, 184, 166, 0.1);
+  color: #0f766e;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .section-header h2 {
   margin: 14px 0 8px;
-  color: #0f172a;
-  font-size: clamp(28px, 4vw, 38px);
+  color: var(--front-text);
+  font-size: clamp(24px, 3vw, 32px);
 }
 
 .section-header p {
   margin: 0;
   max-width: 760px;
-  color: #475569;
+  color: var(--front-text-soft);
   line-height: 1.8;
 }
 
@@ -247,10 +247,10 @@ onMounted(loadRoutes)
 
 .route-card {
   overflow: hidden;
-  border-radius: 24px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 26px;
+  border: 1px solid var(--front-border);
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .route-cover-wrap {
@@ -270,10 +270,10 @@ onMounted(loadRoutes)
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(circle at top right, rgba(16, 185, 129, 0.16), transparent 34%),
-    linear-gradient(135deg, #0f172a, #0f766e);
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 34%),
+    linear-gradient(135deg, #14303a, #0f766e);
   color: #f8fafc;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -310,27 +310,27 @@ onMounted(loadRoutes)
   display: inline-flex;
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(226, 232, 240, 0.8);
-  color: #475569;
+  background: rgba(229, 239, 242, 0.84);
+  color: var(--front-text-soft);
   font-size: 12px;
 }
 
 .badge-mode {
-  background: rgba(14, 165, 233, 0.12);
-  color: #0369a1;
+  background: rgba(20, 184, 166, 0.12);
+  color: #0f766e;
 }
 
 .route-card h3,
 .detail-copy h3 {
   margin: 0;
-  color: #0f172a;
-  font-size: 22px;
+  color: var(--front-text);
+  font-size: 20px;
 }
 
 .route-summary,
 .route-description {
   margin: 0;
-  color: #475569;
+  color: var(--front-text-soft);
   line-height: 1.75;
 }
 
@@ -338,12 +338,12 @@ onMounted(loadRoutes)
   display: flex;
   flex-direction: column;
   gap: 6px;
-  color: #64748b;
+  color: var(--front-text-muted);
   font-size: 13px;
 }
 
 .meta-note {
-  color: #0f766e;
+  color: var(--front-accent-strong);
 }
 
 .route-actions,
@@ -386,7 +386,8 @@ onMounted(loadRoutes)
   align-items: center;
   padding: 12px 14px;
   border-radius: 18px;
-  background: rgba(248, 250, 252, 0.9);
+  background: rgba(247, 251, 252, 0.92);
+  border: 1px solid var(--front-border);
 }
 
 .timeline-index {
@@ -396,18 +397,18 @@ onMounted(loadRoutes)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(14, 165, 233, 0.14);
-  color: #0369a1;
+  background: rgba(23, 135, 166, 0.14);
+  color: var(--front-accent-strong);
   font-weight: 700;
 }
 
 .timeline-copy strong {
-  color: #0f172a;
+  color: var(--front-text);
 }
 
 .timeline-copy p {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--front-text-muted);
 }
 
 @media (max-width: 1280px) {
@@ -418,7 +419,7 @@ onMounted(loadRoutes)
 
 @media (max-width: 760px) {
   .route-section {
-    padding: 22px 16px 4px;
+    padding-top: 0;
   }
 
   .section-header,
