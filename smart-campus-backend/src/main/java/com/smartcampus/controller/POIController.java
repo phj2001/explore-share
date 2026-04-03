@@ -1,11 +1,13 @@
 package com.smartcampus.controller;
 
 import com.smartcampus.dto.common.Result;
+import com.smartcampus.dto.response.POIImportResult;
 import com.smartcampus.entity.POI;
 import com.smartcampus.service.POIService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,6 +27,16 @@ public class POIController {
     public Result<POI> createPOI(@RequestBody POI poi) {
         POI createdPOI = poiService.createPOI(poi);
         return Result.success(createdPOI);
+    }
+
+    @PostMapping("/import")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public Result<POIImportResult> importPOIs(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(defaultValue = "false") boolean replaceExisting,
+            @RequestParam(defaultValue = "true") boolean skipDuplicates
+    ) {
+        return Result.success(poiService.importFromCsv(file, replaceExisting, skipDuplicates));
     }
 
     /**

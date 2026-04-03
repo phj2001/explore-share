@@ -2,7 +2,16 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { clearAuthState, getToken } from '@/utils/auth.js'
 
-export const BASE_URL = 'http://localhost:8080/api'
+const getEnvValue = (key) => {
+  const value = import.meta.env[key]
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+const normalizeBaseUrl = (value) => value.replace(/\/+$/, '')
+
+const defaultBaseUrl = import.meta.env.DEV ? 'http://localhost:8080/api' : '/api'
+
+export const BASE_URL = normalizeBaseUrl(getEnvValue('VITE_API_BASE_URL') || defaultBaseUrl)
 export const API_ORIGIN = BASE_URL.replace(/\/api$/, '')
 const TIMEOUT = 10000
 

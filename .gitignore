@@ -18,4 +18,6 @@ smart-campus-backend/.idea/
 # Local-only configuration
 .env
 .env.*
+!smart-campus-frontend/.env.example
+!smart-campus-frontend/.env.production.example
 smart-campus-backend/config/application-local.properties

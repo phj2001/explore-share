@@ -5,7 +5,7 @@
         <span class="hero-kicker">地点管理</span>
         <h1>统一维护地点名称、分类、坐标与基础说明信息</h1>
         <p>
-          这里集中管理地图上的全部地点数据，支持按名称和分类快速筛选，并直接进入创建、编辑与删除流程。
+          这里集中管理地图上的全部地点数据，支持按名称和分类快速筛选，并直接进入新增、编辑、删除和批量导入流程。
         </p>
       </div>
 
@@ -13,17 +13,17 @@
         <article class="hero-stat">
           <span>地点总数</span>
           <strong>{{ totalAll }}</strong>
-          <em>当前已录入系统的地点数量</em>
+          <em>当前系统中已录入的地点数量</em>
         </article>
         <article class="hero-stat">
           <span>筛选结果</span>
           <strong>{{ total }}</strong>
-          <em>符合当前搜索条件的数据条数</em>
+          <em>符合当前检索条件的地点数量</em>
         </article>
         <article class="hero-stat">
-          <span>分类数量</span>
+          <span>分类总数</span>
           <strong>{{ poiStore.categories.length }}</strong>
-          <em>当前可选地点分类总数</em>
+          <em>当前可用的地点分类数量</em>
         </article>
       </div>
     </section>
@@ -72,6 +72,7 @@
 
       <div class="toolbar-actions">
         <el-button :icon="RefreshRight" @click="reloadData">刷新列表</el-button>
+        <el-button :icon="Upload" @click="openImportDialog">批量导入</el-button>
         <el-button @click="resetFilters">重置</el-button>
         <el-button type="primary" :icon="Plus" @click="handleCreate">新增地点</el-button>
       </div>
@@ -83,23 +84,19 @@
           <span class="panel-kicker">地点列表</span>
           <h2>当前地点数据</h2>
         </div>
-        <span class="panel-note">按 ID 升序展示，支持直接编辑与删除</span>
+        <span class="panel-note">按 ID 升序展示，支持编辑、删除和批量导入更新</span>
       </div>
 
-      <el-table
-        :data="pagedPOIList"
-        v-loading="poiStore.isLoading"
-        stripe
-      >
+      <el-table :data="pagedPOIList" v-loading="poiStore.isLoading" stripe>
         <template #empty>
           <el-empty description="当前条件下暂无地点数据">
             <el-button type="primary" plain @click="resetFilters">清空筛选</el-button>
           </el-empty>
         </template>
 
-        <el-table-column prop="id" label="ID" width="80" sortable />
+        <el-table-column prop="id" label="ID" width="90" sortable />
 
-        <el-table-column label="地点信息" min-width="260">
+        <el-table-column label="地点信息" min-width="280">
           <template #default="{ row }">
             <div class="poi-main">
               <strong>{{ row.name }}</strong>
@@ -131,11 +128,7 @@
       <div class="pagination-bar">
         <span class="total-text">共 {{ total }} 条，当前第 {{ currentPage }} 页</span>
         <div class="pagination-actions">
-          <el-select
-            v-model="pageSize"
-            class="page-size-select"
-            @change="handlePageSizeChange"
-          >
+          <el-select v-model="pageSize" class="page-size-select" @change="handlePageSizeChange">
             <el-option label="20 条/页" :value="20" />
             <el-option label="50 条/页" :value="50" />
             <el-option label="100 条/页" :value="100" />
@@ -150,6 +143,111 @@
         </div>
       </div>
     </section>
+
+    <el-dialog
+      v-model="importDialogVisible"
+      title="批量导入 POI"
+      width="720px"
+      destroy-on-close
+      @closed="resetImportState"
+    >
+      <div class="import-dialog">
+        <el-alert type="info" show-icon :closable="false">
+          <template #title>
+            仅支持 UTF-8 编码的 CSV 文件。必填列为 `name/名称`、`latitude/纬度`、`longitude/经度`，
+            可选列为 `category/分类`、`description/描述`。
+          </template>
+        </el-alert>
+
+        <div class="import-template-row">
+          <span>推荐先下载模板，再按模板整理数据。</span>
+          <a class="template-link" href="/templates/poi-import-template.csv" download>
+            <el-button text type="primary" :icon="Download">下载 CSV 模板</el-button>
+          </a>
+        </div>
+
+        <el-upload
+          ref="uploadRef"
+          drag
+          :auto-upload="false"
+          :limit="1"
+          accept=".csv,text/csv"
+          :file-list="uploadFileList"
+          :on-change="handleImportFileChange"
+          :on-remove="handleImportRemove"
+          :on-exceed="handleImportExceed"
+        >
+          <el-icon class="el-icon--upload">
+            <Upload />
+          </el-icon>
+          <div class="el-upload__text">
+            将 CSV 文件拖到此处，或 <em>点击选择文件</em>
+          </div>
+          <template #tip>
+            <div class="upload-tip">
+              文件建议小于 10MB；当前导入会按“名称 + 分类 + 坐标”判断重复项。
+            </div>
+          </template>
+        </el-upload>
+
+        <div class="import-options">
+          <el-checkbox v-model="replaceExisting">
+            导入前先清空现有 POI 数据
+          </el-checkbox>
+          <el-checkbox v-model="skipDuplicates">
+            自动跳过重复项
+          </el-checkbox>
+        </div>
+
+        <el-alert
+          v-if="replaceExisting"
+          type="warning"
+          show-icon
+          :closable="false"
+          title="你已勾选“先清空再导入”，提交后会先删除现有 POI，再写入本次文件中的有效记录。"
+        />
+
+        <div v-if="importResult" class="import-result-card">
+          <div class="import-result-head">
+            <strong>最近一次导入结果</strong>
+            <span>{{ importResult.fileName || '未命名文件' }}</span>
+          </div>
+
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="文件总行数">{{ importResult.totalRows }}</el-descriptions-item>
+            <el-descriptions-item label="成功导入">{{ importResult.importedCount }}</el-descriptions-item>
+            <el-descriptions-item label="跳过总数">{{ importResult.skippedCount }}</el-descriptions-item>
+            <el-descriptions-item label="重复项">{{ importResult.duplicateCount }}</el-descriptions-item>
+            <el-descriptions-item label="无效行">{{ importResult.invalidCount }}</el-descriptions-item>
+            <el-descriptions-item label="空白行">{{ importResult.emptyRowCount }}</el-descriptions-item>
+            <el-descriptions-item label="清空旧数据">{{ importResult.clearedCount }}</el-descriptions-item>
+            <el-descriptions-item label="导入模式">
+              {{ importResult.replaceExisting ? '清空后重导' : '追加导入' }}
+            </el-descriptions-item>
+          </el-descriptions>
+
+          <div v-if="importResult.errors?.length" class="import-error-list">
+            <strong>前 {{ importResult.errors.length }} 条错误示例</strong>
+            <ul>
+              <li v-for="item in importResult.errors" :key="`${item.rowNumber}-${item.name || 'empty'}`">
+                第 {{ item.rowNumber }} 行
+                <template v-if="item.name">（{{ item.name }}）</template>
+                ：{{ item.message }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-actions">
+          <el-button @click="importDialogVisible = false">关闭</el-button>
+          <el-button type="primary" :loading="importing" @click="handleImportSubmit">
+            开始导入
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -157,7 +255,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, RefreshRight, Search } from '@element-plus/icons-vue'
+import { Download, Plus, RefreshRight, Search, Upload } from '@element-plus/icons-vue'
+import { importPOIs } from '@/api/poi'
 import { usePOIStore } from '@/stores/poi'
 
 const router = useRouter()
@@ -169,8 +268,16 @@ const selectedCategory = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
 
-const normalizedKeyword = computed(() => searchText.value.trim().toLowerCase())
+const importDialogVisible = ref(false)
+const importing = ref(false)
+const replaceExisting = ref(false)
+const skipDuplicates = ref(true)
+const importResult = ref(null)
+const importFile = ref(null)
+const uploadFileList = ref([])
+const uploadRef = ref()
 
+const normalizedKeyword = computed(() => searchText.value.trim().toLowerCase())
 const sortedPOIList = computed(() => [...poiStore.poiList].sort((a, b) => a.id - b.id))
 
 const filteredPOIList = computed(() => {
@@ -270,7 +377,7 @@ const handleEdit = (row) => {
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm(
-      `确定删除地点“${row.name}”吗？删除后该地点将无法继续在地图中展示。`,
+      `确定删除地点“${row.name}”吗？删除后该地点将不再在地图和相关业务中展示。`,
       '删除地点',
       {
         type: 'warning',
@@ -294,10 +401,125 @@ const handleDelete = async (row) => {
 }
 
 const formatCoordinate = (value) => {
-  if (typeof value !== 'number') {
-    return '--'
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue.toFixed(6) : '--'
+}
+
+const openImportDialog = () => {
+  importDialogVisible.value = true
+}
+
+const validateImportFile = (file) => {
+  const isCsv = file?.name?.toLowerCase().endsWith('.csv')
+  const isReasonableSize = (file?.size || 0) <= 10 * 1024 * 1024
+
+  if (!isCsv) {
+    ElMessage.error('仅支持上传 CSV 文件')
+    return false
   }
-  return value.toFixed(6)
+
+  if (!isReasonableSize) {
+    ElMessage.error('文件不能超过 10MB')
+    return false
+  }
+
+  return true
+}
+
+const handleImportFileChange = (uploadFile) => {
+  const rawFile = uploadFile.raw
+  if (!rawFile) {
+    return
+  }
+
+  if (!validateImportFile(rawFile)) {
+    resetImportFileState()
+    return
+  }
+
+  importFile.value = rawFile
+  uploadFileList.value = [uploadFile]
+}
+
+const handleImportRemove = () => {
+  importFile.value = null
+  uploadFileList.value = []
+}
+
+const handleImportExceed = (files) => {
+  if (!files?.length) {
+    return
+  }
+
+  const nextFile = files[0]
+  if (!validateImportFile(nextFile)) {
+    resetImportFileState()
+    return
+  }
+
+  resetImportFileState()
+  importFile.value = nextFile
+  uploadFileList.value = [{
+    name: nextFile.name,
+    size: nextFile.size,
+    status: 'ready',
+    raw: nextFile
+  }]
+}
+
+const resetImportFileState = () => {
+  importFile.value = null
+  uploadFileList.value = []
+  uploadRef.value?.clearFiles()
+}
+
+const resetImportState = () => {
+  importing.value = false
+  replaceExisting.value = false
+  skipDuplicates.value = true
+  importResult.value = null
+  resetImportFileState()
+}
+
+const handleImportSubmit = async () => {
+  if (!importFile.value) {
+    ElMessage.warning('请先选择要导入的 CSV 文件')
+    return
+  }
+
+  if (replaceExisting.value) {
+    try {
+      await ElMessageBox.confirm(
+        '当前已勾选“导入前先清空现有 POI 数据”。提交后会先删除现有地点，再导入本次文件中的有效记录，是否继续？',
+        '确认批量导入',
+        {
+          type: 'warning',
+          confirmButtonText: '继续导入',
+          cancelButtonText: '取消'
+        }
+      )
+    } catch {
+      return
+    }
+  }
+
+  importing.value = true
+  try {
+    const result = await importPOIs(importFile.value, {
+      replaceExisting: replaceExisting.value,
+      skipDuplicates: skipDuplicates.value
+    })
+
+    importResult.value = result
+    await loadData()
+    currentPage.value = 1
+
+    ElMessage.success(`导入完成，成功写入 ${result.importedCount} 条记录`)
+  } catch (error) {
+    ElMessage.error(error.message || '批量导入失败')
+  } finally {
+    importing.value = false
+  }
 }
 
 onMounted(async () => {
@@ -337,6 +559,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  gap: 12px;
 }
 
 .filter-input {
@@ -354,6 +577,11 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
+.filter-label {
+  color: #5f7882;
+  font-size: 12px;
+}
+
 .active-filter-chip {
   border: none;
   cursor: pointer;
@@ -366,7 +594,10 @@ onMounted(async () => {
 
 .toolbar-actions,
 .pagination-actions,
-.action-group {
+.action-group,
+.dialog-actions,
+.import-template-row,
+.import-options {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -419,6 +650,72 @@ onMounted(async () => {
   padding: 18px 4px 8px;
 }
 
+.import-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.import-template-row {
+  justify-content: space-between;
+}
+
+.template-link {
+  text-decoration: none;
+}
+
+.upload-tip {
+  color: #6b7f88;
+  font-size: 12px;
+}
+
+.import-options {
+  justify-content: space-between;
+}
+
+.import-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #f7fbfc;
+  border: 1px solid rgba(18, 98, 120, 0.12);
+}
+
+.import-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.import-result-head strong {
+  color: #173b46;
+}
+
+.import-result-head span {
+  color: #5f7882;
+  font-size: 12px;
+}
+
+.import-error-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-error-list strong {
+  color: #8b2f35;
+}
+
+.import-error-list ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #8b2f35;
+  line-height: 1.7;
+}
+
 @media (max-width: 1080px) {
   .page-hero {
     grid-template-columns: 1fr;
@@ -430,6 +727,12 @@ onMounted(async () => {
 
   .filter-input {
     width: 100%;
+  }
+
+  .import-options,
+  .import-template-row {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
@@ -452,6 +755,11 @@ onMounted(async () => {
   .pagination-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .import-result-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

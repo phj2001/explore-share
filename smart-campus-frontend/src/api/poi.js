@@ -73,3 +73,18 @@ export const updatePOI = (id, data) => {
 export const deletePOI = (id) => {
   return request.delete(`/pois/${id}`)
 }
+
+/**
+ * 批量导入 POI（需管理员）
+ */
+export const importPOIs = (file, options = {}) => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return request.post('/pois/import', formData, {
+    params: {
+      replaceExisting: Boolean(options.replaceExisting),
+      skipDuplicates: options.skipDuplicates !== false
+    }
+  })
+}

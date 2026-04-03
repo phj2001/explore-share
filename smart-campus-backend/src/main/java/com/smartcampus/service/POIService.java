@@ -1,6 +1,8 @@
 package com.smartcampus.service;
 
+import com.smartcampus.dto.response.POIImportResult;
 import com.smartcampus.entity.POI;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,4 +58,6 @@ public interface POIService {
      * 获取所有分类
      */
     List<String> getAllCategories();
+
+    POIImportResult importFromCsv(MultipartFile file, boolean replaceExisting, boolean skipDuplicates);
 }
