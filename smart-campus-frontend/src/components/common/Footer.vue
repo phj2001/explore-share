@@ -123,4 +123,49 @@ const userStore = useUserStore()
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 560px) {
+  .site-footer {
+    padding: 18px 0 22px;
+  }
+
+  .footer-shell {
+    gap: 14px;
+  }
+
+  .footer-hero {
+    padding: 18px 16px;
+    gap: 14px;
+    border-radius: 20px;
+  }
+
+  .footer-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .footer-link-pill {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  .footer-grid {
+    gap: 10px;
+  }
+
+  .footer-column {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .footer-column h3 {
+    font-size: 14px;
+  }
+
+  .footer-column p {
+    font-size: 12px;
+    line-height: 1.65;
+  }
+}
 </style>

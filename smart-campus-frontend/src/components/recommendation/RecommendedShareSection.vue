@@ -125,6 +125,7 @@ onMounted(async () => {
 <style scoped>
 .recommendation-section {
   padding: 8px 0 0;
+  background: transparent;
 }
 
 .section-head {
@@ -168,7 +169,7 @@ onMounted(async () => {
 .recommendation-card {
   overflow: hidden;
   border-radius: 26px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--front-border);
   box-shadow: var(--front-shadow-soft);
   cursor: pointer;
@@ -193,9 +194,9 @@ onMounted(async () => {
 .card-cover-placeholder {
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, rgba(23, 135, 166, 0.16), rgba(13, 107, 133, 0.14));
-  color: var(--front-text);
-  font-size: 20px;
+  background: linear-gradient(135deg, rgba(232, 245, 247, 0.96), rgba(255, 255, 255, 0.98));
+  color: var(--front-text-soft);
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -256,7 +257,7 @@ onMounted(async () => {
   margin: 0;
   padding: 12px 14px;
   border-radius: 18px;
-  background: rgba(23, 135, 166, 0.08);
+  background: rgba(233, 244, 246, 0.9);
   color: var(--front-accent-strong);
   line-height: 1.65;
 }
@@ -307,6 +308,86 @@ onMounted(async () => {
 
   .recommendation-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .section-head {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .section-head h2 {
+    margin: 8px 0 6px;
+    font-size: 20px;
+  }
+
+  .section-head p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .recommendation-grid {
+    gap: 12px;
+  }
+
+  .recommendation-card {
+    border-radius: 18px;
+  }
+
+  .card-cover {
+    height: 156px;
+  }
+
+  .card-badges {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    gap: 6px;
+  }
+
+  .badge {
+    font-size: 10px;
+    padding: 4px 7px;
+  }
+
+  .card-body {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .author-row {
+    gap: 8px;
+  }
+
+  .author-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .author-row strong {
+    font-size: 13px;
+  }
+
+  .author-row p,
+  .content-preview,
+  .recommend-text {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .content-preview {
+    min-height: auto;
+  }
+
+  .recommend-text {
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  .card-footer {
+    gap: 8px;
+    font-size: 12px;
   }
 }
 </style>

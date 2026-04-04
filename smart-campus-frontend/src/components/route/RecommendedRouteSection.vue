@@ -439,4 +439,89 @@ onMounted(loadRoutes)
     grid-template-columns: 28px minmax(0, 1fr);
   }
 }
+
+@media (max-width: 560px) {
+  .section-header {
+    gap: 10px;
+  }
+
+  .section-header h2 {
+    margin: 8px 0 6px;
+    font-size: 20px;
+  }
+
+  .section-header p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .route-grid {
+    gap: 12px;
+  }
+
+  .route-card {
+    border-radius: 18px;
+  }
+
+  .route-cover-wrap {
+    height: 150px;
+  }
+
+  .route-glance {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 7px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+  }
+
+  .route-card-body {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .route-card h3,
+  .detail-copy h3 {
+    font-size: 17px;
+  }
+
+  .route-summary,
+  .route-description,
+  .route-meta {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .route-badges {
+    gap: 6px;
+  }
+
+  .badge {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  .route-actions :deep(.el-button),
+  .dialog-footer :deep(.el-button) {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .detail-cover {
+    height: 200px;
+    border-radius: 18px;
+  }
+
+  .timeline-item {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .timeline-item :deep(.el-button) {
+    grid-column: 2;
+    justify-content: flex-start;
+    padding-left: 0;
+  }
+}
 </style>

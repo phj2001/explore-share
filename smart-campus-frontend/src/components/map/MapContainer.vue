@@ -1,9 +1,9 @@
 ﻿<template>
-  <section class="map-shell">
+  <section class="map-shell" :class="{ 'mobile-route-panel-open': isMobileViewport && isMobileRoutePanelExpanded }">
     <div class="map-container">
       <div ref="mapRoot" class="map-view"></div>
 
-      <RoutePolyline />
+      <RoutePolyline @visibility-change="handleRoutePanelVisibilityChange" />
 
       <div v-if="mapStore.isPickingRoutePoint" class="map-pick-tip">
         请在地图中点击，设置{{ mapStore.routePickMode === 'start' ? '起点' : '终点' }}。
@@ -30,7 +30,9 @@
     <el-dialog
       v-model="showDetailDialog"
       :title="selectedPOI?.name"
-      width="920px"
+      :width="isMobileViewport ? '100%' : '920px'"
+      :fullscreen="isMobileViewport"
+      :top="isMobileViewport ? '0' : '8vh'"
       destroy-on-close
       class="poi-dialog"
       @closed="handleDialogClosed"
@@ -121,6 +123,8 @@ const poiCheckInStatus = ref({
   checkInCount: 0
 })
 const sdkError = ref('')
+const isMobileViewport = ref(false)
+const isMobileRoutePanelExpanded = ref(false)
 const hasShownBoundsLimitMessage = ref(false)
 const renderedPoiList = computed(() => poiStore.visiblePoiList || [])
 const activeResultSummary = computed(() =>
@@ -150,8 +154,23 @@ const BOUNDS_REUSE_EPSILON = 0.0001
 const EMPTY_STATE_FALLBACK_CENTER = { lat: 35.8617, lng: 104.1954 }
 const EMPTY_STATE_FALLBACK_ZOOM = 5
 
+const updateViewportState = () => {
+  isMobileViewport.value = window.innerWidth <= 768
+  if (!isMobileViewport.value) {
+    isMobileRoutePanelExpanded.value = false
+  }
+}
+
+const handleRoutePanelVisibilityChange = (visible) => {
+  isMobileRoutePanelExpanded.value = !!visible
+}
+
 const getFitViewPadding = () => {
-  return window.innerWidth <= 768 ? [80, 80, 340, 80] : [80, 420, 80, 80]
+  if (window.innerWidth <= 768) {
+    return [64, 44, 64, 44]
+  }
+
+  return [80, 420, 80, 80]
 }
 
 const getBoundsLimitByZoom = () => {
@@ -956,6 +975,8 @@ const handleResetToBounds = () => {
 
 onMounted(async () => {
   try {
+    updateViewportState()
+    window.addEventListener('resize', updateViewportState)
     await initMap()
     window.addEventListener('poi:reset-to-bounds', handleResetToBounds)
     await loadInitialMapData()
@@ -981,6 +1002,7 @@ onUnmounted(() => {
   }
 
   window.removeEventListener('poi:reset-to-bounds', handleResetToBounds)
+  window.removeEventListener('resize', updateViewportState)
 
   poiMarkers = []
   poiCluster = null
@@ -1075,6 +1097,7 @@ watch(
   width: 100%;
   min-height: calc(100vh - 96px);
   overflow: hidden;
+  overscroll-behavior: contain;
   background:
     radial-gradient(circle at top right, rgba(23, 135, 166, 0.12), transparent 28%),
     linear-gradient(180deg, #f9fcfd, #e7f0f3);
@@ -1083,9 +1106,20 @@ watch(
 .map-view {
   width: 100%;
   height: calc(100vh - 96px);
+  touch-action: pan-x pan-y pinch-zoom;
   background:
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.15), transparent 28%),
     linear-gradient(180deg, #f8fafc, #e2e8f0);
+}
+
+@supports (height: 100svh) {
+  .map-container {
+    min-height: calc(100svh - 96px);
+  }
+
+  .map-view {
+    height: calc(100svh - 96px);
+  }
 }
 
 :deep(.amap-marker-label) {
@@ -1289,33 +1323,70 @@ watch(
   justify-content: flex-end;
 }
 
+:deep(.poi-dialog .el-dialog) {
+  max-width: min(920px, calc(100vw - 32px));
+  border-radius: 28px;
+}
+
+:deep(.poi-dialog .el-dialog__body) {
+  padding-top: 10px;
+}
+
 @media (max-width: 768px) {
+  .map-shell.mobile-route-panel-open {
+    padding-bottom: 60svh;
+  }
+
   .map-container {
-    min-height: calc(100vh - 88px);
+    min-height: 62svh;
+    overflow: visible;
   }
 
   .map-view {
-    height: calc(100vh - 88px);
+    height: 62svh;
   }
 
   .map-pick-tip {
     left: 12px;
     right: 12px;
     top: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
   }
 
   .map-error {
     left: 12px;
     right: 12px;
-    bottom: 84px;
+    bottom: 78px;
     max-width: none;
+  }
+
+  .map-toolbar {
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .map-toolbar-button {
+    min-height: 40px;
+    padding-inline: 14px;
   }
 
   .map-limit-tip {
     left: 12px;
     right: 12px;
-    bottom: 72px;
+    bottom: calc(60px + max(12px, env(safe-area-inset-bottom)));
     max-width: none;
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+
+  .poi-overview {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .poi-overview-card h3 {
+    font-size: 22px;
   }
 
   .poi-meta-grid {
@@ -1326,9 +1397,65 @@ watch(
     flex-direction: column;
   }
 
+  .poi-actions :deep(.el-button) {
+    width: 100%;
+    min-height: 42px;
+  }
+
   .poi-check-in-card {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .poi-check-in-card :deep(.el-button) {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .dialog-actions :deep(.el-button) {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  :deep(.poi-dialog .el-dialog) {
+    width: 100% !important;
+    max-width: none;
+    height: 100svh;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  :deep(.poi-dialog .el-dialog__header) {
+    padding: 16px 16px 12px;
+  }
+
+  :deep(.poi-dialog .el-dialog__body) {
+    padding: 0 16px 16px;
+    max-height: calc(100svh - 128px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :deep(.poi-dialog .el-dialog__footer) {
+    padding: 8px 16px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-container {
+    min-height: 58svh;
+  }
+
+  .map-view {
+    height: 58svh;
+  }
+
+  .poi-overview-card h3 {
+    font-size: 20px;
+  }
+
+  .poi-category {
+    font-size: 11px;
   }
 }
 </style>

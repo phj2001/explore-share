@@ -447,5 +447,102 @@ onBeforeUnmount(() => {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .card-head :deep(.el-button),
+  .hero-side :deep(.el-button) {
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 560px) {
+  .settings-main {
+    padding: 12px 0 22px;
+  }
+
+  .settings-shell {
+    gap: 14px;
+  }
+
+  .profile-hero,
+  .settings-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .profile-hero {
+    gap: 14px;
+  }
+
+  .hero-main {
+    gap: 14px;
+  }
+
+  .hero-avatar {
+    width: 78px;
+    height: 78px;
+    font-size: 24px;
+  }
+
+  .hero-copy :deep(.front-title) {
+    font-size: 28px;
+    line-height: 1.14;
+  }
+
+  .hero-copy :deep(.front-description) {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .hero-info-card,
+  .safety-note {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .hero-side {
+    align-items: stretch;
+  }
+
+  .hidden-uploader,
+  .hidden-uploader :deep(.el-button),
+  .card-head :deep(.el-button) {
+    width: 100%;
+  }
+
+  .card-head {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .card-head h2 {
+    font-size: 20px;
+  }
+
+  .settings-form :deep(.el-input__wrapper),
+  .settings-form :deep(.el-textarea__inner) {
+    border-radius: 14px;
+  }
+
+  .settings-form :deep(.el-input__wrapper) {
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-copy :deep(.front-title) {
+    font-size: 24px;
+  }
+
+  .hero-copy :deep(.front-description) {
+    display: none;
+  }
+
+  .hero-info-card strong {
+    font-size: 16px;
+  }
+
+  .safety-note strong {
+    font-size: 13px;
+  }
 }
 </style>

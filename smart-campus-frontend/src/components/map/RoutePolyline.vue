@@ -1,11 +1,22 @@
 <template>
-  <el-tooltip v-if="isCollapsed" content="展开路线面板" placement="left">
+  <el-tooltip v-if="isCollapsed" content="打开路线导航" placement="left">
     <button type="button" class="route-trigger" @click="handleExpandPanel">
       <el-icon><Guide /></el-icon>
+      <span>导航</span>
     </button>
   </el-tooltip>
 
-  <div v-else class="route-panel" :class="{ 'has-route': routeResult?.steps?.length }">
+  <div
+    v-else
+    class="route-panel"
+    :class="{
+      'has-route': routeResult?.steps?.length,
+      'is-mobile': isMobileViewport,
+      'is-picking-mobile': showCompactPickingPanel
+    }"
+  >
+    <div v-if="isMobileViewport" class="mobile-sheet-handle" aria-hidden="true"></div>
+
     <div class="panel-header">
       <div>
         <h3>{{ currentModeLabel }}路线规划</h3>
@@ -17,7 +28,30 @@
       </div>
     </div>
 
-    <div class="panel-body">
+    <div v-if="showCompactPickingPanel" class="compact-pick-body">
+      <div class="pick-banner compact">
+        <span>请在地图中点击，设置{{ routePickMode === 'start' ? '起点' : '终点' }}。</span>
+        <el-button text @click="handleCancelPickMode">取消</el-button>
+      </div>
+
+      <div class="compact-point-preview">
+        <div class="route-point">
+          <span class="point-tag start">起</span>
+          <div class="point-text">
+            <strong>{{ routeStart?.name || '未设置起点' }}</strong>
+          </div>
+        </div>
+
+        <div class="route-point">
+          <span class="point-tag end">终</span>
+          <div class="point-text">
+            <strong>{{ routeEnd?.name || '未设置终点' }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="panel-body" :class="{ 'has-result': !!routeResult }">
       <div v-if="activeRecommendedRoute" class="recommended-banner">
         <div class="banner-copy">
           <span class="banner-kicker">推荐路线</span>
@@ -88,7 +122,7 @@
       </div>
     </div>
 
-    <div v-if="routeResult" class="result-summary">
+    <div v-if="routeResult && !showCompactPickingPanel" class="result-summary">
       <div class="summary-item">
         <span>出行方式</span>
         <strong>{{ routeResult.modeLabel || currentModeLabel }}</strong>
@@ -103,7 +137,7 @@
       </div>
     </div>
 
-    <el-scrollbar v-if="routeResult?.steps?.length" class="step-list">
+    <el-scrollbar v-if="routeResult?.steps?.length && !showCompactPickingPanel" class="step-list">
       <div v-for="(step, index) in routeResult.steps" :key="`${routeResult.mode}-${index}-${step.instruction}`" class="step-item">
         <div class="step-index">{{ index + 1 }}</div>
         <div class="step-content">
@@ -116,13 +150,16 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, Guide, Minus, Sort } from '@element-plus/icons-vue'
 import { useMapStore } from '@/stores/map'
 
+const emit = defineEmits(['visibility-change'])
+
 const mapStore = useMapStore()
 const isCollapsed = ref(true)
+const isMobileViewport = ref(false)
 
 const routeStart = computed(() => mapStore.routeStart)
 const routeEnd = computed(() => mapStore.routeEnd)
@@ -134,6 +171,7 @@ const routeIntermediatePoints = computed(() => mapStore.routeIntermediatePoints)
 const hasIntermediatePoints = computed(() => mapStore.hasIntermediatePoints)
 const activeRecommendedRoute = computed(() => mapStore.activeRecommendedRoute)
 const modeOptions = computed(() => mapStore.routeModes.map((mode) => ({ label: mode.label, value: mode.value })))
+const showCompactPickingPanel = computed(() => isMobileViewport.value && isPickingRoutePoint.value)
 
 const currentModeLabel = computed(() => {
   return mapStore.routeModes.find((mode) => mode.value === mapStore.routeMode)?.label || '步行'
@@ -210,11 +248,26 @@ const handleClearRoute = () => {
 
 const handleExpandPanel = () => {
   isCollapsed.value = false
+  emit('visibility-change', true)
 }
 
 const handleCollapsePanel = () => {
   isCollapsed.value = true
+  emit('visibility-change', false)
 }
+
+const updateViewportState = () => {
+  isMobileViewport.value = window.innerWidth <= 768
+}
+
+onMounted(() => {
+  updateViewportState()
+  window.addEventListener('resize', updateViewportState)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateViewportState)
+})
 </script>
 
 <style scoped>
@@ -222,14 +275,16 @@ const handleCollapsePanel = () => {
   position: absolute;
   top: 20px;
   right: 20px;
-  z-index: 1000;
-  width: 56px;
-  height: 56px;
+  z-index: 1400;
+  min-width: 88px;
+  height: 48px;
+  padding: 0 16px;
   border: none;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   background: linear-gradient(135deg, #0f766e, #0ea5e9);
   color: #fff;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
@@ -243,14 +298,20 @@ const handleCollapsePanel = () => {
 }
 
 .route-trigger .el-icon {
-  font-size: 24px;
+  font-size: 20px;
+}
+
+.route-trigger span {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .route-panel {
   position: absolute;
   top: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 1400;
   width: 360px;
   max-height: calc(100vh - 120px);
   display: flex;
@@ -264,6 +325,11 @@ const handleCollapsePanel = () => {
 
 .route-panel.has-route {
   height: calc(100vh - 120px);
+}
+
+.route-panel.is-picking-mobile {
+  height: auto;
+  max-height: none;
 }
 
 .panel-header {
@@ -294,10 +360,16 @@ const handleCollapsePanel = () => {
 }
 
 .panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.mobile-sheet-handle {
+  display: none;
 }
 
 .recommended-banner,
@@ -344,6 +416,23 @@ const handleCollapsePanel = () => {
   background: #ecfeff;
   color: #0f766e;
   font-size: 12px;
+}
+
+.pick-banner.compact {
+  margin: 0;
+}
+
+.compact-pick-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.compact-point-preview {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .route-point {
@@ -450,6 +539,7 @@ const handleCollapsePanel = () => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .summary-item {
@@ -519,22 +609,90 @@ const handleCollapsePanel = () => {
 
 @media (max-width: 768px) {
   .route-trigger {
-    top: auto;
+    top: 12px;
     right: 12px;
-    bottom: 12px;
+    min-width: 92px;
+    height: 44px;
+    padding: 0 14px;
   }
 
   .route-panel {
     left: 12px;
     right: 12px;
-    top: auto;
-    bottom: 12px;
+    top: calc(100% + 12px);
+    bottom: auto;
     width: auto;
-    max-height: 58vh;
+    max-height: 60svh;
+    height: 60svh;
+    border-radius: 22px 22px 18px 18px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+    border: 1px solid rgba(148, 163, 184, 0.16);
   }
 
   .route-panel.has-route {
-    height: 58vh;
+    height: 72svh;
+    max-height: 72svh;
+  }
+
+  .route-panel.is-picking-mobile {
+    height: auto;
+    max-height: none;
+  }
+
+  .mobile-sheet-handle {
+    display: block;
+    width: 44px;
+    height: 5px;
+    margin: 10px auto 0;
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.42);
+    flex-shrink: 0;
+  }
+
+  .panel-header {
+    padding: 12px 14px 8px;
+  }
+
+  .panel-header h3 {
+    font-size: 16px;
+  }
+
+  .panel-header p {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .panel-body {
+    padding: 10px 12px;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .panel-body:not(.has-result) {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .recommended-banner,
+  .pick-banner,
+  .waypoint-list {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .banner-copy strong {
+    font-size: 13px;
+  }
+
+  .banner-copy p,
+  .banner-kicker,
+  .waypoint-head,
+  .waypoint-chip,
+  .point-text span {
+    font-size: 10px;
   }
 
   .pick-banner {
@@ -542,8 +700,90 @@ const handleCollapsePanel = () => {
     align-items: flex-start;
   }
 
+  .route-point {
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .point-tag {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .point-text strong {
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .route-actions {
+    gap: 6px;
+  }
+
+  .route-actions :deep(.el-button) {
+    min-height: 34px;
+  }
+
+  .route-actions :deep(.el-button--small) {
+    padding-inline: 10px;
+  }
+
+  .route-actions :deep(.el-button.is-circle) {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+  }
+
+  .compact-pick-body .pick-banner {
+    flex-direction: row;
+    align-items: center;
+  }
+
   .result-summary {
-    grid-template-columns: 1fr;
+    margin: 0 12px 8px;
+    padding: 8px 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .summary-item span {
+    font-size: 10px;
+  }
+
+  .summary-item strong {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .step-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0 12px 12px;
+  }
+
+  .step-list :deep(.el-scrollbar__wrap) {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .step-item {
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .step-index {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .step-content p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .step-content span {
+    margin-top: 2px;
+    font-size: 10px;
   }
 }
 </style>

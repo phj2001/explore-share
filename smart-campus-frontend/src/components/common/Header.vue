@@ -9,9 +9,44 @@
             <span>发现地点 · 分享体验 · 串联路线</span>
           </div>
         </router-link>
+
+        <div class="mobile-actions">
+          <el-button
+            class="mobile-action-button mobile-search-button"
+            aria-label="打开搜索面板"
+            @click="toggleMobileSearch"
+          >
+            <el-icon><Search /></el-icon>
+            <span>搜索</span>
+          </el-button>
+
+          <router-link
+            v-if="userStore.isLoggedIn"
+            to="/settings"
+            class="mobile-profile-link front-panel"
+            aria-label="个人中心"
+          >
+            <el-avatar :size="34" :src="avatarUrl || undefined" class="user-avatar">
+              {{ displayName.slice(0, 1).toUpperCase() }}
+            </el-avatar>
+          </router-link>
+
+          <router-link v-else to="/login" class="mobile-login-link" aria-label="登录或注册">
+            <el-button type="primary" class="mobile-action-button mobile-login-button">登录</el-button>
+          </router-link>
+
+          <el-button
+            v-if="userStore.isLoggedIn"
+            class="mobile-action-button mobile-logout-button"
+            aria-label="退出登录"
+            @click="handleMobileLogout"
+          >
+            退出
+          </el-button>
+        </div>
       </div>
 
-      <div class="search-strip front-panel">
+      <div class="search-strip front-panel" :class="{ 'mobile-search-collapsed': !mobileSearchVisible }">
         <el-input
           v-model="searchText"
           placeholder="搜索地点、空间或兴趣点"
@@ -72,6 +107,7 @@
         </div>
       </div>
     </div>
+
   </header>
 </template>
 
@@ -90,6 +126,7 @@ const poiStore = usePOIStore()
 const searchText = ref('')
 const selectedCategory = ref('')
 const poiCategories = ref([])
+const mobileSearchVisible = ref(false)
 
 const displayName = computed(() => userStore.displayName || '当前用户')
 const avatarUrl = computed(() => userStore.avatarUrl)
@@ -118,6 +155,7 @@ onMounted(async () => {
 const handleSearch = async () => {
   if (!searchText.value.trim()) {
     await resetToCurrentBounds()
+    mobileSearchVisible.value = false
     return
   }
 
@@ -127,6 +165,7 @@ const handleSearch = async () => {
       ElMessage.warning(SEARCH_RESULT_LIMIT_MESSAGE)
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    mobileSearchVisible.value = false
   } catch {
     ElMessage.error('搜索失败')
   }
@@ -135,6 +174,7 @@ const handleSearch = async () => {
 const handleCategoryFilter = async () => {
   if (!selectedCategory.value) {
     await resetToCurrentBounds()
+    mobileSearchVisible.value = false
     return
   }
 
@@ -144,6 +184,7 @@ const handleCategoryFilter = async () => {
       ElMessage.warning(SEARCH_RESULT_LIMIT_MESSAGE)
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    mobileSearchVisible.value = false
   } catch {
     ElMessage.error('筛选失败')
   }
@@ -152,6 +193,14 @@ const handleCategoryFilter = async () => {
 const handleLogout = () => {
   userStore.logout()
   router.push('/login')
+}
+
+const handleMobileLogout = () => {
+  handleLogout()
+}
+
+const toggleMobileSearch = () => {
+  mobileSearchVisible.value = !mobileSearchVisible.value
 }
 </script>
 
@@ -172,11 +221,21 @@ const handleLogout = () => {
   gap: 14px;
 }
 
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .brand-link {
   display: inline-flex;
   align-items: center;
   gap: 12px;
   text-decoration: none;
+}
+
+.mobile-actions {
+  display: none;
 }
 
 .brand-mark {
@@ -323,6 +382,10 @@ const handleLogout = () => {
     align-items: stretch;
   }
 
+  .search-strip {
+    gap: 12px;
+  }
+
   .nav-menu {
     justify-content: flex-start;
     flex-wrap: wrap;
@@ -331,11 +394,113 @@ const handleLogout = () => {
   .category-select {
     width: 100%;
   }
+
+  .user-actions {
+    justify-content: space-between;
+  }
 }
 
 @media (max-width: 640px) {
+  .site-header {
+    padding-top: 8px;
+  }
+
+  .header-shell {
+    gap: 8px;
+  }
+
+  .brand-block {
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: var(--front-shadow-soft);
+  }
+
+  .brand-link {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
   .brand-copy strong {
-    font-size: 16px;
+    font-size: 14px;
+  }
+
+  .brand-copy span {
+    display: none;
+  }
+
+  .mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .mobile-profile-link {
+    padding: 4px;
+    border-radius: 14px;
+    text-decoration: none;
+    order: 2;
+  }
+
+  .mobile-login-link {
+    text-decoration: none;
+    order: 4;
+  }
+
+  .mobile-login-button {
+    color: #ffffff;
+  }
+
+  .mobile-action-button {
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 12px;
+    border-color: rgba(23, 135, 166, 0.14);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--front-text);
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .mobile-menu-button {
+    order: 1;
+  }
+
+  .mobile-search-button {
+    order: 1;
+  }
+
+  .mobile-logout-button {
+    order: 3;
+  }
+
+  .search-strip {
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .mobile-search-collapsed {
+    display: none;
+  }
+
+  .right-section {
+    display: none;
   }
 
   .profile-link {
@@ -345,6 +510,50 @@ const handleLogout = () => {
   .user-actions {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+  }
+
+  .logout-button,
+  .login-link :deep(.el-button) {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .logout-button {
+    justify-content: center;
+    margin-left: 0;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+  }
+}
+
+@media (max-width: 480px) {
+  .search-strip {
+    gap: 8px;
+  }
+
+  .search-strip :deep(.el-input__wrapper),
+  .search-strip :deep(.el-select__wrapper) {
+    min-height: 38px;
+    font-size: 13px;
+  }
+
+  .search-strip :deep(.el-button) {
+    min-height: 38px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+
+  .brand-copy strong {
+    font-size: 13px;
+  }
+
+  .mobile-action-button span {
+    line-height: 1;
+  }
+
+  .profile-copy span {
+    display: none;
   }
 }
 </style>

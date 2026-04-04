@@ -616,4 +616,69 @@ onBeforeUnmount(() => {
     justify-content: stretch;
   }
 }
+
+@media (max-width: 560px) {
+  .mobile-trigger {
+    left: 10px;
+    top: 76px;
+    padding: 10px 14px;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .mobile-head {
+    padding-bottom: 12px;
+  }
+
+  .rail-head {
+    padding: 18px 16px 12px;
+    gap: 10px;
+  }
+
+  .rail-head h2 {
+    margin: 10px 0 0;
+    font-size: 22px;
+  }
+
+  .rail-scroll {
+    padding: 0 16px 16px;
+  }
+
+  .featured-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .featured-card h3 {
+    margin: 10px 0 8px;
+    font-size: 20px;
+  }
+
+  .notice-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .notice-card strong {
+    font-size: 15px;
+  }
+
+  .notice-card p,
+  .featured-card p,
+  .detail-summary,
+  .detail-content {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .detail-cover {
+    height: 200px;
+    border-radius: 18px;
+  }
+
+  .detail-footer :deep(.el-button) {
+    width: 100%;
+    min-height: 42px;
+  }
+}
 </style>

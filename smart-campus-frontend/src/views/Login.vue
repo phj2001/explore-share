@@ -366,6 +366,17 @@ const handleSubmit = async () => {
 @media (max-width: 720px) {
   .auth-page {
     padding: 16px 0;
+    align-items: stretch;
+  }
+
+  .auth-intro {
+    order: 2;
+    padding: 0;
+    gap: 10px;
+  }
+
+  .auth-panel {
+    order: 1;
   }
 
   .intro-grid {
@@ -379,6 +390,119 @@ const handleSubmit = async () => {
 
   .panel-head {
     flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .submit-button {
+    height: 42px;
+  }
+}
+
+@media (max-width: 560px) {
+  .auth-page {
+    padding: 8px 0 16px;
+  }
+
+  .auth-shell {
+    gap: 10px;
+  }
+
+  .auth-intro {
+    gap: 8px;
+  }
+
+  .intro-title {
+    font-size: clamp(20px, 7vw, 26px);
+    line-height: 1.18;
+  }
+
+  .intro-description {
+    max-width: none;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .intro-grid {
+    display: none;
+  }
+
+  .auth-panel {
+    padding: 16px 14px;
+    border-radius: 18px;
+  }
+
+  .panel-head h2 {
+    margin-top: 8px;
+    font-size: 20px;
+  }
+
+  .panel-head p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .back-home {
+    font-size: 12px;
+  }
+
+  .auth-form :deep(.el-input__wrapper) {
+    min-height: 42px;
+  }
+
+  .submit-zone {
+    gap: 10px;
+  }
+
+  .submit-button {
+    height: 44px;
+  }
+
+  .mode-switch {
+    font-size: 12px;
+    padding: 6px 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .auth-page {
+    padding-top: 4px;
+  }
+
+  .auth-shell {
+    gap: 8px;
+  }
+
+  .front-kicker {
+    font-size: 11px;
+  }
+
+  .auth-intro {
+    gap: 6px;
+  }
+
+  .intro-title {
+    font-size: 18px;
+  }
+
+  .intro-description {
+    display: none;
+  }
+
+  .panel-head {
+    margin-bottom: 16px;
+  }
+
+  .panel-head h2 {
+    font-size: 18px;
+  }
+
+  .panel-head p {
+    display: none;
+  }
+
+  .back-home {
+    display: none;
   }
 }
 </style>

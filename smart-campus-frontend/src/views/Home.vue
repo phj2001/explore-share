@@ -3,24 +3,34 @@
     <Header />
 
     <div class="main-content">
-      <MapContainer />
+      <section id="map-section">
+        <MapContainer />
+      </section>
 
-      <LazyMount min-height="520px">
-        <RecommendedShareSection />
-      </LazyMount>
+      <section id="recommended-share-section">
+        <LazyMount min-height="520px">
+          <RecommendedShareSection />
+        </LazyMount>
+      </section>
 
-      <LazyMount min-height="520px">
-        <ActivitySection />
-      </LazyMount>
+      <section id="activity-section">
+        <LazyMount min-height="520px">
+          <ActivitySection />
+        </LazyMount>
+      </section>
 
-      <LazyMount min-height="520px">
-        <RecommendedRouteSection />
-      </LazyMount>
+      <section id="recommended-route-section">
+        <LazyMount min-height="520px">
+          <RecommendedRouteSection />
+        </LazyMount>
+      </section>
     </div>
 
-    <LazyMount min-height="0" root-margin="0px">
-      <AnnouncementSection />
-    </LazyMount>
+    <section id="announcement-section">
+      <LazyMount min-height="0" root-margin="0px">
+        <AnnouncementSection />
+      </LazyMount>
+    </section>
 
     <Footer />
   </div>
@@ -52,5 +62,19 @@ const RecommendedRouteSection = defineAsyncComponent(() => import('@/components/
   flex-direction: column;
   gap: 22px;
   padding: 18px 0 0;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    gap: 16px;
+    padding-top: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    gap: 14px;
+    padding-top: 10px;
+  }
 }
 </style>

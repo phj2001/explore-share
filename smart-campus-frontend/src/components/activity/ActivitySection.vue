@@ -432,4 +432,71 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 560px) {
+  .section-head {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .section-head h2 {
+    margin: 8px 0 6px;
+    font-size: 20px;
+  }
+
+  .section-head p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .activity-grid {
+    gap: 12px;
+  }
+
+  .activity-card {
+    border-radius: 18px;
+  }
+
+  .card-cover {
+    height: 156px;
+  }
+
+  .card-body {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .card-meta,
+  .card-footer {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .card-body h3 {
+    font-size: 16px;
+  }
+
+  .summary {
+    min-height: auto;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .detail-cover {
+    height: 200px;
+    border-radius: 18px;
+  }
+
+  .detail-content {
+    padding: 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .dialog-footer :deep(.el-button) {
+    width: 100%;
+    min-height: 42px;
+  }
+}
 </style>
