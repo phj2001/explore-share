@@ -590,7 +590,7 @@ const fillForm = (detail) => {
     detail.poiId
       ? {
           id: detail.poiId,
-          name: detail.poiName || `鍦扮偣 #${detail.poiId}`,
+          name: detail.poiName || `地点 #${detail.poiId}`,
           category: detail.poiCategory || ''
         }
       : null

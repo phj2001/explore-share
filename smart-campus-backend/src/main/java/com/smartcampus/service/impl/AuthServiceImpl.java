@@ -1,4 +1,4 @@
-package com.smartcampus.service.impl;
+﻿package com.smartcampus.service.impl;
 
 import com.smartcampus.dto.response.LoginResponse;
 import com.smartcampus.entity.User;
@@ -28,7 +28,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public User register(User user) {
         if (existsByUsername(user.getUsername())) {
-            throw new IllegalArgumentException("用户名已存在: " + user.getUsername());
+            throw new BusinessException(409, "用户名已存在，请更换后重试");
         }
 
         user.setRole(UserRole.USER.getCode());
@@ -44,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
                 .map(user -> {
                     if (UserStatus.fromCode(user.getStatus()) == UserStatus.DISABLED) {
-                        throw new BusinessException(403, "账号已被禁用");
+                        throw new BusinessException(403, "璐﹀彿宸茶绂佺敤");
                     }
                     String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
                     return new LoginResponse(token, user.getId(), user.getUsername(), user.getRole());
@@ -73,3 +73,4 @@ public class AuthServiceImpl implements AuthService {
         return userRepository.existsByUsername(username);
     }
 }
+

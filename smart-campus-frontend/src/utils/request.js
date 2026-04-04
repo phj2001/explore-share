@@ -1,4 +1,4 @@
-import axios from 'axios'
+﻿import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { clearAuthState, getToken } from '@/utils/auth.js'
 
@@ -79,6 +79,9 @@ request.interceptors.response.use(
           break
         case 404:
           error.message = data.message || '请求的资源不存在'
+          break
+        case 409:
+          error.message = data.message || '资源已存在，请勿重复提交'
           break
         case 500:
           error.message = data.message || '服务器内部错误'

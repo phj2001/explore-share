@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="auth-page front-page">
     <div class="front-shell auth-shell">
       <section class="auth-intro">
@@ -91,6 +91,7 @@ import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { checkUsername } from '@/api/auth.js'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -105,23 +106,55 @@ const form = reactive({
   confirmPassword: ''
 })
 
-const validateConfirmPassword = (rule, value, callback) => {
-  if (!isLogin.value) {
-    if (value === '') {
-      callback(new Error('请再次输入密码'))
-    } else if (value !== form.password) {
-      callback(new Error('两次输入的密码不一致'))
-    } else {
-      callback()
-    }
-  } else {
-    callback()
+const normalizeUsername = (value) => value?.trim?.() || ''
+
+const validateUsername = async (rule, value, callback) => {
+  const normalizedUsername = normalizeUsername(value)
+
+  if (!normalizedUsername) {
+    callback(new Error('请输入用户名'))
+    return
   }
+
+  if (isLogin.value) {
+    callback()
+    return
+  }
+
+  try {
+    const exists = await checkUsername(normalizedUsername)
+    if (exists) {
+      callback(new Error('用户名已存在，请更换后重试'))
+      return
+    }
+    callback()
+  } catch {
+    callback(new Error('用户名校验失败，请稍后重试'))
+  }
+}
+
+const validateConfirmPassword = (rule, value, callback) => {
+  if (isLogin.value) {
+    callback()
+    return
+  }
+
+  if (!value) {
+    callback(new Error('请再次输入密码'))
+    return
+  }
+
+  if (value !== form.password) {
+    callback(new Error('两次输入的密码不一致'))
+    return
+  }
+
+  callback()
 }
 
 const rules = computed(() => {
   const baseRules = {
-    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+    username: [{ required: true, validator: validateUsername, trigger: 'blur' }],
     password: [
       { required: true, message: '请输入密码', trigger: 'blur' },
       { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' }
@@ -144,6 +177,7 @@ const toggleMode = () => {
 }
 
 const handleSubmit = async () => {
+  form.username = normalizeUsername(form.username)
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) {
     return
@@ -155,6 +189,13 @@ const handleSubmit = async () => {
       await userStore.login(form.username, form.password)
       ElMessage.success('登录成功')
     } else {
+      const exists = await checkUsername(form.username)
+      if (exists) {
+        ElMessage.error('用户名已存在，请更换后重试')
+        await formRef.value?.validateField?.('username').catch(() => {})
+        return
+      }
+
       await userStore.register(form.username, form.password)
       await userStore.login(form.username, form.password)
       ElMessage.success('注册成功')

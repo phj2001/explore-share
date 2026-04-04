@@ -460,7 +460,7 @@ const fillForm = (detail) => {
   form.poiIds = (detail.waypoints || []).map((item) => item.poiId)
   mergePoiOptions((detail.waypoints || []).map((item) => ({
     id: item.poiId,
-    name: item.poiName || `鍦扮偣 #${item.poiId}`,
+    name: item.poiName || `地点 #${item.poiId}`,
     category: item.poiCategory || ''
   })))
   form.coverImage = null

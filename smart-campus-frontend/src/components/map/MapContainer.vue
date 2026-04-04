@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="map-shell">
     <div class="map-container">
       <div ref="mapRoot" class="map-view"></div>
@@ -22,8 +22,8 @@
       </div>
 
       <div v-if="!sdkError && activeResultSummary.truncated" class="map-limit-tip">
-        当前视野内共有 {{ poiStore.boundsSummary.total }} 个地点，为保证性能，当前仅展示前
-        {{ poiStore.boundsSummary.limit }} 个。请继续放大地图查看更多。
+        当前视野内共有 {{ activeResultSummary.total }} 个地点，为保证性能，当前仅展示前
+        {{ activeResultSummary.limit }} 个。请继续放大地图查看更多。
       </div>
     </div>
 
@@ -58,6 +58,25 @@
             <el-button @click="setAsRoutePoint('start')">设为起点</el-button>
             <el-button type="primary" plain @click="setAsRoutePoint('end')">设为终点</el-button>
           </div>
+
+          <div class="poi-check-in-card">
+            <div class="poi-check-in-meta">
+              <span class="poi-check-in-label">打卡状态</span>
+              <strong>{{ poiCheckInStatus.checkInCount }} 人打卡</strong>
+              <p>
+                {{ poiCheckInStatus.checkedIn ? '你已经打卡过这里了。' : '到过这里的话，可以点一下打卡。' }}
+              </p>
+            </div>
+
+            <el-button
+              :type="poiCheckInStatus.checkedIn ? 'success' : 'primary'"
+              :plain="poiCheckInStatus.checkedIn"
+              :loading="poiCheckInLoading"
+              @click="togglePOICheckIn"
+            >
+              {{ poiCheckInStatus.checkedIn ? '取消打卡' : (userStore.isLoggedIn ? '打卡' : '登录后打卡') }}
+            </el-button>
+          </div>
         </section>
 
         <PoiSharePanel v-if="showDetailDialog" :poi="selectedPOI" />
@@ -76,8 +95,10 @@
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import RoutePolyline from '@/components/map/RoutePolyline.vue'
+import { useUserStore } from '@/stores/user'
 import { usePOIStore } from '@/stores/poi'
 import { useMapStore } from '@/stores/map'
+import { cancelCheckInPOI, checkInPOI, getPOICheckInStatus } from '@/api/poiCheckIn'
 import {
   fromAmapCoordinate,
   loadAmapSdk,
@@ -87,12 +108,18 @@ import {
 
 const PoiSharePanel = defineAsyncComponent(() => import('@/components/map/PoiSharePanel.vue'))
 
+const userStore = useUserStore()
 const poiStore = usePOIStore()
 const mapStore = useMapStore()
 
 const mapRoot = ref(null)
 const showDetailDialog = ref(false)
 const selectedPOI = ref(null)
+const poiCheckInLoading = ref(false)
+const poiCheckInStatus = ref({
+  checkedIn: false,
+  checkInCount: 0
+})
 const sdkError = ref('')
 const hasShownBoundsLimitMessage = ref(false)
 const renderedPoiList = computed(() => poiStore.visiblePoiList || [])
@@ -519,7 +546,7 @@ const applyTemporaryRoutePoint = (mode, lat, lng) => {
   }
 
   mapStore.cancelPickingRoutePoint()
-  ElMessage.success(`已设置${point.name}`)
+  ElMessage.success(`已设置 ${point.name}`)
 }
 
 const updateMapCursor = () => {
@@ -643,7 +670,7 @@ const fetchPoisInCurrentBounds = async ({ silent = false, force = false } = {}) 
 
     if (data?.truncated && !silent && !hasShownBoundsLimitMessage.value) {
       hasShownBoundsLimitMessage.value = true
-      ElMessage.warning(`当前视野内共 ${data.total} 个地点，已限制显示前 ${data.limit} 个，请继续放大地图查看更多。`)
+      ElMessage.warning(`当前视野内共有 ${data.total} 个地点，已限制显示前 ${data.limit} 个，请继续放大地图查看更多。`)
     }
 
     if (!data?.truncated) {
@@ -685,7 +712,7 @@ const triggerBoundsFetch = async ({ silent = true } = {}) => {
       }
     }
   } catch {
-    // 下层已处理可见错误，静默模式下直接忽略
+    // 下层已经处理可见错误提示，这里静默即可
   }
 }
 
@@ -721,7 +748,7 @@ const loadInitialMapData = async () => {
       await fetchPoisInCurrentBounds({ force: true })
     }
   } catch {
-    // 下层已处理错误提示
+    // 下层已经处理错误提示
   }
 }
 
@@ -864,7 +891,55 @@ const setAsRoutePoint = (type) => {
   showDetailDialog.value = false
 }
 
+const resetPOICheckInState = () => {
+  poiCheckInLoading.value = false
+  poiCheckInStatus.value = {
+    checkedIn: false,
+    checkInCount: 0
+  }
+}
+
+const loadPOICheckInStatus = async (poiId) => {
+  if (!poiId) {
+    resetPOICheckInState()
+    return
+  }
+
+  try {
+    poiCheckInStatus.value = await getPOICheckInStatus(poiId)
+  } catch (error) {
+    resetPOICheckInState()
+    ElMessage.error(error.message || '打卡状态加载失败')
+  }
+}
+
+const togglePOICheckIn = async () => {
+  if (!selectedPOI.value?.id) {
+    return
+  }
+
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录后再打卡')
+    return
+  }
+
+  poiCheckInLoading.value = true
+
+  try {
+    poiCheckInStatus.value = poiCheckInStatus.value.checkedIn
+      ? await cancelCheckInPOI(selectedPOI.value.id)
+      : await checkInPOI(selectedPOI.value.id)
+
+    ElMessage.success(poiCheckInStatus.value.checkedIn ? '打卡成功' : '已取消打卡')
+  } catch (error) {
+    ElMessage.error(error.message || '打卡操作失败')
+  } finally {
+    poiCheckInLoading.value = false
+  }
+}
+
 const handleDialogClosed = () => {
+  resetPOICheckInState()
   selectedPOI.value = null
   mapStore.clearSelectedPOI()
 }
@@ -951,6 +1026,39 @@ watch(
     }
   },
   { deep: true }
+)
+
+watch(
+  () => selectedPOI.value?.id,
+  (poiId) => {
+    if (showDetailDialog.value && poiId) {
+      loadPOICheckInStatus(poiId)
+      return
+    }
+
+    if (!poiId) {
+      resetPOICheckInState()
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => showDetailDialog.value,
+  (visible) => {
+    if (visible && selectedPOI.value?.id) {
+      loadPOICheckInStatus(selectedPOI.value.id)
+    }
+  }
+)
+
+watch(
+  () => userStore.isLoggedIn,
+  () => {
+    if (showDetailDialog.value && selectedPOI.value?.id) {
+      loadPOICheckInStatus(selectedPOI.value.id)
+    }
+  }
 )
 
 watch(
@@ -1141,6 +1249,41 @@ watch(
   gap: 12px;
 }
 
+.poi-check-in-card {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--front-border);
+  background: rgba(255, 255, 255, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.poi-check-in-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.poi-check-in-label {
+  color: var(--front-text-muted);
+  font-size: 12px;
+}
+
+.poi-check-in-meta strong {
+  color: var(--front-text);
+  font-size: 18px;
+}
+
+.poi-check-in-meta p {
+  margin: 0;
+  color: var(--front-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -1182,5 +1325,11 @@ watch(
   .poi-actions {
     flex-direction: column;
   }
+
+  .poi-check-in-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>
+
