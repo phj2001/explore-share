@@ -38,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Comparator;
 
 @Service
 @RequiredArgsConstructor
@@ -166,11 +167,20 @@ public class POIServiceImpl implements POIService {
     @Override
     public List<POIMapPointResponse> findMapPointsWithinBounds(Double minLat, Double maxLat, Double minLng, Double maxLng, Integer limit) {
         int safeLimit = normalizeMapPointLimit(limit);
-        PageRequest pageable = PageRequest.of(0, safeLimit);
+        long total = poiRepository.countWithinBounds(minLat, maxLat, minLng, maxLng);
 
-        return poiRepository.findWithinBounds(minLat, maxLat, minLng, maxLng, pageable).stream()
+        if (total <= safeLimit) {
+            PageRequest pageable = PageRequest.of(0, safeLimit);
+            return poiRepository.findWithinBounds(minLat, maxLat, minLng, maxLng, pageable).stream()
+                    .map(this::toMapPointResponse)
+                    .toList();
+        }
+
+        List<POIMapPointResponse> points = poiRepository.findWithinBoundsMapPointFields(minLat, maxLat, minLng, maxLng).stream()
                 .map(this::toMapPointResponse)
                 .toList();
+
+        return selectBalancedMapPoints(points, minLat, maxLat, minLng, maxLng, safeLimit);
     }
 
     @Override
@@ -180,6 +190,117 @@ public class POIServiceImpl implements POIService {
         List<POIMapPointResponse> records = findMapPointsWithinBounds(minLat, maxLat, minLng, maxLng, safeLimit);
 
         return new POIBoundsResponse(records, total, safeLimit, total > safeLimit);
+    }
+
+    private List<POIMapPointResponse> selectBalancedMapPoints(
+            List<POIMapPointResponse> points,
+            Double minLat,
+            Double maxLat,
+            Double minLng,
+            Double maxLng,
+            int limit
+    ) {
+        if (points.size() <= limit) {
+            return points;
+        }
+
+        double latSpan = Math.max(maxLat - minLat, 0.000001d);
+        double lngSpan = Math.max(maxLng - minLng, 0.000001d);
+        double aspectRatio = Math.max(0.6d, Math.min(lngSpan / latSpan, 2.4d));
+
+        int columns = Math.max(1, (int) Math.floor(Math.sqrt(limit * aspectRatio)));
+        int rows = Math.max(1, limit / columns);
+
+        while (rows * columns > limit && rows > 1) {
+            rows--;
+        }
+        while ((rows + 1) * columns <= limit) {
+            rows++;
+        }
+
+        double latStep = latSpan / rows;
+        double lngStep = lngSpan / columns;
+
+        Map<String, BoundsBucket> buckets = new HashMap<>();
+        for (POIMapPointResponse point : points) {
+            int rowIndex = clampGridIndex((point.getLatitude().doubleValue() - minLat) / latStep, rows);
+            int columnIndex = clampGridIndex((point.getLongitude().doubleValue() - minLng) / lngStep, columns);
+            String bucketKey = rowIndex + ":" + columnIndex;
+
+            BoundsBucket bucket = buckets.computeIfAbsent(bucketKey, key -> new BoundsBucket(
+                    rowIndex,
+                    columnIndex,
+                    minLat + (rowIndex + 0.5d) * latStep,
+                    minLng + (columnIndex + 0.5d) * lngStep
+            ));
+            bucket.points.add(point);
+        }
+
+        List<BoundsBucket> orderedBuckets = new ArrayList<>(buckets.values());
+        orderedBuckets.forEach(this::sortBucketPointsByRepresentativeness);
+        orderedBuckets.sort(Comparator
+                .comparingInt((BoundsBucket bucket) -> bucket.rowIndex)
+                .thenComparingInt(bucket -> bucket.columnIndex));
+
+        List<POIMapPointResponse> sampled = new ArrayList<>(limit);
+        for (BoundsBucket bucket : orderedBuckets) {
+            if (sampled.size() >= limit || bucket.points.isEmpty()) {
+                break;
+            }
+            sampled.add(bucket.points.get(0));
+            bucket.nextIndex = 1;
+        }
+
+        if (sampled.size() >= limit) {
+            return sampled;
+        }
+
+        List<BoundsBucket> densityBuckets = new ArrayList<>(orderedBuckets);
+        densityBuckets.sort(Comparator
+                .comparingInt((BoundsBucket bucket) -> bucket.points.size()).reversed()
+                .thenComparingInt(bucket -> bucket.rowIndex)
+                .thenComparingInt(bucket -> bucket.columnIndex));
+
+        boolean added;
+        do {
+            added = false;
+            for (BoundsBucket bucket : densityBuckets) {
+                if (sampled.size() >= limit) {
+                    break;
+                }
+                if (bucket.nextIndex >= bucket.points.size()) {
+                    continue;
+                }
+                sampled.add(bucket.points.get(bucket.nextIndex));
+                bucket.nextIndex++;
+                added = true;
+            }
+        } while (added && sampled.size() < limit);
+
+        return sampled;
+    }
+
+    private int clampGridIndex(double ratio, int gridSize) {
+        int index = (int) Math.floor(ratio);
+        if (index < 0) {
+            return 0;
+        }
+        if (index >= gridSize) {
+            return gridSize - 1;
+        }
+        return index;
+    }
+
+    private void sortBucketPointsByRepresentativeness(BoundsBucket bucket) {
+        bucket.points.sort(Comparator
+                .comparingDouble((POIMapPointResponse point) -> distanceSquaredToCellCenter(point, bucket))
+                .thenComparing(point -> point.getId() == null ? Long.MAX_VALUE : point.getId()));
+    }
+
+    private double distanceSquaredToCellCenter(POIMapPointResponse point, BoundsBucket bucket) {
+        double latDistance = point.getLatitude().doubleValue() - bucket.centerLat;
+        double lngDistance = point.getLongitude().doubleValue() - bucket.centerLng;
+        return latDistance * latDistance + lngDistance * lngDistance;
     }
 
     @Override
@@ -596,5 +717,21 @@ public class POIServiceImpl implements POIService {
 
     private String normalizeSignaturePart(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static final class BoundsBucket {
+        private final int rowIndex;
+        private final int columnIndex;
+        private final double centerLat;
+        private final double centerLng;
+        private final List<POIMapPointResponse> points = new ArrayList<>();
+        private int nextIndex = 0;
+
+        private BoundsBucket(int rowIndex, int columnIndex, double centerLat, double centerLng) {
+            this.rowIndex = rowIndex;
+            this.columnIndex = columnIndex;
+            this.centerLat = centerLat;
+            this.centerLng = centerLng;
+        }
     }
 }

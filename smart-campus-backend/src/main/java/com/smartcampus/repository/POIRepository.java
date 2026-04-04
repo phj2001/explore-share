@@ -67,6 +67,14 @@ public interface POIRepository extends JpaRepository<POI, Long>, JpaSpecificatio
                                @Param("maxLng") Double maxLng,
                                Pageable pageable);
 
+    @Query("SELECT p.id, p.name, p.category, p.description, p.latitude, p.longitude " +
+           "FROM POI p WHERE p.latitude BETWEEN :minLat AND :maxLat " +
+           "AND p.longitude BETWEEN :minLng AND :maxLng ORDER BY p.id ASC")
+    List<Object[]> findWithinBoundsMapPointFields(@Param("minLat") Double minLat,
+                                                  @Param("maxLat") Double maxLat,
+                                                  @Param("minLng") Double minLng,
+                                                  @Param("maxLng") Double maxLng);
+
     @Query("SELECT COUNT(p.id) FROM POI p WHERE p.latitude BETWEEN :minLat AND :maxLat " +
            "AND p.longitude BETWEEN :minLng AND :maxLng")
     long countWithinBounds(@Param("minLat") Double minLat,
