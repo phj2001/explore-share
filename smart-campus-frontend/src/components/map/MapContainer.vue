@@ -14,6 +14,17 @@
         <p>{{ sdkError }}</p>
         <p>请检查 `VITE_AMAP_JS_KEY` 与高德地图白名单配置。</p>
       </div>
+
+      <div v-if="!sdkError" class="map-toolbar">
+        <el-button plain class="map-toolbar-button" @click="clearAllPoiLabels">
+          清除名称
+        </el-button>
+      </div>
+
+      <div v-if="!sdkError && activeResultSummary.truncated" class="map-limit-tip">
+        当前视野内共有 {{ poiStore.boundsSummary.total }} 个地点，为保证性能，当前仅展示前
+        {{ poiStore.boundsSummary.limit }} 个。请继续放大地图查看更多。
+      </div>
     </div>
 
     <el-dialog
@@ -49,7 +60,7 @@
           </div>
         </section>
 
-        <PoiSharePanel :poi="selectedPOI" />
+        <PoiSharePanel v-if="showDetailDialog" :poi="selectedPOI" />
       </div>
 
       <template #footer>
@@ -62,10 +73,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import RoutePolyline from '@/components/map/RoutePolyline.vue'
-import PoiSharePanel from '@/components/map/PoiSharePanel.vue'
 import { usePOIStore } from '@/stores/poi'
 import { useMapStore } from '@/stores/map'
 import {
@@ -75,6 +85,8 @@ import {
   toAmapCoordinate
 } from '@/utils/amap'
 
+const PoiSharePanel = defineAsyncComponent(() => import('@/components/map/PoiSharePanel.vue'))
+
 const poiStore = usePOIStore()
 const mapStore = useMapStore()
 
@@ -82,15 +94,67 @@ const mapRoot = ref(null)
 const showDetailDialog = ref(false)
 const selectedPOI = ref(null)
 const sdkError = ref('')
+const hasShownBoundsLimitMessage = ref(false)
+const renderedPoiList = computed(() => poiStore.visiblePoiList || [])
+const activeResultSummary = computed(() =>
+  poiStore.activeSource === 'search' ? poiStore.searchSummary : poiStore.boundsSummary
+)
 
 let AMapRef = null
 let map = null
 let poiMarkers = []
+let poiCluster = null
+let poiMarkerMap = new Map()
+let poiLabelMarkers = new Map()
 let routePolyline = null
 let routeEndpointMarkers = []
+let boundsRequestId = 0
+let boundsFetchTimer = null
+let markerClusterPluginLoaded = false
+let lastReusableBounds = null
+let lastRenderedPoiSignature = ''
+let hasAppliedEmptyStateFallback = false
+
+const BOUNDS_FETCH_DEBOUNCE_MS = 300
+const POI_LABEL_HOVER_DELAY_MS = 500
+const MAP_BOUNDS_LIMIT = 1200
+const MAP_BOUNDS_LIMIT_MAX = 1800
+const BOUNDS_REUSE_EPSILON = 0.0001
+const EMPTY_STATE_FALLBACK_CENTER = { lat: 35.8617, lng: 104.1954 }
+const EMPTY_STATE_FALLBACK_ZOOM = 5
 
 const getFitViewPadding = () => {
   return window.innerWidth <= 768 ? [80, 80, 340, 80] : [80, 420, 80, 80]
+}
+
+const getBoundsLimitByZoom = () => {
+  if (!map) {
+    return MAP_BOUNDS_LIMIT
+  }
+
+  const zoom = map.getZoom()
+  if (zoom <= 5) return 180
+  if (zoom <= 7) return 280
+  if (zoom <= 9) return 420
+  if (zoom <= 11) return 700
+  if (zoom <= 13) return 1000
+  if (zoom <= 15) return 1400
+  return MAP_BOUNDS_LIMIT_MAX
+}
+
+const getClusterGridSizeByZoom = () => {
+  if (!map) {
+    return 80
+  }
+
+  const zoom = map.getZoom()
+  if (zoom <= 5) return 104
+  if (zoom <= 7) return 96
+  if (zoom <= 9) return 88
+  if (zoom <= 11) return 80
+  if (zoom <= 13) return 72
+  if (zoom <= 15) return 64
+  return 56
 }
 
 const createPoiMarkerContent = () => {
@@ -110,10 +174,32 @@ const createPoiMarkerContent = () => {
   `
 }
 
+const createPoiLabelContent = (name) => {
+  return `
+    <div style="
+      padding:4px 10px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.88);
+      color:#ffffff;
+      font-size:12px;
+      font-weight:600;
+      white-space:nowrap;
+      box-shadow:0 8px 18px rgba(15,23,42,0.22);
+      border:none;
+      outline:none;
+      pointer-events:none;
+      user-select:none;
+      -webkit-user-select:none;
+      caret-color:transparent;
+    ">${name}</div>
+  `
+}
+
 const createEndpointMarkerContent = (label, colors, size = 36, pointName = '') => {
   const compactName = pointName
     ? `<span style="max-width:${size * 2.4}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:600;opacity:0.95;">${pointName}</span>`
     : ''
+
   return `
     <div style="
       min-width: ${size}px;
@@ -153,10 +239,19 @@ const clearMarkerFocusArtifacts = () => {
 }
 
 const clearPoiMarkers = () => {
-  if (map && poiMarkers.length) {
-    map.remove(poiMarkers)
+  if (poiCluster) {
+    poiCluster.setMap?.(null)
+    poiCluster = null
+  }
+
+  const allMarkers = [...new Set([...poiMarkers, ...poiMarkerMap.values()])]
+  if (map && allMarkers.length) {
+    map.remove(allMarkers)
   }
   poiMarkers = []
+  poiMarkerMap = new Map()
+  clearAllPoiLabels()
+  lastRenderedPoiSignature = ''
 }
 
 const clearRoutePolyline = () => {
@@ -180,6 +275,186 @@ const getPoiMapPosition = (poi) => {
   }
 
   return [normalizedPoi.mapLng, normalizedPoi.mapLat]
+}
+
+const getPoiRenderSignature = () => {
+  return renderedPoiList.value
+    .map((poi) => `${poi.id}:${poi.latitude}:${poi.longitude}:${poi.name}`)
+    .join('|')
+}
+
+const showPoiMarkerLabel = (marker, poi) => {
+  const poiId = poi?.id ?? marker?.getExtData?.()?.poiId
+  if (!map || !marker || !poiId || !poi?.name || poiLabelMarkers.has(poiId)) {
+    return
+  }
+
+  const position = marker.getPosition?.()
+  if (!position) {
+    return
+  }
+
+  const labelMarker = new AMapRef.Marker({
+    position,
+    anchor: 'bottom-center',
+    offset: new AMapRef.Pixel(0, -14),
+    content: createPoiLabelContent(poi.name),
+    clickable: false,
+    bubble: false,
+    topWhenClick: false,
+    zIndex: 130
+  })
+
+  poiLabelMarkers.set(poiId, labelMarker)
+  map.add(labelMarker)
+}
+
+const hidePoiMarkerLabel = (marker) => {
+  const poiId = marker?.getExtData?.()?.poiId
+  if (!poiId) {
+    return
+  }
+
+  const labelMarker = poiLabelMarkers.get(poiId)
+  if (labelMarker && map) {
+    map.remove(labelMarker)
+  }
+  poiLabelMarkers.delete(poiId)
+}
+
+const removeAllRenderedPoiLabelDom = () => {
+  document
+    ?.querySelectorAll?.('.amap-marker-label')
+    ?.forEach((labelNode) => labelNode.remove())
+}
+
+const clearAllPoiLabels = () => {
+  if (map && poiLabelMarkers.size) {
+    map.remove([...poiLabelMarkers.values()])
+  }
+  poiLabelMarkers.clear()
+  removeAllRenderedPoiLabelDom()
+}
+
+const bindPoiMarkerInteractions = (marker, poi) => {
+  if (!marker || marker.__poiInteractionsBound) {
+    return
+  }
+
+  marker.on('mouseover', () => {
+    const currentPoi = marker.getExtData?.()?.poi || poi
+    if (marker.__poiHoverTimer) {
+      window.clearTimeout(marker.__poiHoverTimer)
+    }
+
+    marker.__poiHoverTimer = window.setTimeout(() => {
+      marker.__poiHoverTimer = null
+      showPoiMarkerLabel(marker, currentPoi)
+    }, POI_LABEL_HOVER_DELAY_MS)
+  })
+
+  marker.on('mouseout', () => {
+    if (marker.__poiHoverTimer) {
+      window.clearTimeout(marker.__poiHoverTimer)
+      marker.__poiHoverTimer = null
+    }
+  })
+
+  marker.on('touchend', () => {
+    if (marker.__poiHoverTimer) {
+      window.clearTimeout(marker.__poiHoverTimer)
+      marker.__poiHoverTimer = null
+    }
+  })
+
+  marker.on('click', () => {
+    const currentPoi = marker.getExtData?.()?.poi || poi
+    if (marker.__poiHoverTimer) {
+      window.clearTimeout(marker.__poiHoverTimer)
+      marker.__poiHoverTimer = null
+    }
+    clearMarkerFocusArtifacts()
+    selectedPOI.value = currentPoi
+    showDetailDialog.value = true
+    mapStore.selectPOI(currentPoi)
+    focusSelectedPoi(currentPoi)
+  })
+
+  marker.__poiInteractionsBound = true
+}
+
+const applyPoiMarkerPresentation = (marker, poi, position) => {
+  marker.setPosition(position)
+  marker.setTitle?.('')
+  marker.setContent?.(createPoiMarkerContent())
+  marker.setOffset?.(new AMapRef.Pixel(-9, -9))
+  marker.setTopWhenClick?.(true)
+  marker.setExtData?.({
+    poiId: poi.id,
+    poi
+  })
+}
+
+const createPoiMarker = (poi, position) => {
+  const marker = new AMapRef.Marker({
+    position,
+    title: '',
+    anchor: 'center',
+    content: createPoiMarkerContent(),
+    offset: new AMapRef.Pixel(-9, -9),
+    topWhenClick: true,
+  })
+  applyPoiMarkerPresentation(marker, poi, position)
+  bindPoiMarkerInteractions(marker, poi)
+
+  return marker
+}
+
+const syncPoiMarkerInstances = () => {
+  const nextMarkers = []
+  const activePoiIds = new Set()
+
+  for (const poi of renderedPoiList.value) {
+    const position = getPoiMapPosition(poi)
+    if (!position) {
+      continue
+    }
+
+    activePoiIds.add(poi.id)
+
+    let marker = poiMarkerMap.get(poi.id)
+    if (!marker) {
+      marker = createPoiMarker(poi, position)
+      poiMarkerMap.set(poi.id, marker)
+    } else {
+      applyPoiMarkerPresentation(marker, poi, position)
+    }
+
+    nextMarkers.push(marker)
+  }
+
+  const staleMarkers = []
+  for (const [poiId, marker] of poiMarkerMap.entries()) {
+    if (activePoiIds.has(poiId)) {
+      const labelMarker = poiLabelMarkers.get(poiId)
+      if (labelMarker) {
+        labelMarker.setPosition?.(marker.getPosition?.())
+      }
+      continue
+    }
+    staleMarkers.push(marker)
+    if (marker.__poiHoverTimer) {
+      window.clearTimeout(marker.__poiHoverTimer)
+      marker.__poiHoverTimer = null
+    }
+    hidePoiMarkerLabel(marker)
+    poiMarkerMap.delete(poiId)
+  }
+
+  return {
+    nextMarkers,
+    staleMarkers
+  }
 }
 
 const syncMapCenterToStore = () => {
@@ -265,6 +540,7 @@ const handleMapClick = (event) => {
 
 const initMap = async () => {
   AMapRef = await loadAmapSdk()
+  await ensureMarkerClusterPlugin()
 
   const currentCenter = toAmapCoordinate(mapStore.center.lat, mapStore.center.lng)
   if (!currentCenter) {
@@ -279,56 +555,219 @@ const initMap = async () => {
     zooms: [3, 20]
   })
 
-  map.on('moveend', handleMapMove)
-  map.on('zoomend', syncMapCenterToStore)
+  map.on('moveend', handleMapBoundsChange)
+  map.on('zoomend', handleMapBoundsChange)
   map.on('click', handleMapClick)
   updateMapCursor()
 }
 
-const loadPOIs = async () => {
+const ensureMarkerClusterPlugin = async () => {
+  if (!AMapRef || markerClusterPluginLoaded || typeof AMapRef.plugin !== 'function') {
+    return
+  }
+
+  await new Promise((resolve) => {
+    AMapRef.plugin(['AMap.MarkerCluster'], () => {
+      if (AMapRef.MarkerCluster) {
+        markerClusterPluginLoaded = true
+      } else {
+        console.warn('AMap.MarkerCluster 插件加载失败，已回退为普通点位渲染')
+      }
+      resolve()
+    })
+  })
+}
+
+const getCurrentBoundsPayload = () => {
+  if (!map) return
+  const bounds = map.getBounds()
+  if (!bounds) return
+
+  const southWest = bounds.getSouthWest()
+  const northEast = bounds.getNorthEast()
+  const convertedSouthWest = fromAmapCoordinate(southWest.getLat(), southWest.getLng())
+  const convertedNorthEast = fromAmapCoordinate(northEast.getLat(), northEast.getLng())
+
+  if (!convertedSouthWest || !convertedNorthEast) {
+    return
+  }
+
+   return {
+    minLat: convertedSouthWest.lat,
+    maxLat: convertedNorthEast.lat,
+    minLng: convertedSouthWest.lng,
+    maxLng: convertedNorthEast.lng
+  }
+}
+
+const canReuseBoundsData = (boundsPayload) => {
+  if (!boundsPayload || !lastReusableBounds) {
+    return false
+  }
+
+  return (
+    boundsPayload.minLat >= lastReusableBounds.minLat - BOUNDS_REUSE_EPSILON &&
+    boundsPayload.maxLat <= lastReusableBounds.maxLat + BOUNDS_REUSE_EPSILON &&
+    boundsPayload.minLng >= lastReusableBounds.minLng - BOUNDS_REUSE_EPSILON &&
+    boundsPayload.maxLng <= lastReusableBounds.maxLng + BOUNDS_REUSE_EPSILON
+  )
+}
+
+const fetchPoisInCurrentBounds = async ({ silent = false, force = false } = {}) => {
+  const boundsPayload = getCurrentBoundsPayload()
+  if (!boundsPayload) return
+
+  if (!force && canReuseBoundsData(boundsPayload)) {
+      return {
+        reused: true,
+        records: poiStore.mapPoiList,
+        ...poiStore.boundsSummary
+      }
+  }
+
+  const requestId = ++boundsRequestId
+  const boundsLimit = getBoundsLimitByZoom()
+
   try {
-    await Promise.all([poiStore.fetchAllPOIs(), poiStore.fetchCategories()])
-    renderMarkers()
+    const data = await poiStore.fetchInBounds(
+      boundsPayload.minLat,
+      boundsPayload.maxLat,
+      boundsPayload.minLng,
+      boundsPayload.maxLng,
+      boundsLimit
+    )
+
+    if (requestId !== boundsRequestId) {
+      return
+    }
+
+    if (data?.truncated && !silent && !hasShownBoundsLimitMessage.value) {
+      hasShownBoundsLimitMessage.value = true
+      ElMessage.warning(`当前视野内共 ${data.total} 个地点，已限制显示前 ${data.limit} 个，请继续放大地图查看更多。`)
+    }
+
+    if (!data?.truncated) {
+      hasShownBoundsLimitMessage.value = false
+      lastReusableBounds = boundsPayload
+    } else {
+      lastReusableBounds = null
+    }
+
+    return data
+  } catch (error) {
+    if (!silent) {
+      ElMessage.error(error?.message || '加载当前视野地点失败')
+    }
+    throw error
+  }
+}
+
+const triggerBoundsFetch = async ({ silent = true } = {}) => {
+  syncMapCenterToStore()
+
+  try {
+    const data = await fetchPoisInCurrentBounds({ silent })
+
+    if (
+      !hasAppliedEmptyStateFallback &&
+      !activeResultSummary.value.truncated &&
+      !(data?.records?.length > 0)
+    ) {
+      const currentZoom = map?.getZoom?.() ?? mapStore.zoom
+      if (currentZoom > EMPTY_STATE_FALLBACK_ZOOM) {
+        hasAppliedEmptyStateFallback = true
+        mapStore.flyTo(EMPTY_STATE_FALLBACK_CENTER.lat, EMPTY_STATE_FALLBACK_CENTER.lng, EMPTY_STATE_FALLBACK_ZOOM)
+        map?.setZoomAndCenter(
+          EMPTY_STATE_FALLBACK_ZOOM,
+          [EMPTY_STATE_FALLBACK_CENTER.lng, EMPTY_STATE_FALLBACK_CENTER.lat]
+        )
+        scheduleBoundsFetch({ silent: true })
+      }
+    }
   } catch {
-    ElMessage.error('加载地点失败')
+    // 下层已处理可见错误，静默模式下直接忽略
+  }
+}
+
+const scheduleBoundsFetch = ({ silent = true } = {}) => {
+  if (boundsFetchTimer) {
+    window.clearTimeout(boundsFetchTimer)
+  }
+
+  boundsFetchTimer = window.setTimeout(() => {
+    boundsFetchTimer = null
+    void triggerBoundsFetch({ silent })
+  }, BOUNDS_FETCH_DEBOUNCE_MS)
+}
+
+const loadInitialMapData = async () => {
+  try {
+    lastReusableBounds = null
+    hasAppliedEmptyStateFallback = false
+    await poiStore.fetchCategories()
+
+    const data = await fetchPoisInCurrentBounds({ force: true })
+    if (
+      !hasAppliedEmptyStateFallback &&
+      !activeResultSummary.value.truncated &&
+      !(data?.records?.length > 0)
+    ) {
+      hasAppliedEmptyStateFallback = true
+      mapStore.flyTo(EMPTY_STATE_FALLBACK_CENTER.lat, EMPTY_STATE_FALLBACK_CENTER.lng, EMPTY_STATE_FALLBACK_ZOOM)
+      map?.setZoomAndCenter(
+        EMPTY_STATE_FALLBACK_ZOOM,
+        [EMPTY_STATE_FALLBACK_CENTER.lng, EMPTY_STATE_FALLBACK_CENTER.lat]
+      )
+      await fetchPoisInCurrentBounds({ force: true })
+    }
+  } catch {
+    // 下层已处理错误提示
   }
 }
 
 const renderMarkers = () => {
   if (!map || !AMapRef) return
 
-  clearPoiMarkers()
+  const nextSignature = getPoiRenderSignature()
+  if (nextSignature === lastRenderedPoiSignature) {
+    return
+  }
 
-  poiMarkers = poiStore.poiList
-    .map((poi) => {
-      const position = getPoiMapPosition(poi)
-      if (!position) {
-        return null
-      }
+  if (poiCluster) {
+    poiCluster.setMap?.(null)
+    poiCluster = null
+  }
 
-      const marker = new AMapRef.Marker({
-        position,
-        title: poi.name,
-        anchor: 'center',
-        content: createPoiMarkerContent(),
-        offset: new AMapRef.Pixel(-9, -9),
-        topWhenClick: true
+  lastRenderedPoiSignature = nextSignature
+
+  if (!renderedPoiList.value.length) {
+  if (map && poiMarkers.length) {
+      poiMarkers.forEach((marker) => {
+        if (marker.__poiHoverTimer) {
+          window.clearTimeout(marker.__poiHoverTimer)
+          marker.__poiHoverTimer = null
+        }
       })
+      map.remove(poiMarkers)
+  }
+    poiMarkers = []
+    poiMarkerMap = new Map()
+    return
+  }
 
-      marker.on('click', () => {
-        clearMarkerFocusArtifacts()
-        selectedPOI.value = poi
-        showDetailDialog.value = true
-        mapStore.selectPOI(poi)
-        focusSelectedPoi(poi)
-      })
+  if (map) {
+    const { nextMarkers, staleMarkers } = syncPoiMarkerInstances()
 
-      return marker
-    })
-    .filter(Boolean)
+    if (staleMarkers.length) {
+      staleMarkers.forEach((marker) => hidePoiMarkerLabel(marker))
+      map.remove(staleMarkers)
+    }
 
-  if (poiMarkers.length) {
-    map.add(poiMarkers)
+    poiMarkers = nextMarkers
+    const markersToAdd = poiMarkers.filter((marker) => !marker.getMap?.())
+    if (markersToAdd.length) {
+      map.add(markersToAdd)
+    }
   }
 }
 
@@ -430,37 +869,21 @@ const handleDialogClosed = () => {
   mapStore.clearSelectedPOI()
 }
 
-const handleMapMove = async () => {
+const handleMapBoundsChange = () => {
   if (!map) return
+  scheduleBoundsFetch({ silent: true })
+}
 
-  syncMapCenterToStore()
-
-  const bounds = map.getBounds()
-  const southWest = bounds.getSouthWest()
-  const northEast = bounds.getNorthEast()
-  const convertedSouthWest = fromAmapCoordinate(southWest.getLat(), southWest.getLng())
-  const convertedNorthEast = fromAmapCoordinate(northEast.getLat(), northEast.getLng())
-
-  if (!convertedSouthWest || !convertedNorthEast) {
-    return
-  }
-
-  try {
-    await poiStore.fetchInBounds(
-      convertedSouthWest.lat,
-      convertedNorthEast.lat,
-      convertedSouthWest.lng,
-      convertedNorthEast.lng
-    )
-  } catch {
-    // 保持地图交互流畅，这里不打断用户操作。
-  }
+const handleResetToBounds = () => {
+  if (!map) return
+  scheduleBoundsFetch({ silent: true })
 }
 
 onMounted(async () => {
   try {
     await initMap()
-    await loadPOIs()
+    window.addEventListener('poi:reset-to-bounds', handleResetToBounds)
+    await loadInitialMapData()
     drawRoute()
   } catch (error) {
     sdkError.value = error.message || '高德地图初始化失败'
@@ -469,25 +892,35 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (boundsFetchTimer) {
+    window.clearTimeout(boundsFetchTimer)
+    boundsFetchTimer = null
+  }
+
   if (map) {
-    map.off('moveend', handleMapMove)
-    map.off('zoomend', syncMapCenterToStore)
+    map.off('moveend', handleMapBoundsChange)
+    map.off('zoomend', handleMapBoundsChange)
     map.off('click', handleMapClick)
     map.destroy()
     map = null
   }
 
+  window.removeEventListener('poi:reset-to-bounds', handleResetToBounds)
+
   poiMarkers = []
+  poiCluster = null
+  poiMarkerMap = new Map()
   routePolyline = null
   routeEndpointMarkers = []
+  lastRenderedPoiSignature = ''
+  poiLabelMarkers = new Map()
 })
 
 watch(
-  () => poiStore.poiList,
+  () => poiStore.visiblePoiList,
   () => {
     renderMarkers()
-  },
-  { deep: true }
+  }
 )
 
 watch(
@@ -547,6 +980,20 @@ watch(
     linear-gradient(180deg, #f8fafc, #e2e8f0);
 }
 
+:deep(.amap-marker-label) {
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+:deep(.amap-marker-label::before),
+:deep(.amap-marker-label::after) {
+  display: none !important;
+}
+
 .map-pick-tip {
   position: absolute;
   top: 20px;
@@ -558,6 +1005,28 @@ watch(
   color: #eff8fa;
   font-size: 13px;
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+}
+
+.map-toolbar {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.map-toolbar-button {
+  border-radius: 999px;
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.map-toolbar-button:hover {
+  background: rgba(255, 255, 255, 0.98);
 }
 
 .map-error {
@@ -587,6 +1056,22 @@ watch(
 
 .map-error p + p {
   margin-top: 6px;
+}
+
+.map-limit-tip {
+  position: absolute;
+  right: 20px;
+  bottom: 84px;
+  z-index: 1200;
+  max-width: 360px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 248, 235, 0.94);
+  color: #8a5a00;
+  font-size: 13px;
+  line-height: 1.6;
+  border: 1px solid rgba(217, 119, 6, 0.18);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
 }
 
 .poi-dialog-content {
@@ -680,6 +1165,13 @@ watch(
     left: 12px;
     right: 12px;
     bottom: 84px;
+    max-width: none;
+  }
+
+  .map-limit-tip {
+    left: 12px;
+    right: 12px;
+    bottom: 72px;
     max-width: none;
   }
 

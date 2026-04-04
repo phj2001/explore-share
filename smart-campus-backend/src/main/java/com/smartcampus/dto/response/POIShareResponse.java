@@ -2,6 +2,7 @@ package com.smartcampus.dto.response;
 
 import com.smartcampus.entity.POIShare;
 import com.smartcampus.security.UserRole;
+import com.smartcampus.util.ImageThumbnailUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class POIShareResponse {
     private Long poiId;
     private String content;
     private List<String> imageUrls;
+    private List<String> imageThumbnailUrls;
     private Long authorUserId;
     private String authorDisplayName;
     private String authorUsername;
@@ -45,11 +47,14 @@ public class POIShareResponse {
                 ? share.getUser().getDisplayName()
                 : share.getUser().getUsername();
 
+        List<String> imageUrls = share.getImages().stream().map(image -> image.getImageUrl()).toList();
+
         return new POIShareResponse(
                 share.getId(),
                 share.getPoi().getId(),
                 share.getContent(),
-                share.getImages().stream().map(image -> image.getImageUrl()).toList(),
+                imageUrls,
+                imageUrls.stream().map(ImageThumbnailUtils::resolveThumbnailUrl).toList(),
                 share.getUser().getId(),
                 displayName,
                 share.getUser().getUsername(),

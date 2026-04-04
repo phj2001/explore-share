@@ -1,7 +1,13 @@
 package com.smartcampus.controller;
 
+import com.smartcampus.dto.common.PageResponse;
 import com.smartcampus.dto.common.Result;
+import com.smartcampus.dto.response.POIBoundsResponse;
 import com.smartcampus.dto.response.POIImportResult;
+import com.smartcampus.dto.response.POIMapPointResponse;
+import com.smartcampus.dto.response.POIOptionResponse;
+import com.smartcampus.dto.response.POIQueryResponse;
+import com.smartcampus.dto.response.POIResponse;
 import com.smartcampus.entity.POI;
 import com.smartcampus.service.POIService;
 import lombok.RequiredArgsConstructor;
@@ -55,8 +61,30 @@ public class POIController {
      * GET /api/pois
      */
     @GetMapping
-    public Result<List<POI>> getAllPOIs() {
-        return Result.success(poiService.getAllPOIs());
+    public Result<POIQueryResponse> getAllPOIs(
+            @RequestParam(defaultValue = "300") Integer limit) {
+        return Result.success(poiService.getAllPOIs(limit));
+    }
+
+    @GetMapping("/page")
+    public Result<PageResponse<POIResponse>> getPOIPage(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size) {
+        return Result.success(poiService.getPOIPage(keyword, category, page, size));
+    }
+
+    @GetMapping("/count")
+    public Result<Long> countAllPOIs() {
+        return Result.success(poiService.countAllPOIs());
+    }
+
+    @GetMapping("/options")
+    public Result<List<POIOptionResponse>> getPOIOptions(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "20") Integer limit) {
+        return Result.success(poiService.searchOptions(keyword, limit));
     }
 
     /**
@@ -87,8 +115,10 @@ public class POIController {
      * GET /api/pois/search?name=xxx
      */
     @GetMapping("/search")
-    public Result<List<POI>> searchByName(@RequestParam String name) {
-        return Result.success(poiService.searchByName(name));
+    public Result<POIQueryResponse> searchByName(
+            @RequestParam String name,
+            @RequestParam(defaultValue = "300") Integer limit) {
+        return Result.success(poiService.getSearchResponse(name, null, limit));
     }
 
     /**
@@ -96,8 +126,10 @@ public class POIController {
      * GET /api/pois/category/{category}
      */
     @GetMapping("/category/{category}")
-    public Result<List<POI>> searchByCategory(@PathVariable String category) {
-        return Result.success(poiService.searchByCategory(category));
+    public Result<POIQueryResponse> searchByCategory(
+            @PathVariable String category,
+            @RequestParam(defaultValue = "300") Integer limit) {
+        return Result.success(poiService.getSearchResponse(null, category, limit));
     }
 
     /**
@@ -105,18 +137,11 @@ public class POIController {
      * GET /api/pois/search/advanced?name=xxx&category=xxx
      */
     @GetMapping("/search/advanced")
-    public Result<List<POI>> searchByNameAndCategory(
+    public Result<POIQueryResponse> searchByNameAndCategory(
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String category) {
-        if (name != null && category != null) {
-            return Result.success(poiService.searchByNameAndCategory(name, category));
-        } else if (name != null) {
-            return Result.success(poiService.searchByName(name));
-        } else if (category != null) {
-            return Result.success(poiService.searchByCategory(category));
-        } else {
-            return Result.success(poiService.getAllPOIs());
-        }
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "300") Integer limit) {
+        return Result.success(poiService.getSearchResponse(name, category, limit));
     }
 
     /**
@@ -124,12 +149,13 @@ public class POIController {
      * GET /api/pois/bounds?minLat=xxx&maxLat=xxx&minLng=xxx&maxLng=xxx
      */
     @GetMapping("/bounds")
-    public Result<List<POI>> findWithinBounds(
+    public Result<POIBoundsResponse> findWithinBounds(
             @RequestParam Double minLat,
             @RequestParam Double maxLat,
             @RequestParam Double minLng,
-            @RequestParam Double maxLng) {
-        return Result.success(poiService.findWithinBounds(minLat, maxLat, minLng, maxLng));
+            @RequestParam Double maxLng,
+            @RequestParam(defaultValue = "1200") Integer limit) {
+        return Result.success(poiService.getBoundsResponse(minLat, maxLat, minLng, maxLng, limit));
     }
 
     /**

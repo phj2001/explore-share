@@ -8,6 +8,7 @@ import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.AnnouncementRepository;
 import com.smartcampus.service.AdminAnnouncementService;
 import com.smartcampus.service.AdminOperationLogService;
+import com.smartcampus.util.ImageThumbnailUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,8 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
     private static final int MAX_CONTENT_LENGTH = 10000;
     private static final long MAX_COVER_SIZE = 5L * 1024 * 1024;
     private static final String IMAGE_URL_PREFIX = "/uploads/announcements/";
+    private static final int COVER_THUMB_MAX_WIDTH = 480;
+    private static final int COVER_THUMB_MAX_HEIGHT = 320;
 
     private final AnnouncementRepository announcementRepository;
     private final AdminOperationLogService adminOperationLogService;
@@ -360,7 +363,8 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
         }
 
         try {
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            Files.write(targetPath, bytes);
+            ImageThumbnailUtils.createThumbnailIfSupported(bytes, extension, targetPath, COVER_THUMB_MAX_WIDTH, COVER_THUMB_MAX_HEIGHT);
         } catch (IOException e) {
             throw new BusinessException(500, "公告封面保存失败");
         }
@@ -383,10 +387,7 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
             return;
         }
 
-        try {
-            Files.deleteIfExists(targetPath);
-        } catch (IOException ignored) {
-        }
+        ImageThumbnailUtils.deleteImageAndThumbnailQuietly(targetPath);
     }
 
     private String detectImageExtension(byte[] bytes) {

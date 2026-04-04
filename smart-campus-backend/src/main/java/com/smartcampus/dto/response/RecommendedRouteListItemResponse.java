@@ -2,6 +2,7 @@ package com.smartcampus.dto.response;
 
 import com.smartcampus.entity.RecommendedRoute;
 import com.smartcampus.entity.RecommendedRouteWaypoint;
+import com.smartcampus.util.ImageThumbnailUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ public class RecommendedRouteListItemResponse {
     private String recommendationText;
 
     private String coverImageUrl;
+    private String coverThumbnailUrl;
 
     private Integer sortOrder;
 
@@ -48,6 +50,7 @@ public class RecommendedRouteListItemResponse {
                 entity.getSummary(),
                 entity.getRecommendationText(),
                 entity.getCoverImageUrl(),
+                ImageThumbnailUtils.resolveThumbnailUrl(entity.getCoverImageUrl()),
                 entity.getSortOrder(),
                 entity.getDefaultMode(),
                 defaultModeLabel,

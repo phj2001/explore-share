@@ -32,6 +32,9 @@ public interface POIShareReplyRepository extends JpaRepository<POIShareReply, Lo
     @EntityGraph(attributePaths = {"user", "share"})
     List<POIShareReply> findTop3ByShareIdOrderByCreatedAtAscIdAsc(Long shareId);
 
+    @EntityGraph(attributePaths = {"user", "share"})
+    List<POIShareReply> findAllByShareIdInOrderByShareIdAscCreatedAtAscIdAsc(Collection<Long> shareIds);
+
     @EntityGraph(attributePaths = {"user", "share", "share.user", "share.poi"})
     List<POIShareReply> findAllByShareIdOrderByCreatedAtAscIdAsc(Long shareId);
 

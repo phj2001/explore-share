@@ -1,6 +1,7 @@
 package com.smartcampus.dto.response;
 
 import com.smartcampus.entity.RecommendedShare;
+import com.smartcampus.util.ImageThumbnailUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ public class AdminRecommendedShareListItemResponse {
     private String authorAvatarUrl;
     private String contentPreview;
     private String coverImageUrl;
+    private String coverThumbnailUrl;
     private Integer imageCount;
     private Long likeCount;
     private Long replyCount;
@@ -51,6 +53,7 @@ public class AdminRecommendedShareListItemResponse {
                 recommendedShare.getShare().getUser().getAvatarUrl(),
                 summarizeContent(recommendedShare.getShare().getContent(), 80),
                 coverImageUrl,
+                ImageThumbnailUtils.resolveThumbnailUrl(coverImageUrl),
                 recommendedShare.getShare().getImages().size(),
                 likeCount,
                 replyCount,

@@ -4,25 +4,39 @@
 
     <div class="main-content">
       <MapContainer />
-      <RecommendedShareSection />
-      <ActivitySection />
-      <RecommendedRouteSection />
+
+      <LazyMount min-height="520px">
+        <RecommendedShareSection />
+      </LazyMount>
+
+      <LazyMount min-height="520px">
+        <ActivitySection />
+      </LazyMount>
+
+      <LazyMount min-height="520px">
+        <RecommendedRouteSection />
+      </LazyMount>
     </div>
 
-    <AnnouncementSection />
+    <LazyMount min-height="0" root-margin="0px">
+      <AnnouncementSection />
+    </LazyMount>
 
     <Footer />
   </div>
 </template>
 
 <script setup>
+import { defineAsyncComponent } from 'vue'
+import LazyMount from '@/components/common/LazyMount.vue'
 import Header from '@/components/common/Header.vue'
 import Footer from '@/components/common/Footer.vue'
 import MapContainer from '@/components/map/MapContainer.vue'
-import AnnouncementSection from '@/components/announcement/AnnouncementSection.vue'
-import RecommendedShareSection from '@/components/recommendation/RecommendedShareSection.vue'
-import ActivitySection from '@/components/activity/ActivitySection.vue'
-import RecommendedRouteSection from '@/components/route/RecommendedRouteSection.vue'
+
+const AnnouncementSection = defineAsyncComponent(() => import('@/components/announcement/AnnouncementSection.vue'))
+const RecommendedShareSection = defineAsyncComponent(() => import('@/components/recommendation/RecommendedShareSection.vue'))
+const ActivitySection = defineAsyncComponent(() => import('@/components/activity/ActivitySection.vue'))
+const RecommendedRouteSection = defineAsyncComponent(() => import('@/components/route/RecommendedRouteSection.vue'))
 </script>
 
 <style scoped>

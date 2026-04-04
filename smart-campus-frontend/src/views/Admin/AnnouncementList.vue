@@ -82,7 +82,7 @@
             <div class="title-cell">
               <el-image
                 v-if="row.coverImageUrl"
-                :src="resolveAssetUrl(row.coverImageUrl)"
+                :src="resolveAssetUrl(row.coverThumbnailUrl || row.coverImageUrl)"
                 fit="cover"
                 class="cover-thumb"
               />

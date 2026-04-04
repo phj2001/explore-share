@@ -19,7 +19,8 @@
         <div class="card-cover-wrap">
           <el-image
             v-if="item.coverImageUrl"
-            :src="resolveAssetUrl(item.coverImageUrl)"
+            :src="resolveAssetUrl(item.coverThumbnailUrl || item.coverImageUrl)"
+            lazy
             fit="cover"
             class="card-cover"
           />
@@ -76,10 +77,11 @@ const loading = ref(false)
 const poiStore = usePOIStore()
 const mapStore = useMapStore()
 
-const loadRecommendations = async () => {
+const loadRecommendations = async (forceRefreshOrEvent = false) => {
+  const forceRefresh = forceRefreshOrEvent === true || typeof forceRefreshOrEvent === 'object'
   loading.value = true
   try {
-    recommendations.value = await getRecommendedShareList()
+    recommendations.value = await getRecommendedShareList(undefined, { forceRefresh })
   } catch (error) {
     ElMessage.error(error.message || '加载推荐内容失败')
   } finally {
@@ -89,7 +91,7 @@ const loadRecommendations = async () => {
 
 const focusPoi = async (item) => {
   try {
-    let poi = poiStore.poiList.find((candidate) => candidate.id === item.poiId)
+    let poi = poiStore.getCachedPOIById(item.poiId)
     if (!poi) {
       poi = await poiStore.fetchPOIById(item.poiId)
     }

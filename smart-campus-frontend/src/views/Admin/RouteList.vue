@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="route-page">
     <section class="page-hero">
       <div class="hero-copy">
@@ -70,7 +70,7 @@
         <el-table-column label="路线" min-width="360">
           <template #default="{ row }">
             <div class="route-main">
-              <el-image v-if="row.coverImageUrl" :src="resolveAssetUrl(row.coverImageUrl)" fit="cover" class="cover" />
+              <el-image v-if="row.coverImageUrl" :src="resolveAssetUrl(row.coverThumbnailUrl || row.coverImageUrl)" fit="cover" class="cover" />
               <div class="route-meta">
                 <strong>{{ row.title }}</strong>
                 <p>{{ row.summary }}</p>
@@ -179,7 +179,17 @@
         <el-form-item label="路线地点" prop="poiIds">
           <div class="editor">
             <div class="editor-bar">
-              <el-select v-model="selectedPoiIdToAdd" filterable clearable placeholder="选择一个地点加入路线" class="poi-picker">
+              <el-select
+                v-model="selectedPoiIdToAdd"
+                filterable
+                clearable
+                remote
+                reserve-keyword
+                placeholder="选择一个地点加入路线"
+                class="poi-picker"
+                :remote-method="handlePoiOptionSearch"
+                @visible-change="handlePoiSelectVisibleChange"
+              >
                 <el-option v-for="poi in availablePoiOptions" :key="poi.id" :label="poi.name" :value="poi.id" />
               </el-select>
               <el-button :icon="Plus" @click="handleAddPoi">添加地点</el-button>
@@ -244,7 +254,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, RefreshRight, Search } from '@element-plus/icons-vue'
 import { API_ORIGIN } from '@/utils/request'
-import { getAllPOIs } from '@/api/poi'
+import { getPOIOptions } from '@/api/poi'
 import {
   createAdminRecommendedRoute,
   deleteAdminRecommendedRoute,
@@ -256,6 +266,7 @@ import {
 
 const DRAFT_STATUS = 0
 const PUBLISHED_STATUS = 1
+const POI_OPTION_LIMIT = 20
 const modeOptions = [
   { label: '步行', value: 'walking' },
   { label: '驾车', value: 'driving' },
@@ -348,12 +359,37 @@ const getPoiById = (poiId) => poiOptions.value.find((item) => item.id === poiId)
 const getPoiName = (poiId) => getPoiById(poiId)?.name || `地点 #${poiId}`
 const getPoiCategory = (poiId) => getPoiById(poiId)?.category || '未分类'
 
-const loadPoiOptions = async () => {
+const mergePoiOptions = (items = []) => {
+  const optionMap = new Map(poiOptions.value.map((item) => [item.id, item]))
+  items.forEach((item) => {
+    if (item?.id != null) {
+      optionMap.set(item.id, item)
+    }
+  })
+  poiOptions.value = Array.from(optionMap.values())
+}
+
+const loadPoiOptions = async (keyword = '') => {
   try {
-    poiOptions.value = await getAllPOIs()
+    const data = await getPOIOptions({
+      keyword: keyword.trim() || undefined,
+      limit: POI_OPTION_LIMIT
+    })
+    mergePoiOptions(data || [])
   } catch (error) {
     ElMessage.error(error.message || '加载地点列表失败')
   }
+}
+
+const handlePoiOptionSearch = async (keyword) => {
+  await loadPoiOptions(keyword)
+}
+
+const handlePoiSelectVisibleChange = async (visible) => {
+  if (!visible || poiOptions.value.length) {
+    return
+  }
+  await loadPoiOptions()
 }
 
 const loadRoutes = async () => {
@@ -422,6 +458,11 @@ const fillForm = (detail) => {
   form.defaultMode = detail.defaultMode || 'walking'
   form.sortOrder = detail.sortOrder || 1
   form.poiIds = (detail.waypoints || []).map((item) => item.poiId)
+  mergePoiOptions((detail.waypoints || []).map((item) => ({
+    id: item.poiId,
+    name: item.poiName || `鍦扮偣 #${item.poiId}`,
+    category: item.poiCategory || ''
+  })))
   form.coverImage = null
   form.coverPreview = detail.coverImageUrl || ''
   form.removeCoverImage = false

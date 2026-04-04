@@ -4,7 +4,28 @@ import request from '@/utils/request.js'
  * 获取所有 POI
  */
 export const getAllPOIs = () => {
-  return request.get('/pois')
+  return request.get('/pois', {
+    params: { limit: 300 }
+  })
+}
+
+export const getPOIPage = (params = {}) => {
+  return request.get('/pois/page', {
+    params
+  })
+}
+
+export const getPOICount = () => {
+  return request.get('/pois/count')
+}
+
+/**
+ * 获取轻量 POI 选项
+ */
+export const getPOIOptions = (params = {}) => {
+  return request.get('/pois/options', {
+    params
+  })
 }
 
 /**
@@ -17,17 +38,19 @@ export const getPOIById = (id) => {
 /**
  * 搜索 POI（按名称）
  */
-export const searchPOIByName = (name) => {
+export const searchPOIByName = (name, limit = 300) => {
   return request.get('/pois/search', {
-    params: { name }
+    params: { name, limit }
   })
 }
 
 /**
  * 按分类获取 POI
  */
-export const getPOIsByCategory = (category) => {
-  return request.get(`/pois/category/${category}`)
+export const getPOIsByCategory = (category, limit = 300) => {
+  return request.get(`/pois/category/${category}`, {
+    params: { limit }
+  })
 }
 
 /**
@@ -40,9 +63,9 @@ export const advancedSearchPOI = (params) => {
 /**
  * 获取边界范围内的 POI
  */
-export const getPOIsInBounds = (minLat, maxLat, minLng, maxLng) => {
+export const getPOIsInBounds = (minLat, maxLat, minLng, maxLng, limit = 1200) => {
   return request.get('/pois/bounds', {
-    params: { minLat, maxLat, minLng, maxLng }
+    params: { minLat, maxLat, minLng, maxLng, limit }
   })
 }
 

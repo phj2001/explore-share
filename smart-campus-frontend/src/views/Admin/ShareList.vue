@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="share-page">
     <section class="page-hero">
       <div class="hero-copy">
@@ -35,8 +35,12 @@
           v-model="poiId"
           clearable
           filterable
+          remote
+          reserve-keyword
           placeholder="筛选所属地点"
           class="filter-select"
+          :remote-method="handlePoiOptionSearch"
+          @visible-change="handlePoiSelectVisibleChange"
           @change="handleSearch"
         >
           <el-option
@@ -334,7 +338,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { RefreshRight, Search } from '@element-plus/icons-vue'
-import { getAllPOIs } from '@/api/poi'
+import { getPOIOptions } from '@/api/poi'
 import {
   deleteAdminReply,
   deleteAdminShare,
@@ -345,6 +349,7 @@ import { API_ORIGIN } from '@/utils/request'
 
 const router = useRouter()
 const route = useRoute()
+const POI_OPTION_LIMIT = 20
 
 const keyword = ref('')
 const poiId = ref()
@@ -402,12 +407,37 @@ const heroStats = computed(() => {
   ]
 })
 
-const loadPois = async () => {
+const mergePoiOptions = (items = []) => {
+  const optionMap = new Map(poiOptions.value.map((item) => [item.id, item]))
+  items.forEach((item) => {
+    if (item?.id != null) {
+      optionMap.set(item.id, item)
+    }
+  })
+  poiOptions.value = Array.from(optionMap.values())
+}
+
+const loadPois = async (keyword = '') => {
   try {
-    poiOptions.value = await getAllPOIs()
+    const data = await getPOIOptions({
+      keyword: keyword.trim() || undefined,
+      limit: POI_OPTION_LIMIT
+    })
+    mergePoiOptions(data || [])
   } catch (error) {
     ElMessage.error(error.message || '加载地点列表失败')
   }
+}
+
+const handlePoiOptionSearch = async (keyword) => {
+  await loadPois(keyword)
+}
+
+const handlePoiSelectVisibleChange = async (visible) => {
+  if (!visible || poiOptions.value.length) {
+    return
+  }
+  await loadPois()
 }
 
 const loadShares = async () => {

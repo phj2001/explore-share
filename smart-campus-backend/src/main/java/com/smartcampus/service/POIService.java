@@ -1,6 +1,12 @@
 package com.smartcampus.service;
 
+import com.smartcampus.dto.common.PageResponse;
+import com.smartcampus.dto.response.POIBoundsResponse;
 import com.smartcampus.dto.response.POIImportResult;
+import com.smartcampus.dto.response.POIMapPointResponse;
+import com.smartcampus.dto.response.POIOptionResponse;
+import com.smartcampus.dto.response.POIQueryResponse;
+import com.smartcampus.dto.response.POIResponse;
 import com.smartcampus.entity.POI;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,7 +28,7 @@ public interface POIService {
     /**
      * 获取所有POI
      */
-    List<POI> getAllPOIs();
+    POIQueryResponse getAllPOIs(Integer limit);
 
     /**
      * 更新POI
@@ -49,15 +55,27 @@ public interface POIService {
      */
     List<POI> searchByNameAndCategory(String name, String category);
 
+    POIQueryResponse getSearchResponse(String name, String category, Integer limit);
+
     /**
      * 按坐标范围查询
      */
     List<POI> findWithinBounds(Double minLat, Double maxLat, Double minLng, Double maxLng);
 
+    List<POIMapPointResponse> findMapPointsWithinBounds(Double minLat, Double maxLat, Double minLng, Double maxLng, Integer limit);
+
+    POIBoundsResponse getBoundsResponse(Double minLat, Double maxLat, Double minLng, Double maxLng, Integer limit);
+
     /**
      * 获取所有分类
      */
     List<String> getAllCategories();
+
+    PageResponse<POIResponse> getPOIPage(String keyword, String category, Integer page, Integer size);
+
+    long countAllPOIs();
+
+    List<POIOptionResponse> searchOptions(String keyword, Integer limit);
 
     POIImportResult importFromCsv(MultipartFile file, boolean replaceExisting, boolean skipDuplicates);
 }

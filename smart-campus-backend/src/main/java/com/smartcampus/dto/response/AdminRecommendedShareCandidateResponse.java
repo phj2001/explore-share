@@ -1,6 +1,7 @@
 package com.smartcampus.dto.response;
 
 import com.smartcampus.entity.POIShare;
+import com.smartcampus.util.ImageThumbnailUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ public class AdminRecommendedShareCandidateResponse {
     private String authorAvatarUrl;
     private String contentPreview;
     private String coverImageUrl;
+    private String coverThumbnailUrl;
     private Integer imageCount;
     private Long likeCount;
     private Long replyCount;
@@ -50,6 +52,7 @@ public class AdminRecommendedShareCandidateResponse {
                 share.getUser().getAvatarUrl(),
                 summarizeContent(share.getContent(), 80),
                 coverImageUrl,
+                ImageThumbnailUtils.resolveThumbnailUrl(coverImageUrl),
                 share.getImages().size(),
                 likeCount,
                 replyCount,

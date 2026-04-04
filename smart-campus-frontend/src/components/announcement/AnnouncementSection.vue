@@ -151,6 +151,7 @@
           <el-image
             v-if="selectedAnnouncement.coverImageUrl"
             :src="resolveAssetUrl(selectedAnnouncement.coverImageUrl)"
+            lazy
             fit="cover"
             class="detail-cover"
           />
@@ -216,10 +217,11 @@ const loadPublicConfigs = async () => {
   }
 }
 
-const loadAnnouncements = async () => {
+const loadAnnouncements = async (forceRefreshOrEvent = false) => {
+  const forceRefresh = forceRefreshOrEvent === true || typeof forceRefreshOrEvent === 'object'
   loading.value = true
   try {
-    announcements.value = await getAnnouncementList()
+    announcements.value = await getAnnouncementList(undefined, { forceRefresh })
   } catch (error) {
     ElMessage.error(error.message || '加载公告失败')
   } finally {
@@ -273,8 +275,10 @@ const formatDate = (value) => {
 
 onMounted(async () => {
   window.addEventListener('resize', handleResize)
-  await loadPublicConfigs()
-  await loadAnnouncements()
+  await Promise.all([
+    loadPublicConfigs(),
+    loadAnnouncements()
+  ])
 })
 
 onBeforeUnmount(() => {

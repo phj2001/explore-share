@@ -15,7 +15,7 @@
       <div v-if="routes.length" class="route-grid">
         <article v-for="item in routes" :key="item.id" class="route-card">
           <div class="route-cover-wrap">
-            <img v-if="item.coverImageUrl" :src="resolveAssetUrl(item.coverImageUrl)" :alt="item.title" class="route-cover">
+            <img v-if="item.coverImageUrl" :src="resolveAssetUrl(item.coverThumbnailUrl || item.coverImageUrl)" :alt="item.title" class="route-cover" loading="lazy">
             <div v-else class="route-cover route-cover-fallback">
               <span>{{ item.defaultModeLabel }}</span>
             </div>
@@ -62,6 +62,7 @@
             :src="resolveAssetUrl(selectedRoute.coverImageUrl)"
             :alt="selectedRoute.title"
             class="detail-cover"
+            loading="lazy"
           >
 
           <div class="detail-copy">
@@ -136,10 +137,11 @@ const getRouteTempoLabel = (item) => {
   return '轻量路线'
 }
 
-const loadRoutes = async () => {
+const loadRoutes = async (forceRefreshOrEvent = false) => {
+  const forceRefresh = forceRefreshOrEvent === true || typeof forceRefreshOrEvent === 'object'
   loading.value = true
   try {
-    routes.value = await getRecommendedRouteList({ limit: 4 })
+    routes.value = await getRecommendedRouteList({ limit: 4 }, { forceRefresh })
   } catch (error) {
     ElMessage.error(error.message || '加载推荐路线失败')
   } finally {

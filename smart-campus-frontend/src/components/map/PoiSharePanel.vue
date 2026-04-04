@@ -69,10 +69,10 @@
     <el-skeleton v-if="loading && !shares.length" :rows="4" animated />
 
     <div v-else-if="shares.length" class="share-list">
-      <article v-for="share in shares" :key="share.id" class="share-card">
-        <div class="share-card-head">
-          <div class="author-block">
-            <el-avatar :size="42" :src="resolveMediaUrl(share.authorAvatarUrl) || undefined" class="author-avatar">
+          <article v-for="share in shares" :key="share.id" class="share-card">
+            <div class="share-card-head">
+              <div class="author-block">
+            <el-avatar :size="42" :src="share.authorAvatarResolvedUrl || undefined" class="author-avatar">
               {{ (share.authorDisplayName || share.authorUsername || 'U').slice(0, 1).toUpperCase() }}
             </el-avatar>
             <div class="author-meta">
@@ -80,7 +80,7 @@
                 <strong>{{ share.authorDisplayName }}</strong>
                 <span class="author-username">@{{ share.authorUsername }}</span>
               </div>
-              <time>{{ formatTime(share.createdAt) }}</time>
+              <time>{{ share.formattedCreatedAt }}</time>
             </div>
           </div>
 
@@ -107,12 +107,12 @@
 
         <p v-if="share.content" class="share-content">{{ share.content }}</p>
 
-        <div v-if="share.imageUrls?.length" class="share-images">
+        <div v-if="share.displayImageUrls?.length" class="share-images">
           <el-image
-            v-for="imageUrl in share.imageUrls"
-            :key="imageUrl"
-            :src="resolveMediaUrl(imageUrl)"
-            :preview-src-list="share.imageUrls.map(resolveMediaUrl)"
+            v-for="(imageUrl, index) in share.displayImageUrls"
+            :key="share.imagePreviewUrls?.[index] || imageUrl"
+            :src="imageUrl"
+            :preview-src-list="share.imagePreviewUrls"
             fit="cover"
             preview-teleported
             class="share-image"
@@ -137,14 +137,14 @@
           <div v-if="share.replies.length" class="reply-list">
             <div v-for="reply in share.replies" :key="reply.id" class="reply-item">
               <div class="reply-main">
-                <el-avatar :size="32" :src="resolveMediaUrl(reply.authorAvatarUrl) || undefined" class="reply-avatar">
+                <el-avatar :size="32" :src="reply.authorAvatarResolvedUrl || undefined" class="reply-avatar">
                   {{ (reply.authorDisplayName || reply.authorUsername || 'U').slice(0, 1).toUpperCase() }}
                 </el-avatar>
                 <div class="reply-body">
                   <div class="reply-meta">
                     <strong>{{ reply.authorDisplayName }}</strong>
                     <span class="author-username">@{{ reply.authorUsername }}</span>
-                    <time>{{ formatTime(reply.createdAt) }}</time>
+                    <time>{{ reply.formattedCreatedAt }}</time>
                   </div>
                   <p>{{ reply.content }}</p>
                 </div>
@@ -286,6 +286,16 @@ import { REPORT_REASON_OPTIONS, REPORT_REASON_OTHER } from '@/constants/contentR
 import { useUserStore } from '@/stores/user'
 import { API_ORIGIN } from '@/utils/request'
 
+const SHARE_PAGE_SIZE = 10
+const REPLY_PAGE_SIZE = 10
+const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit'
+})
+
 const props = defineProps({
   poi: {
     type: Object,
@@ -319,6 +329,7 @@ const reportReasonDetail = ref('')
 
 const currentDisplayName = computed(() => userStore.displayName || userStore.username || '当前用户')
 const currentUserId = computed(() => userStore.userInfo?.id ?? null)
+const shareCacheKeySuffix = computed(() => currentUserId.value ?? 'guest')
 const totalText = computed(() => `共 ${total.value} 条地点打卡`)
 
 const resolveMediaUrl = (value) => {
@@ -338,29 +349,42 @@ const formatTime = (value) => {
     return ''
   }
 
-  return new Intl.DateTimeFormat('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(value))
+  return dateTimeFormatter.format(new Date(value))
 }
 
-const createShareState = (share) => ({
-  ...share,
-  likeCount: share.likeCount || 0,
-  likedByCurrentUser: Boolean(share.likedByCurrentUser),
-  replyCount: share.replyCount || 0,
-  replies: [...(share.previewReplies || [])],
-  replyHasMore: (share.replyCount || 0) > (share.previewReplies?.length || 0),
-  replyComposerVisible: false,
-  replyDraft: '',
-  likeLoading: false,
-  replyLoading: false,
-  replySubmitting: false,
-  replyDeletingId: null
+const createReplyState = (reply) => ({
+  ...reply,
+  authorAvatarResolvedUrl: resolveMediaUrl(reply.authorAvatarUrl),
+  formattedCreatedAt: formatTime(reply.createdAt)
 })
+
+const createShareState = (share) => {
+  const previewReplies = (share.previewReplies || []).map(createReplyState)
+  const imagePreviewUrls = (share.imageUrls || []).map(resolveMediaUrl)
+
+  return {
+    ...share,
+    likeCount: share.likeCount || 0,
+    likedByCurrentUser: Boolean(share.likedByCurrentUser),
+    replyCount: share.replyCount || 0,
+    authorAvatarResolvedUrl: resolveMediaUrl(share.authorAvatarUrl),
+    formattedCreatedAt: formatTime(share.createdAt),
+    imagePreviewUrls,
+    displayImageUrls: (share.imageUrls || []).map((imageUrl, index) =>
+      resolveMediaUrl(share.imageThumbnailUrls?.[index] || imageUrl)
+    ),
+    replies: previewReplies,
+    replyHasMore: (share.replyCount || 0) > previewReplies.length,
+    replyHydrated: (share.replyCount || 0) <= previewReplies.length,
+    replyNextPage: 1,
+    replyComposerVisible: false,
+    replyDraft: '',
+    likeLoading: false,
+    replyLoading: false,
+    replySubmitting: false,
+    replyDeletingId: null
+  }
+}
 
 const clearUploadFiles = () => {
   uploadFileList.value.forEach((file) => {
@@ -453,7 +477,7 @@ const applySharePage = (data, reset = false) => {
   hasMore.value = Boolean(data.hasMore)
 }
 
-const loadShares = async (reset = false) => {
+const loadShares = async (reset = false, options = {}) => {
   if (!props.poi?.id) {
     return
   }
@@ -463,7 +487,14 @@ const loadShares = async (reset = false) => {
   loadingRef.value = true
 
   try {
-    const data = await getPoiSharePage(props.poi.id, { page: nextPage, size: 10 })
+    const data = await getPoiSharePage(
+      props.poi.id,
+      { page: nextPage, size: SHARE_PAGE_SIZE },
+      {
+        forceRefresh: Boolean(options.forceRefresh),
+        cacheKeySuffix: shareCacheKeySuffix.value
+      }
+    )
     applySharePage(data, reset)
   } catch (error) {
     ElMessage.error(error.message || '加载打卡内容失败')
@@ -476,23 +507,53 @@ const loadMore = async () => {
   await loadShares(false)
 }
 
-const refreshReplies = async (share, size) => {
+const refreshReplies = async (share, options = {}) => {
+  const { forceRefresh = true } = options
   share.replyLoading = true
   try {
-    const data = await getPoiShareReplies(share.id, { page: 0, size })
-    share.replies = data.records || []
+    const data = await getPoiShareReplies(
+      share.id,
+      { page: 0, size: REPLY_PAGE_SIZE },
+      {
+        forceRefresh,
+        cacheKeySuffix: shareCacheKeySuffix.value
+      }
+    )
+    share.replies = (data.records || []).map(createReplyState)
     share.replyCount = data.total || 0
     share.replyHasMore = Boolean(data.hasMore)
+    share.replyHydrated = true
+    share.replyNextPage = 1
   } finally {
     share.replyLoading = false
   }
 }
 
 const loadMoreReplies = async (share) => {
-  const nextSize = Math.min((share.replies.length || 0) + 10, share.replyCount || (share.replies.length || 0) + 10)
+  if (share.replyLoading || !share.replyHasMore) {
+    return
+  }
   try {
-    await refreshReplies(share, Math.max(nextSize, 3))
+    if (!share.replyHydrated) {
+      await refreshReplies(share, { forceRefresh: false })
+      return
+    }
+    share.replyLoading = true
+    const data = await getPoiShareReplies(
+      share.id,
+      { page: share.replyNextPage, size: REPLY_PAGE_SIZE },
+      {
+        forceRefresh: false,
+        cacheKeySuffix: shareCacheKeySuffix.value
+      }
+    )
+    share.replies = [...share.replies, ...(data.records || []).map(createReplyState)]
+    share.replyCount = data.total || share.replyCount || 0
+    share.replyHasMore = Boolean(data.hasMore)
+    share.replyNextPage += 1
+    share.replyLoading = false
   } catch (error) {
+    share.replyLoading = false
     ElMessage.error(error.message || '加载回复失败')
   }
 }
@@ -508,14 +569,16 @@ const submitShare = async () => {
 
   submitting.value = true
   try {
-    await createPoiShare(props.poi.id, {
+    const createdShare = await createPoiShare(props.poi.id, {
       content: trimmedContent,
       images
     })
     ElMessage.success('打卡发布成功')
     shareContent.value = ''
     clearUploadFiles()
-    await loadShares(true)
+    shares.value = [createShareState(createdShare), ...shares.value]
+    total.value += 1
+    hasMore.value = shares.value.length < total.value
   } catch (error) {
     ElMessage.error(error.message || '打卡发布失败')
   } finally {
@@ -539,6 +602,7 @@ const removeShare = async (share) => {
     await deletePoiShare(share.id)
     shares.value = shares.value.filter((item) => item.id !== share.id)
     total.value = Math.max(total.value - 1, 0)
+    hasMore.value = shares.value.length < total.value
     ElMessage.success('打卡已删除')
   } catch (error) {
     ElMessage.error(error.message || '删除打卡失败')
@@ -640,7 +704,7 @@ const toggleReplyComposer = async (share) => {
   share.replyComposerVisible = !share.replyComposerVisible
   if (share.replyComposerVisible && !share.replies.length && share.replyCount > 0) {
     try {
-      await refreshReplies(share, 3)
+      await refreshReplies(share, { forceRefresh: false })
     } catch (error) {
       ElMessage.error(error.message || '加载回复失败')
     }
@@ -659,7 +723,7 @@ const submitReply = async (share) => {
     await createPoiShareReply(share.id, { content })
     share.replyDraft = ''
     share.replyComposerVisible = true
-    await refreshReplies(share, Math.max(share.replyCount + 1, 3))
+    await refreshReplies(share)
     ElMessage.success('回复发送成功')
   } catch (error) {
     ElMessage.error(error.message || '回复发送失败')
@@ -687,9 +751,10 @@ const removeReply = async (share, reply) => {
       share.replies = []
       share.replyCount = 0
       share.replyHasMore = false
+      share.replyHydrated = true
+      share.replyNextPage = 1
     } else {
-      const nextSize = Math.min(Math.max(share.replies.length - 1, Math.min(3, nextTotal)), nextTotal)
-      await refreshReplies(share, nextSize)
+      await refreshReplies(share)
     }
     ElMessage.success('回复已删除')
   } catch (error) {

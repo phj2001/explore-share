@@ -18,7 +18,8 @@
       >
         <el-image
           v-if="item.coverImageUrl"
-          :src="resolveAssetUrl(item.coverImageUrl)"
+          :src="resolveAssetUrl(item.coverThumbnailUrl || item.coverImageUrl)"
+          lazy
           fit="cover"
           class="card-cover"
         />
@@ -58,6 +59,7 @@
           <el-image
             v-if="selectedActivity.coverImageUrl"
             :src="resolveAssetUrl(selectedActivity.coverImageUrl)"
+            lazy
             fit="cover"
             class="detail-cover"
           />
@@ -117,10 +119,11 @@ const selectedActivity = ref(null)
 const poiStore = usePOIStore()
 const mapStore = useMapStore()
 
-const loadActivities = async () => {
+const loadActivities = async (forceRefreshOrEvent = false) => {
+  const forceRefresh = forceRefreshOrEvent === true || typeof forceRefreshOrEvent === 'object'
   loading.value = true
   try {
-    activities.value = await getActivityList({ limit: 4 })
+    activities.value = await getActivityList({ limit: 4 }, { forceRefresh })
   } catch (error) {
     ElMessage.error(error.message || '加载活动失败')
   } finally {
@@ -144,7 +147,7 @@ const openDetail = async (activityId) => {
 
 const focusPoi = async (activity) => {
   try {
-    let poi = poiStore.poiList.find((candidate) => candidate.id === activity.poiId)
+    let poi = poiStore.getCachedPOIById(activity.poiId)
     if (!poi) {
       poi = await poiStore.fetchPOIById(activity.poiId)
     }

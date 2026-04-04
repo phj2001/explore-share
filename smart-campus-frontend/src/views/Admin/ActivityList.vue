@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="activity-page">
     <section class="page-hero">
       <div class="hero-copy">
@@ -36,7 +36,18 @@
           <el-option :value="PUBLISHED_STATUS" label="已发布" />
         </el-select>
 
-        <el-select v-model="poiIdFilter" clearable filterable class="filter-select" placeholder="筛选关联地点" @change="handleSearch">
+        <el-select
+          v-model="poiIdFilter"
+          clearable
+          filterable
+          remote
+          reserve-keyword
+          class="filter-select"
+          placeholder="筛选关联地点"
+          :remote-method="handlePoiOptionSearch"
+          @visible-change="handlePoiSelectVisibleChange"
+          @change="handleSearch"
+        >
           <el-option v-for="poi in poiOptions" :key="poi.id" :label="poi.name" :value="poi.id" />
         </el-select>
 
@@ -91,7 +102,7 @@
             <div class="title-cell">
               <el-image
                 v-if="row.coverImageUrl"
-                :src="resolveAssetUrl(row.coverImageUrl)"
+                :src="resolveAssetUrl(row.coverThumbnailUrl || row.coverImageUrl)"
                 fit="cover"
                 class="cover-thumb"
               />
@@ -257,7 +268,17 @@
         </el-form-item>
 
         <el-form-item label="关联地点">
-          <el-select v-model="form.poiId" clearable filterable placeholder="可选关联一个地点" style="width: 100%">
+          <el-select
+            v-model="form.poiId"
+            clearable
+            filterable
+            remote
+            reserve-keyword
+            placeholder="可选关联一个地点"
+            style="width: 100%"
+            :remote-method="handlePoiOptionSearch"
+            @visible-change="handlePoiSelectVisibleChange"
+          >
             <el-option v-for="poi in poiOptions" :key="poi.id" :label="poi.name" :value="poi.id" />
           </el-select>
         </el-form-item>
@@ -334,11 +355,12 @@ import {
   updateAdminActivity,
   updateAdminActivityPublishStatus
 } from '@/api/adminActivity'
-import { getAllPOIs } from '@/api/poi'
+import { getPOIOptions } from '@/api/poi'
 import { API_ORIGIN } from '@/utils/request'
 
 const DRAFT_STATUS = 0
 const PUBLISHED_STATUS = 1
+const POI_OPTION_LIMIT = 20
 
 const route = useRoute()
 
@@ -424,12 +446,44 @@ const heroStats = computed(() => {
   ]
 })
 
-const loadPoiOptions = async () => {
+const mergePoiOptions = (items = []) => {
+  const optionMap = new Map(poiOptions.value.map((item) => [item.id, item]))
+  items.forEach((item) => {
+    if (item?.id != null) {
+      optionMap.set(item.id, item)
+    }
+  })
+  poiOptions.value = Array.from(optionMap.values())
+}
+
+const ensurePoiOption = (option) => {
+  if (!option?.id) {
+    return
+  }
+  mergePoiOptions([option])
+}
+
+const loadPoiOptions = async (keyword = '') => {
   try {
-    poiOptions.value = await getAllPOIs()
+    const data = await getPOIOptions({
+      keyword: keyword.trim() || undefined,
+      limit: POI_OPTION_LIMIT
+    })
+    mergePoiOptions(data || [])
   } catch (error) {
     ElMessage.error(error.message || '加载地点列表失败')
   }
+}
+
+const handlePoiOptionSearch = async (keyword) => {
+  await loadPoiOptions(keyword)
+}
+
+const handlePoiSelectVisibleChange = async (visible) => {
+  if (!visible || poiOptions.value.length) {
+    return
+  }
+  await loadPoiOptions()
 }
 
 const loadActivities = async () => {
@@ -532,6 +586,15 @@ const fillForm = (detail) => {
   form.coverImage = null
   form.coverPreview = detail.coverImageUrl || ''
   form.removeCoverImage = false
+  ensurePoiOption(
+    detail.poiId
+      ? {
+          id: detail.poiId,
+          name: detail.poiName || `鍦扮偣 #${detail.poiId}`,
+          category: detail.poiCategory || ''
+        }
+      : null
+  )
   coverFileList.value = detail.coverImageUrl
     ? [{ name: 'current-cover', url: resolveAssetUrl(detail.coverImageUrl) }]
     : []

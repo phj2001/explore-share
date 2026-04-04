@@ -1,12 +1,23 @@
 package com.smartcampus.service.impl;
 
+import com.smartcampus.dto.common.PageResponse;
+import com.smartcampus.dto.response.POIBoundsResponse;
 import com.smartcampus.dto.response.POIImportResult;
 import com.smartcampus.dto.response.POIImportRowError;
+import com.smartcampus.dto.response.POIMapPointResponse;
+import com.smartcampus.dto.response.POIOptionResponse;
+import com.smartcampus.dto.response.POIQueryResponse;
+import com.smartcampus.dto.response.POIResponse;
 import com.smartcampus.entity.POI;
 import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.POIRepository;
 import com.smartcampus.service.POIService;
 import lombok.RequiredArgsConstructor;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -33,6 +44,14 @@ import java.util.Set;
 public class POIServiceImpl implements POIService {
 
     private static final int MAX_ERROR_ROWS = 20;
+    private static final int DEFAULT_OPTION_LIMIT = 20;
+    private static final int MAX_OPTION_LIMIT = 50;
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final int DEFAULT_MAP_POINT_LIMIT = 1200;
+    private static final int MAX_MAP_POINT_LIMIT = 2000;
+    private static final int DEFAULT_SEARCH_RESULT_LIMIT = 300;
+    private static final int MAX_SEARCH_RESULT_LIMIT = 800;
     private static final Set<String> NAME_HEADERS = Set.of("name", "名称", "poi名称", "地点名称");
     private static final Set<String> CATEGORY_HEADERS = Set.of("category", "分类", "类别");
     private static final Set<String> DESCRIPTION_HEADERS = Set.of("description", "描述", "简介", "说明");
@@ -56,8 +75,16 @@ public class POIServiceImpl implements POIService {
     }
 
     @Override
-    public List<POI> getAllPOIs() {
-        return poiRepository.findAll();
+    public POIQueryResponse getAllPOIs(Integer limit) {
+        int safeLimit = normalizeSearchResultLimit(limit);
+        PageRequest pageable = PageRequest.of(0, safeLimit);
+        long total = poiRepository.count();
+
+        List<POIMapPointResponse> records = poiRepository.findAllMapPointFields(pageable).stream()
+                .map(this::toMapPointResponse)
+                .toList();
+
+        return new POIQueryResponse(records, total, safeLimit, total > safeLimit);
     }
 
     @Override
@@ -96,13 +123,116 @@ public class POIServiceImpl implements POIService {
     }
 
     @Override
+    public POIQueryResponse getSearchResponse(String name, String category, Integer limit) {
+        int safeLimit = normalizeSearchResultLimit(limit);
+        PageRequest pageable = PageRequest.of(0, safeLimit, Sort.by(Sort.Direction.ASC, "name").and(Sort.by(Sort.Direction.ASC, "id")));
+
+        boolean hasKeyword = StringUtils.hasText(name);
+        boolean hasCategory = StringUtils.hasText(category);
+
+        List<POI> pois;
+        long total;
+
+        if (hasKeyword && hasCategory) {
+            String normalizedName = name.trim();
+            String normalizedCategory = category.trim();
+            pois = poiRepository.findByNameContainingIgnoreCaseAndCategoryOrderByNameAsc(normalizedName, normalizedCategory, pageable);
+            total = poiRepository.countByNameContainingIgnoreCaseAndCategory(normalizedName, normalizedCategory);
+        } else if (hasKeyword) {
+            String normalizedName = name.trim();
+            pois = poiRepository.findByNameContainingIgnoreCaseOrderByNameAsc(normalizedName, pageable);
+            total = poiRepository.countByNameContainingIgnoreCase(normalizedName);
+        } else if (hasCategory) {
+            String normalizedCategory = category.trim();
+            pois = poiRepository.findByCategoryOrderByNameAsc(normalizedCategory, pageable);
+            total = poiRepository.countByCategory(normalizedCategory);
+        } else {
+            return new POIQueryResponse(List.of(), 0, safeLimit, false);
+        }
+
+        return new POIQueryResponse(
+                pois.stream().map(this::toMapPointResponse).toList(),
+                total,
+                safeLimit,
+                total > safeLimit
+        );
+    }
+
+    @Override
     public List<POI> findWithinBounds(Double minLat, Double maxLat, Double minLng, Double maxLng) {
         return poiRepository.findWithinBounds(minLat, maxLat, minLng, maxLng);
     }
 
     @Override
+    public List<POIMapPointResponse> findMapPointsWithinBounds(Double minLat, Double maxLat, Double minLng, Double maxLng, Integer limit) {
+        int safeLimit = normalizeMapPointLimit(limit);
+        PageRequest pageable = PageRequest.of(0, safeLimit);
+
+        return poiRepository.findWithinBounds(minLat, maxLat, minLng, maxLng, pageable).stream()
+                .map(this::toMapPointResponse)
+                .toList();
+    }
+
+    @Override
+    public POIBoundsResponse getBoundsResponse(Double minLat, Double maxLat, Double minLng, Double maxLng, Integer limit) {
+        int safeLimit = normalizeMapPointLimit(limit);
+        long total = poiRepository.countWithinBounds(minLat, maxLat, minLng, maxLng);
+        List<POIMapPointResponse> records = findMapPointsWithinBounds(minLat, maxLat, minLng, maxLng, safeLimit);
+
+        return new POIBoundsResponse(records, total, safeLimit, total > safeLimit);
+    }
+
+    @Override
     public List<String> getAllCategories() {
         return poiRepository.findAllCategories();
+    }
+
+    @Override
+    public PageResponse<POIResponse> getPOIPage(String keyword, String category, Integer page, Integer size) {
+        int pageNo = Math.max(page == null ? 0 : page, 0);
+        int pageSize = Math.min(Math.max(size == null ? DEFAULT_PAGE_SIZE : size, 1), MAX_PAGE_SIZE);
+        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.ASC, "id"));
+
+        Page<POI> result = poiRepository.findAll((root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (StringUtils.hasText(keyword)) {
+                predicates.add(cb.like(cb.lower(root.get("name")), "%" + keyword.trim().toLowerCase(Locale.ROOT) + "%"));
+            }
+
+            if (StringUtils.hasText(category)) {
+                predicates.add(cb.equal(root.get("category"), category.trim()));
+            }
+
+            return predicates.isEmpty()
+                    ? cb.conjunction()
+                    : cb.and(predicates.toArray(new Predicate[0]));
+        }, pageable);
+
+        List<POIResponse> records = result.getContent().stream()
+                .map(this::toPOIResponse)
+                .toList();
+
+        return new PageResponse<>(records, result.getNumber(), result.getSize(), result.getTotalElements(), result.hasNext());
+    }
+
+    @Override
+    public long countAllPOIs() {
+        return poiRepository.count();
+    }
+
+    @Override
+    public List<POIOptionResponse> searchOptions(String keyword, Integer limit) {
+        int safeLimit = normalizeOptionLimit(limit);
+        PageRequest pageable = PageRequest.of(0, safeLimit);
+
+        List<POI> pois = StringUtils.hasText(keyword)
+                ? poiRepository.findByNameContainingIgnoreCaseOrderByNameAsc(keyword.trim(), pageable)
+                : poiRepository.findAllByOrderByNameAsc(pageable);
+
+        return pois.stream()
+                .map(poi -> new POIOptionResponse(poi.getId(), poi.getName(), poi.getCategory()))
+                .toList();
     }
 
     @Override
@@ -199,6 +329,62 @@ public class POIServiceImpl implements POIService {
         if (poi.getDescription() != null) {
             poi.setDescription(poi.getDescription().trim());
         }
+    }
+
+    private int normalizeOptionLimit(Integer limit) {
+        if (limit == null) {
+            return DEFAULT_OPTION_LIMIT;
+        }
+        return Math.max(1, Math.min(limit, MAX_OPTION_LIMIT));
+    }
+
+    private int normalizeSearchResultLimit(Integer limit) {
+        if (limit == null) {
+            return DEFAULT_SEARCH_RESULT_LIMIT;
+        }
+        return Math.max(50, Math.min(limit, MAX_SEARCH_RESULT_LIMIT));
+    }
+
+    private int normalizeMapPointLimit(Integer limit) {
+        if (limit == null) {
+            return DEFAULT_MAP_POINT_LIMIT;
+        }
+        return Math.max(100, Math.min(limit, MAX_MAP_POINT_LIMIT));
+    }
+
+    private POIResponse toPOIResponse(POI poi) {
+        return new POIResponse(
+                poi.getId(),
+                poi.getName(),
+                poi.getCategory(),
+                poi.getDescription(),
+                poi.getLatitude(),
+                poi.getLongitude(),
+                poi.getCreatedAt(),
+                poi.getUpdatedAt()
+        );
+    }
+
+    private POIMapPointResponse toMapPointResponse(POI poi) {
+        return new POIMapPointResponse(
+                poi.getId(),
+                poi.getName(),
+                poi.getCategory(),
+                poi.getDescription(),
+                poi.getLatitude(),
+                poi.getLongitude()
+        );
+    }
+
+    private POIMapPointResponse toMapPointResponse(Object[] row) {
+        return new POIMapPointResponse(
+                ((Number) row[0]).longValue(),
+                (String) row[1],
+                (String) row[2],
+                (String) row[3],
+                (BigDecimal) row[4],
+                (BigDecimal) row[5]
+        );
     }
 
     private void validateImportFile(MultipartFile file) {
@@ -381,7 +567,7 @@ public class POIServiceImpl implements POIService {
     }
 
     private Set<String> loadExistingSignatures() {
-        return poiRepository.findAll().stream()
+        return poiRepository.findAllSignatureFields().stream()
                 .map(this::buildSignature)
                 .collect(HashSet::new, HashSet::add, HashSet::addAll);
     }
@@ -392,6 +578,17 @@ public class POIServiceImpl implements POIService {
         return String.join("|",
                 normalizeSignaturePart(poi.getName()),
                 normalizeSignaturePart(poi.getCategory()),
+                latitude,
+                longitude
+        );
+    }
+
+    private String buildSignature(Object[] row) {
+        String latitude = row[2] == null ? "" : ((BigDecimal) row[2]).stripTrailingZeros().toPlainString();
+        String longitude = row[3] == null ? "" : ((BigDecimal) row[3]).stripTrailingZeros().toPlainString();
+        return String.join("|",
+                normalizeSignaturePart((String) row[0]),
+                normalizeSignaturePart((String) row[1]),
                 latitude,
                 longitude
         );

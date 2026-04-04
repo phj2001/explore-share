@@ -5,7 +5,7 @@
         <span class="hero-kicker">地点管理</span>
         <h1>统一维护地点名称、分类、坐标与基础说明信息</h1>
         <p>
-          这里集中管理地图上的全部地点数据，支持按名称和分类快速筛选，并直接进入新增、编辑、删除和批量导入流程。
+          这里集中管理地图中的 POI 数据，支持按名称与分类筛选，并可直接进行新增、编辑、删除和批量导入。
         </p>
       </div>
 
@@ -13,12 +13,12 @@
         <article class="hero-stat">
           <span>地点总数</span>
           <strong>{{ totalAll }}</strong>
-          <em>当前系统中已录入的地点数量</em>
+          <em>当前系统中已录入的全部地点数量</em>
         </article>
         <article class="hero-stat">
           <span>筛选结果</span>
           <strong>{{ total }}</strong>
-          <em>符合当前检索条件的地点数量</em>
+          <em>符合当前筛选条件的地点数量</em>
         </article>
         <article class="hero-stat">
           <span>分类总数</span>
@@ -84,10 +84,10 @@
           <span class="panel-kicker">地点列表</span>
           <h2>当前地点数据</h2>
         </div>
-        <span class="panel-note">按 ID 升序展示，支持编辑、删除和批量导入更新</span>
+        <span class="panel-note">采用服务端分页加载，避免全量 POI 导致后台卡顿</span>
       </div>
 
-      <el-table :data="pagedPOIList" v-loading="poiStore.isLoading" stripe>
+      <el-table :data="pagedPOIList" v-loading="loading" stripe>
         <template #empty>
           <el-empty description="当前条件下暂无地点数据">
             <el-button type="primary" plain @click="resetFilters">清空筛选</el-button>
@@ -154,13 +154,13 @@
       <div class="import-dialog">
         <el-alert type="info" show-icon :closable="false">
           <template #title>
-            仅支持 UTF-8 编码的 CSV 文件。必填列为 `name/名称`、`latitude/纬度`、`longitude/经度`，
-            可选列为 `category/分类`、`description/描述`。
+            仅支持 UTF-8 编码的 CSV 文件。必填列为 `name/名称`、`latitude/纬度`、`longitude/经度`，可选列为
+            `category/分类`、`description/描述`。
           </template>
         </el-alert>
 
         <div class="import-template-row">
-          <span>推荐先下载模板，再按模板整理数据。</span>
+          <span>建议先下载模板，再按模板整理数据。</span>
           <a class="template-link" href="/templates/poi-import-template.csv" download>
             <el-button text type="primary" :icon="Download">下载 CSV 模板</el-button>
           </a>
@@ -256,7 +256,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Plus, RefreshRight, Search, Upload } from '@element-plus/icons-vue'
-import { importPOIs } from '@/api/poi'
+import { deletePOI, getPOICount, getPOIPage, importPOIs } from '@/api/poi'
 import { usePOIStore } from '@/stores/poi'
 
 const router = useRouter()
@@ -267,6 +267,10 @@ const searchText = ref('')
 const selectedCategory = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
+const pagedPOIList = ref([])
+const total = ref(0)
+const totalAll = ref(0)
+const loading = ref(false)
 
 const importDialogVisible = ref(false)
 const importing = ref(false)
@@ -277,50 +281,64 @@ const importFile = ref(null)
 const uploadFileList = ref([])
 const uploadRef = ref()
 
-const normalizedKeyword = computed(() => searchText.value.trim().toLowerCase())
-const sortedPOIList = computed(() => [...poiStore.poiList].sort((a, b) => a.id - b.id))
-
-const filteredPOIList = computed(() => {
-  return sortedPOIList.value.filter((item) => {
-    const matchesKeyword = normalizedKeyword.value
-      ? (item.name || '').toLowerCase().includes(normalizedKeyword.value)
-      : true
-    const matchesCategory = selectedCategory.value
-      ? item.category === selectedCategory.value
-      : true
-
-    return matchesKeyword && matchesCategory
-  })
-})
-
-const totalAll = computed(() => sortedPOIList.value.length)
-const total = computed(() => filteredPOIList.value.length)
-
-const pagedPOIList = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredPOIList.value.slice(start, start + pageSize.value)
-})
-
 const activeFilters = computed(() => {
-  const items = []
+  const filters = []
+
   if (searchText.value.trim()) {
-    items.push({ key: 'keyword', label: `关键词：${searchText.value.trim()}` })
+    filters.push({
+      key: 'keyword',
+      label: `关键词：${searchText.value.trim()}`
+    })
   }
+
   if (selectedCategory.value) {
-    items.push({ key: 'category', label: `分类：${selectedCategory.value}` })
+    filters.push({
+      key: 'category',
+      label: `分类：${selectedCategory.value}`
+    })
   }
-  return items
+
+  return filters
 })
+
+const loadMetaData = async () => {
+  try {
+    const [, count] = await Promise.all([
+      poiStore.fetchCategories(),
+      getPOICount()
+    ])
+    totalAll.value = count || 0
+  } catch (error) {
+    ElMessage.error(error.message || '加载地点统计数据失败')
+    throw error
+  }
+}
+
+const loadPageData = async () => {
+  loading.value = true
+  try {
+    const response = await getPOIPage({
+      keyword: searchText.value.trim() || undefined,
+      category: selectedCategory.value || undefined,
+      page: currentPage.value - 1,
+      size: pageSize.value
+    })
+
+    pagedPOIList.value = response?.records || []
+    total.value = response?.total || 0
+  } catch (error) {
+    ElMessage.error(error.message || '加载地点列表失败')
+    throw error
+  } finally {
+    loading.value = false
+  }
+}
 
 const loadData = async () => {
-  try {
-    await Promise.all([
-      poiStore.fetchAllPOIs(),
-      poiStore.fetchCategories()
-    ])
-  } catch (error) {
-    ElMessage.error(error.message || '加载地点数据失败')
-  }
+  await Promise.all([
+    loadMetaData(),
+    loadPageData()
+  ])
 }
 
 const applyRouteFilters = () => {
@@ -330,40 +348,48 @@ const applyRouteFilters = () => {
   }
 }
 
-const handleSearch = () => {
+const handleSearch = async () => {
   currentPage.value = 1
+  await loadPageData()
 }
 
-const handleCategoryChange = () => {
+const handleCategoryChange = async () => {
   currentPage.value = 1
+  await loadPageData()
 }
 
-const handlePageChange = (page) => {
+const handlePageChange = async (page) => {
   currentPage.value = page
+  await loadPageData()
 }
 
-const handlePageSizeChange = () => {
+const handlePageSizeChange = async () => {
   currentPage.value = 1
+  await loadPageData()
 }
 
 const reloadData = async () => {
   await loadData()
 }
 
-const resetFilters = () => {
+const resetFilters = async () => {
   searchText.value = ''
   selectedCategory.value = ''
   currentPage.value = 1
+  await loadPageData()
 }
 
-const removeFilter = (key) => {
+const removeFilter = async (key) => {
   if (key === 'keyword') {
     searchText.value = ''
   }
+
   if (key === 'category') {
     selectedCategory.value = ''
   }
+
   currentPage.value = 1
+  await loadPageData()
 }
 
 const handleCreate = () => {
@@ -386,15 +412,17 @@ const handleDelete = async (row) => {
       }
     )
 
-    await poiStore.remove(row.id)
+    await deletePOI(row.id)
+    totalAll.value = Math.max(totalAll.value - 1, 0)
 
-    if (!pagedPOIList.value.length && currentPage.value > 1) {
+    if (pagedPOIList.value.length === 1 && currentPage.value > 1) {
       currentPage.value -= 1
     }
 
+    await loadPageData()
     ElMessage.success('地点已删除')
   } catch (error) {
-    if (error !== 'cancel') {
+    if (error !== 'cancel' && error !== 'close') {
       ElMessage.error(error.message || '删除地点失败')
     }
   }
@@ -511,8 +539,8 @@ const handleImportSubmit = async () => {
     })
 
     importResult.value = result
-    await loadData()
     currentPage.value = 1
+    await loadData()
 
     ElMessage.success(`导入完成，成功写入 ${result.importedCount} 条记录`)
   } catch (error) {
@@ -523,8 +551,8 @@ const handleImportSubmit = async () => {
 }
 
 onMounted(async () => {
-  await loadData()
   applyRouteFilters()
+  await loadData()
 })
 </script>
 

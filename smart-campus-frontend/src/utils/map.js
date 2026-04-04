@@ -33,10 +33,13 @@ export const isValidCoordinate = (lat, lng) => {
   )
 }
 
+const DEFAULT_MAP_CENTER = { lat: 35.8617, lng: 104.1954 }
+const DEFAULT_MAP_ZOOM = 5
+
 export const getDefaultCenter = () => {
-  return { lat: 34.2323, lng: 108.9299 }
+  return DEFAULT_MAP_CENTER
 }
 
 export const getDefaultZoom = () => {
-  return 15
+  return DEFAULT_MAP_ZOOM
 }

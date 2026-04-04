@@ -12,6 +12,7 @@ import com.smartcampus.repository.POIRepository;
 import com.smartcampus.repository.RecommendedRouteRepository;
 import com.smartcampus.service.AdminOperationLogService;
 import com.smartcampus.service.AdminRecommendedRouteService;
+import com.smartcampus.util.ImageThumbnailUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -56,6 +57,8 @@ public class AdminRecommendedRouteServiceImpl implements AdminRecommendedRouteSe
     private static final int MAX_WAYPOINT_COUNT = 10;
     private static final long MAX_COVER_SIZE = 5L * 1024 * 1024;
     private static final String IMAGE_URL_PREFIX = "/uploads/routes/";
+    private static final int COVER_THUMB_MAX_WIDTH = 480;
+    private static final int COVER_THUMB_MAX_HEIGHT = 320;
 
     private final RecommendedRouteRepository recommendedRouteRepository;
     private final POIRepository poiRepository;
@@ -453,7 +456,8 @@ public class AdminRecommendedRouteServiceImpl implements AdminRecommendedRouteSe
         }
 
         try {
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            Files.write(targetPath, bytes);
+            ImageThumbnailUtils.createThumbnailIfSupported(bytes, extension, targetPath, COVER_THUMB_MAX_WIDTH, COVER_THUMB_MAX_HEIGHT);
         } catch (IOException e) {
             throw new BusinessException(500, "路线封面保存失败");
         }
@@ -473,10 +477,7 @@ public class AdminRecommendedRouteServiceImpl implements AdminRecommendedRouteSe
         if (!targetPath.startsWith(routeStoragePath)) {
             return;
         }
-        try {
-            Files.deleteIfExists(targetPath);
-        } catch (IOException ignored) {
-        }
+        ImageThumbnailUtils.deleteImageAndThumbnailQuietly(targetPath);
     }
 
     private boolean savedImageUrlEqualsOriginal(String savedImageUrl, String originalImageUrl) {

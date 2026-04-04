@@ -19,6 +19,7 @@ import com.smartcampus.repository.RecommendedShareRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.security.UserRole;
 import com.smartcampus.service.POIShareService;
+import com.smartcampus.util.ImageThumbnailUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,6 +56,8 @@ public class POIShareServiceImpl implements POIShareService {
     private static final int MAX_CONTENT_LENGTH = 300;
     private static final int MAX_IMAGE_COUNT = 3;
     private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;
+    private static final int SHARE_THUMB_MAX_WIDTH = 640;
+    private static final int SHARE_THUMB_MAX_HEIGHT = 640;
     private static final int MAX_PAGE_SIZE = 20;
     private static final int MAX_REPLY_LENGTH = 200;
     private static final int MAX_REPLY_PAGE_SIZE = 100;
@@ -371,13 +374,25 @@ public class POIShareServiceImpl implements POIShareService {
             return Collections.emptyMap();
         }
 
+        List<Long> shareIds = shares.stream()
+                .map(POIShare::getId)
+                .toList();
+
         Map<Long, List<POIShareReplyResponse>> result = new HashMap<>();
-        for (POIShare share : shares) {
-            List<POIShareReplyResponse> previewReplies = poiShareReplyRepository.findTop3ByShareIdOrderByCreatedAtAscIdAsc(share.getId()).stream()
-                    .map(reply -> POIShareReplyResponse.fromEntity(reply, currentUserId, currentUserRole))
-                    .toList();
-            result.put(share.getId(), previewReplies);
+        Map<Long, Integer> replyCounter = new HashMap<>();
+
+        for (POIShareReply reply : poiShareReplyRepository.findAllByShareIdInOrderByShareIdAscCreatedAtAscIdAsc(shareIds)) {
+            Long shareId = reply.getShare().getId();
+            int currentCount = replyCounter.getOrDefault(shareId, 0);
+            if (currentCount >= 3) {
+                continue;
+            }
+
+            result.computeIfAbsent(shareId, key -> new ArrayList<>())
+                    .add(POIShareReplyResponse.fromEntity(reply, currentUserId, currentUserRole));
+            replyCounter.put(shareId, currentCount + 1);
         }
+
         return result;
     }
 
@@ -405,7 +420,8 @@ public class POIShareServiceImpl implements POIShareService {
         }
 
         try {
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            Files.write(targetPath, bytes);
+            ImageThumbnailUtils.createThumbnailIfSupported(bytes, extension, targetPath, SHARE_THUMB_MAX_WIDTH, SHARE_THUMB_MAX_HEIGHT);
         } catch (IOException e) {
             throw new BusinessException(500, "分享图片保存失败");
         }
@@ -428,10 +444,7 @@ public class POIShareServiceImpl implements POIShareService {
             return;
         }
 
-        try {
-            Files.deleteIfExists(targetPath);
-        } catch (IOException ignored) {
-        }
+        ImageThumbnailUtils.deleteImageAndThumbnailQuietly(targetPath);
     }
 
     private String detectImageExtension(byte[] bytes) {

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="recommend-page">
     <section class="page-hero">
       <div class="hero-copy">
@@ -59,7 +59,7 @@
             <div class="share-cell">
               <el-image
                 v-if="row.coverImageUrl"
-                :src="resolveAssetUrl(row.coverImageUrl)"
+                :src="resolveAssetUrl(row.coverThumbnailUrl || row.coverImageUrl)"
                 fit="cover"
                 class="cover-thumb"
               />
@@ -144,8 +144,12 @@
           v-model="candidatePoiId"
           clearable
           filterable
+          remote
+          reserve-keyword
           class="candidate-select"
           placeholder="筛选所属地点"
+          :remote-method="handlePoiOptionSearch"
+          @visible-change="handlePoiSelectVisibleChange"
           @change="loadCandidates"
         >
           <el-option v-for="poi in poiOptions" :key="poi.id" :label="poi.name" :value="poi.id" />
@@ -177,7 +181,7 @@
                 <div class="share-cell">
                   <el-image
                     v-if="row.coverImageUrl"
-                    :src="resolveAssetUrl(row.coverImageUrl)"
+                    :src="resolveAssetUrl(row.coverThumbnailUrl || row.coverImageUrl)"
                     fit="cover"
                     class="cover-thumb"
                   />
@@ -301,7 +305,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, RefreshRight, Search } from '@element-plus/icons-vue'
-import { getAllPOIs } from '@/api/poi'
+import { getPOIOptions } from '@/api/poi'
 import {
   createAdminRecommendedShare,
   deleteAdminRecommendedShare,
@@ -312,6 +316,7 @@ import {
 import { API_ORIGIN } from '@/utils/request'
 
 const router = useRouter()
+const POI_OPTION_LIMIT = 20
 
 const keyword = ref('')
 const currentPage = ref(1)
@@ -360,12 +365,37 @@ const heroStats = computed(() => {
   ]
 })
 
-const loadPois = async () => {
+const mergePoiOptions = (items = []) => {
+  const optionMap = new Map(poiOptions.value.map((item) => [item.id, item]))
+  items.forEach((item) => {
+    if (item?.id != null) {
+      optionMap.set(item.id, item)
+    }
+  })
+  poiOptions.value = Array.from(optionMap.values())
+}
+
+const loadPois = async (keyword = '') => {
   try {
-    poiOptions.value = await getAllPOIs()
+    const data = await getPOIOptions({
+      keyword: keyword.trim() || undefined,
+      limit: POI_OPTION_LIMIT
+    })
+    mergePoiOptions(data || [])
   } catch (error) {
     ElMessage.error(error.message || '加载地点列表失败')
   }
+}
+
+const handlePoiOptionSearch = async (keyword) => {
+  await loadPois(keyword)
+}
+
+const handlePoiSelectVisibleChange = async (visible) => {
+  if (!visible || poiOptions.value.length) {
+    return
+  }
+  await loadPois()
 }
 
 const loadRecommendations = async () => {

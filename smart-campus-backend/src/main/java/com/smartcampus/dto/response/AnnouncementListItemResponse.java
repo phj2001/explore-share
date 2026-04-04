@@ -1,6 +1,7 @@
 package com.smartcampus.dto.response;
 
 import com.smartcampus.entity.Announcement;
+import com.smartcampus.util.ImageThumbnailUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ public class AnnouncementListItemResponse {
     private String title;
     private String summary;
     private String coverImageUrl;
+    private String coverThumbnailUrl;
     private Boolean pinned;
     private LocalDateTime publishedAt;
 
@@ -25,6 +27,7 @@ public class AnnouncementListItemResponse {
                 entity.getTitle(),
                 entity.getSummary(),
                 entity.getCoverImageUrl(),
+                ImageThumbnailUtils.resolveThumbnailUrl(entity.getCoverImageUrl()),
                 entity.getPinned(),
                 entity.getPublishedAt()
         );
