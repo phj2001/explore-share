@@ -131,6 +131,24 @@ const mobileSearchVisible = ref(false)
 const displayName = computed(() => userStore.displayName || '当前用户')
 const avatarUrl = computed(() => userStore.avatarUrl)
 const SEARCH_RESULT_LIMIT_MESSAGE = '当前结果数量较多，系统仅展示前一部分地点。建议继续输入更精确的关键词或放大地图后查看。'
+const EMPTY_SEARCH_RESULT_MESSAGE = '没有找到符合条件的地点，请尝试更换关键词或分类。'
+
+const notifyMapFitSearchResults = () => {
+  window.dispatchEvent(new CustomEvent('poi:fit-search-results'))
+}
+
+const handleSearchResultFeedback = () => {
+  if (!poiStore.searchPoiList.length) {
+    ElMessage.info(EMPTY_SEARCH_RESULT_MESSAGE)
+    return
+  }
+
+  if (poiStore.searchSummary.truncated) {
+    ElMessage.warning(SEARCH_RESULT_LIMIT_MESSAGE)
+  }
+
+  notifyMapFitSearchResults()
+}
 
 const resetToCurrentBounds = async () => {
   poiStore.clearSearchPoiList()
@@ -161,9 +179,7 @@ const handleSearch = async () => {
 
   try {
     await poiStore.searchByName(searchText.value.trim())
-    if (poiStore.searchSummary.truncated) {
-      ElMessage.warning(SEARCH_RESULT_LIMIT_MESSAGE)
-    }
+    handleSearchResultFeedback()
     window.scrollTo({ top: 0, behavior: 'smooth' })
     mobileSearchVisible.value = false
   } catch {
@@ -180,9 +196,7 @@ const handleCategoryFilter = async () => {
 
   try {
     await poiStore.fetchByCategory(selectedCategory.value)
-    if (poiStore.searchSummary.truncated) {
-      ElMessage.warning(SEARCH_RESULT_LIMIT_MESSAGE)
-    }
+    handleSearchResultFeedback()
     window.scrollTo({ top: 0, behavior: 'smooth' })
     mobileSearchVisible.value = false
   } catch {

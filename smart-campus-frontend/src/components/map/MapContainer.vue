@@ -126,6 +126,7 @@ const sdkError = ref('')
 const isMobileViewport = ref(false)
 const isMobileRoutePanelExpanded = ref(false)
 const hasShownBoundsLimitMessage = ref(false)
+const pendingPoiResultViewportAdjustment = ref(false)
 const renderedPoiList = computed(() => poiStore.visiblePoiList || [])
 const activeResultSummary = computed(() =>
   poiStore.activeSource === 'search' ? poiStore.searchSummary : poiStore.boundsSummary
@@ -145,6 +146,7 @@ let markerClusterPluginLoaded = false
 let lastReusableBounds = null
 let lastRenderedPoiSignature = ''
 let hasAppliedEmptyStateFallback = false
+let poiResultViewportFrame = null
 
 const BOUNDS_FETCH_DEBOUNCE_MS = 300
 const POI_LABEL_HOVER_DELAY_MS = 500
@@ -171,6 +173,14 @@ const getFitViewPadding = () => {
   }
 
   return [80, 420, 80, 80]
+}
+
+const getPoiResultFitViewPadding = () => {
+  if (window.innerWidth <= 768) {
+    return [92, 44, 72, 44]
+  }
+
+  return [140, 120, 100, 120]
 }
 
 const getBoundsLimitByZoom = () => {
@@ -537,6 +547,57 @@ const focusSelectedPoi = (poi) => {
   if (!position) return
 
   map.setZoomAndCenter(Math.max(map.getZoom(), 17), position)
+}
+
+const applyPoiResultViewportAdjustment = () => {
+  if (!map || !pendingPoiResultViewportAdjustment.value) {
+    return
+  }
+
+  pendingPoiResultViewportAdjustment.value = false
+
+  if (!renderedPoiList.value.length) {
+    return
+  }
+
+  renderMarkers()
+
+  const markerEntries = renderedPoiList.value
+    .map((poi) => ({
+      poi,
+      marker: poiMarkerMap.get(poi.id)
+    }))
+    .filter((item) => item.marker)
+
+  if (!markerEntries.length) {
+    return
+  }
+
+  if (markerEntries.length === 1) {
+    focusSelectedPoi(markerEntries[0].poi)
+    return
+  }
+
+  map.setFitView(
+    markerEntries.map((item) => item.marker),
+    false,
+    getPoiResultFitViewPadding()
+  )
+}
+
+const schedulePoiResultViewportAdjustment = () => {
+  if (!pendingPoiResultViewportAdjustment.value || !map) {
+    return
+  }
+
+  if (poiResultViewportFrame) {
+    window.cancelAnimationFrame(poiResultViewportFrame)
+  }
+
+  poiResultViewportFrame = window.requestAnimationFrame(() => {
+    poiResultViewportFrame = null
+    applyPoiResultViewportAdjustment()
+  })
 }
 
 const buildTemporaryRoutePoint = (mode, lat, lng) => {
@@ -965,6 +1026,12 @@ const handleDialogClosed = () => {
 
 const handleMapBoundsChange = () => {
   if (!map) return
+
+  if (poiStore.activeSource === 'search') {
+    syncMapCenterToStore()
+    return
+  }
+
   scheduleBoundsFetch({ silent: true })
 }
 
@@ -973,12 +1040,18 @@ const handleResetToBounds = () => {
   scheduleBoundsFetch({ silent: true })
 }
 
+const handleFitSearchResults = () => {
+  pendingPoiResultViewportAdjustment.value = true
+  schedulePoiResultViewportAdjustment()
+}
+
 onMounted(async () => {
   try {
     updateViewportState()
     window.addEventListener('resize', updateViewportState)
     await initMap()
     window.addEventListener('poi:reset-to-bounds', handleResetToBounds)
+    window.addEventListener('poi:fit-search-results', handleFitSearchResults)
     await loadInitialMapData()
     drawRoute()
   } catch (error) {
@@ -993,6 +1066,11 @@ onUnmounted(() => {
     boundsFetchTimer = null
   }
 
+  if (poiResultViewportFrame) {
+    window.cancelAnimationFrame(poiResultViewportFrame)
+    poiResultViewportFrame = null
+  }
+
   if (map) {
     map.off('moveend', handleMapBoundsChange)
     map.off('zoomend', handleMapBoundsChange)
@@ -1002,6 +1080,7 @@ onUnmounted(() => {
   }
 
   window.removeEventListener('poi:reset-to-bounds', handleResetToBounds)
+  window.removeEventListener('poi:fit-search-results', handleFitSearchResults)
   window.removeEventListener('resize', updateViewportState)
 
   poiMarkers = []
@@ -1017,6 +1096,7 @@ watch(
   () => poiStore.visiblePoiList,
   () => {
     renderMarkers()
+    schedulePoiResultViewportAdjustment()
   }
 )
 
