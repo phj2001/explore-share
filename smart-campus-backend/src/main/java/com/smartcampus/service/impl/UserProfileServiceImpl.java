@@ -4,7 +4,9 @@ import com.smartcampus.dto.request.ChangePasswordRequest;
 import com.smartcampus.dto.request.UpdateUserProfileRequest;
 import com.smartcampus.entity.User;
 import com.smartcampus.repository.UserRepository;
+import com.smartcampus.security.JwtTokenProvider;
 import com.smartcampus.service.UserProfileService;
+import com.smartcampus.util.RedisUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +33,8 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RedisUtils redisUtils;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Value("${app.upload.avatar-dir:uploads/avatars}")
     private String avatarUploadDir;
@@ -74,6 +78,13 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+
+        // 密码变更后吊销该用户所有旧 token，强制重新登录
+        long ttlSeconds = jwtTokenProvider.getExpirationMs() / 1000 + 60;
+        redisUtils.set("jwt:revoke_before:" + userId,
+                String.valueOf(System.currentTimeMillis()),
+                ttlSeconds, java.util.concurrent.TimeUnit.SECONDS);
+        redisUtils.delete("user:info:" + userId);
     }
 
     @Override

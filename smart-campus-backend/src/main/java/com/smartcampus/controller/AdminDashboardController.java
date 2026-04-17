@@ -18,7 +18,7 @@ public class AdminDashboardController {
     private final AdminDashboardService adminDashboardService;
 
     @GetMapping("/overview")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public Result<AdminOverviewResponse> getOverview(@RequestParam(defaultValue = "7") Integer days) {
         return Result.success(adminDashboardService.getOverview(days));
     }

@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/recommended-routes")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 public class AdminRecommendedRouteController {
 
     private final AdminRecommendedRouteService adminRecommendedRouteService;

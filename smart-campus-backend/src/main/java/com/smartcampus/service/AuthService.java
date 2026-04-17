@@ -38,4 +38,29 @@ public interface AuthService {
      * 检查用户名是否已存在
      */
     boolean existsByUsername(String username);
+
+    /**
+     * 登出：吊销当前用户的所有 token
+     */
+    void logout(Long userId);
+
+    /**
+     * 发送注册邮箱验证码
+     */
+    void sendRegisterCode(String email);
+
+    /**
+     * 发送重置密码验证码
+     */
+    void sendResetCode(String email);
+
+    /**
+     * 通过邮箱验证码重置密码
+     */
+    void resetPassword(String email, String code, String newPassword);
+
+    /**
+     * 注册（含邮箱验证码校验）
+     */
+    User register(User user, String emailCode);
 }

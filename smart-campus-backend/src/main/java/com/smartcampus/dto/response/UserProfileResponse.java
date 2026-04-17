@@ -15,18 +15,20 @@ public class UserProfileResponse {
     private String displayName;
     private String avatarUrl;
     private String bio;
+    private String email;
     private Short role;
     private Short status;
 
     public static UserProfileResponse fromUser(User user) {
-        return new UserProfileResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getDisplayName(),
-                user.getAvatarUrl(),
-                user.getBio(),
-                user.getRole(),
-                user.getStatus()
-        );
+        UserProfileResponse r = new UserProfileResponse();
+        r.setId(user.getId());
+        r.setUsername(user.getUsername());
+        r.setDisplayName(user.getDisplayName());
+        r.setAvatarUrl(user.getAvatarUrl());
+        r.setBio(user.getBio());
+        r.setEmail(user.getEmail());
+        r.setRole(user.getRole());
+        r.setStatus(user.getStatus());
+        return r;
     }
 }

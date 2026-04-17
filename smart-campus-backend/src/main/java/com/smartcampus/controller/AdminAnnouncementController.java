@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/admin/announcements")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 public class AdminAnnouncementController {
 
     private final AdminAnnouncementService adminAnnouncementService;

@@ -61,6 +61,17 @@
                 <el-input :model-value="userStore.username" disabled />
               </el-form-item>
 
+              <el-form-item label="绑定邮箱">
+                <el-input
+                  :model-value="userStore.userInfo?.email || '暂未绑定邮箱'"
+                  disabled
+                >
+                  <template v-if="userStore.userInfo?.email" #suffix>
+                    <el-tag size="small" type="success" effect="plain">已验证</el-tag>
+                  </template>
+                </el-input>
+              </el-form-item>
+
               <el-form-item label="展示名" prop="displayName">
                 <el-input
                   v-model="profileForm.displayName"

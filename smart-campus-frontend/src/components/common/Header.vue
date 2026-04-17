@@ -82,7 +82,7 @@
         <nav class="nav-menu front-panel">
           <router-link to="/" class="nav-item">探索首页</router-link>
           <router-link v-if="userStore.isLoggedIn" to="/settings" class="nav-item">个人中心</router-link>
-          <router-link v-if="userStore.isSuperAdmin" to="/admin/overview" class="nav-item">运营后台</router-link>
+          <router-link v-if="userStore.isAdminOrAbove" to="/admin/overview" class="nav-item">运营后台</router-link>
         </nav>
 
         <div class="user-actions">

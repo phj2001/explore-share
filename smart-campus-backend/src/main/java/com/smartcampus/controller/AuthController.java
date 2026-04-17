@@ -3,6 +3,8 @@ package com.smartcampus.controller;
 import com.smartcampus.dto.common.Result;
 import com.smartcampus.dto.request.LoginRequest;
 import com.smartcampus.dto.request.RegisterRequest;
+import com.smartcampus.dto.request.ResetPasswordRequest;
+import com.smartcampus.dto.request.SendEmailCodeRequest;
 import com.smartcampus.dto.response.LoginResponse;
 import com.smartcampus.dto.response.UserProfileResponse;
 import com.smartcampus.entity.User;
@@ -12,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,9 +36,10 @@ public class AuthController {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(request.getPassword());
+        user.setEmail(request.getEmail());
         user.setRole(UserRole.USER.getCode());
 
-        User registeredUser = authService.register(user);
+        User registeredUser = authService.register(user, request.getEmailCode());
         return Result.success(UserProfileResponse.fromUser(registeredUser));
     }
 
@@ -87,9 +91,47 @@ public class AuthController {
         return Result.success(authService.existsByUsername(username));
     }
 
+    /**
+     * 登出：吊销当前用户所有 token
+     */
+    @DeleteMapping("/logout")
+    public Result<Void> logout(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof Long userId) {
+            authService.logout(userId);
+        }
+        return Result.success(null);
+    }
+
+    /**
+     * 发送注册邮箱验证码
+     */
+    @PostMapping("/sendRegisterCode")
+    public Result<Void> sendRegisterCode(@Valid @RequestBody SendEmailCodeRequest request) {
+        authService.sendRegisterCode(request.getEmail());
+        return Result.success(null);
+    }
+
+    /**
+     * 发送重置密码验证码
+     */
+    @PostMapping("/sendResetCode")
+    public Result<Void> sendResetCode(@Valid @RequestBody SendEmailCodeRequest request) {
+        authService.sendResetCode(request.getEmail());
+        return Result.success(null);
+    }
+
+    /**
+     * 通过邮箱验证码重置密码
+     */
+    @PostMapping("/resetPassword")
+    public Result<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getEmail(), request.getCode(), request.getNewPassword());
+        return Result.success(null);
+    }
+
     private Result<LoginResponse> doLogin(LoginRequest request) {
         return authService.login(request.getUsername(), request.getPassword())
                 .map(Result::success)
-                .orElse(Result.error("用户名或密码错误"));
+                .orElse(Result.error("用户名/邮箱或密码错误"));
     }
 }

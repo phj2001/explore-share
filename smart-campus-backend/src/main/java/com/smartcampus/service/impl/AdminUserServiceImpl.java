@@ -76,6 +76,15 @@ public class AdminUserServiceImpl implements AdminUserService {
     public AdminUserDetailResponse updateUserRole(Long targetUserId, Short role, Long operatorUserId) {
         validateRole(role);
         User targetUser = getRequiredUser(targetUserId);
+        User operatorUser = getRequiredUser(operatorUserId);
+
+        if (targetUser.getRole() == UserRole.SUPER_ADMIN.getCode()) {
+            throw new BusinessException(403, "不能修改超级管理员的角色");
+        }
+
+        if (operatorUser.getRole() != UserRole.SUPER_ADMIN.getCode()) {
+            throw new BusinessException(403, "无权修改用户角色，该操作仅限超级管理员");
+        }
 
         if (targetUserId.equals(operatorUserId) && UserRole.USER.getCode() == role) {
             throw new BusinessException(400, "不能将自己降级为普通用户");
@@ -89,7 +98,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 "更新用户角色",
                 "用户",
                 savedUser.getId(),
-                "将用户 @" + savedUser.getUsername() + " 的角色更新为" + (savedUser.getRole() == UserRole.SUPER_ADMIN.getCode() ? "超级管理员" : "普通用户")
+                "将用户 @" + savedUser.getUsername() + " 的角色更新为" + getRoleLabel(savedUser.getRole())
         );
         return buildUserDetail(savedUser);
     }
@@ -99,6 +108,16 @@ public class AdminUserServiceImpl implements AdminUserService {
     public AdminUserDetailResponse updateUserStatus(Long targetUserId, Short status, Long operatorUserId) {
         validateStatus(status);
         User targetUser = getRequiredUser(targetUserId);
+        User operatorUser = getRequiredUser(operatorUserId);
+
+        if (targetUser.getRole() == UserRole.SUPER_ADMIN.getCode()) {
+            throw new BusinessException(403, "不能修改超级管理员的账号状态");
+        }
+
+        if (operatorUser.getRole() == UserRole.ADMIN.getCode()
+                && targetUser.getRole() != UserRole.USER.getCode()) {
+            throw new BusinessException(403, "管理员只能修改普通用户的账号状态");
+        }
 
         if (targetUserId.equals(operatorUserId) && UserStatus.DISABLED.getCode() == status) {
             throw new BusinessException(400, "不能禁用当前登录账号");
@@ -115,6 +134,12 @@ public class AdminUserServiceImpl implements AdminUserService {
                 "将用户 @" + savedUser.getUsername() + " 的账号状态更新为" + (savedUser.getStatus() == UserStatus.ACTIVE.getCode() ? "正常" : "禁用")
         );
         return buildUserDetail(savedUser);
+    }
+
+    private String getRoleLabel(short role) {
+        if (role == UserRole.SUPER_ADMIN.getCode()) return "超级管理员";
+        if (role == UserRole.ADMIN.getCode()) return "管理员";
+        return "普通用户";
     }
 
     private Specification<User> buildSpecification(String keyword, Short role, Short status) {
@@ -180,6 +205,8 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     private boolean isSupportedRole(Short role) {
-        return UserRole.USER.getCode() == role || UserRole.SUPER_ADMIN.getCode() == role;
+        return UserRole.USER.getCode() == role
+                || UserRole.ADMIN.getCode() == role
+                || UserRole.SUPER_ADMIN.getCode() == role;
     }
 }

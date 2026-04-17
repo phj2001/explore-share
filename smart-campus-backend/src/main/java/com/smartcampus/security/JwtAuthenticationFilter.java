@@ -2,8 +2,8 @@ package com.smartcampus.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartcampus.dto.common.Result;
-import com.smartcampus.entity.User;
 import com.smartcampus.repository.UserRepository;
+import com.smartcampus.util.RedisUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
@@ -26,8 +27,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
+    /** 用户信息缓存 TTL（分钟） */
+    private static final long USER_CACHE_TTL_MINUTES = 5L;
+
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final RedisUtils redisUtils;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -38,25 +43,61 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            User user = userRepository.findById(userId).orElse(null);
-            if (user != null) {
-                if (UserStatus.fromCode(user.getStatus()) == UserStatus.DISABLED) {
-                    writeUnauthorizedResponse(response, "账号已被禁用");
+
+            // P0：JWT 黑名单检查（revoke_before 方案）
+            // 逻辑：登出或改密时设置 jwt:revoke_before:{userId} = 当前时间戳
+            // 若 token 签发时间 <= revoke_before，则该 token 已被吊销
+            String revokeKey = "jwt:revoke_before:" + userId;
+            String revokeBeforeStr = redisUtils.get(revokeKey);
+            if (revokeBeforeStr != null) {
+                long issuedAt = jwtTokenProvider.getIssuedAtFromToken(token);
+                if (issuedAt <= Long.parseLong(revokeBeforeStr)) {
+                    // token 已被吊销，视为未登录（不报错，让后续鉴权逻辑处理）
+                    filterChain.doFilter(request, response);
                     return;
                 }
-                setAuthentication(user);
             }
+
+            // P1：用户信息缓存（status:role 格式，5 分钟 TTL）
+            Short status;
+            Short role;
+            String cacheKey = "user:info:" + userId;
+            String cachedInfo = redisUtils.get(cacheKey);
+
+            if (cachedInfo != null) {
+                // 命中缓存：格式 "status:role"
+                String[] parts = cachedInfo.split(":");
+                status = Short.parseShort(parts[0]);
+                role = Short.parseShort(parts[1]);
+            } else {
+                // 缓存未命中：查数据库并写入缓存
+                var user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                status = user.getStatus();
+                role = user.getRole();
+                redisUtils.set(cacheKey, status + ":" + role, USER_CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+            }
+
+            if (UserStatus.fromCode(status) == UserStatus.DISABLED) {
+                writeUnauthorizedResponse(response, "账号已被禁用");
+                return;
+            }
+
+            setAuthentication(userId, role);
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private void setAuthentication(User user) {
+    private void setAuthentication(Long userId, Short role) {
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
-                        user.getId(),
+                        userId,
                         null,
-                        Collections.singletonList(UserRole.fromCode(user.getRole()).toAuthority())
+                        Collections.singletonList(UserRole.fromCode(role).toAuthority())
                 );
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }

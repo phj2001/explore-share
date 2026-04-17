@@ -162,7 +162,7 @@ router.beforeEach(async (to) => {
       }
     }
 
-    if (!userStore.isSuperAdmin) {
+    if (!userStore.isAdminOrAbove) {
       return { name: 'Home' }
     }
   }

@@ -10,6 +10,7 @@ import com.smartcampus.repository.POIShareRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.AdminDashboardService;
 import com.smartcampus.service.SystemConfigService;
+import com.smartcampus.util.RedisUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM-dd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final String DASHBOARD_CACHE_PREFIX = "dashboard:overview:";
+    private static final long   DASHBOARD_CACHE_TTL    = 300L; // 5 分钟
 
     private final POIRepository poiRepository;
     private final UserRepository userRepository;
@@ -39,11 +42,20 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final POIShareReplyRepository poiShareReplyRepository;
     private final POIShareLikeRepository poiShareLikeRepository;
     private final SystemConfigService systemConfigService;
+    private final RedisUtils redisUtils;
 
     @Override
     @Transactional(readOnly = true)
     public AdminOverviewResponse getOverview(Integer days) {
         int rangeDays = normalizeRangeDays(days);
+        String cacheKey = DASHBOARD_CACHE_PREFIX + rangeDays;
+
+        // 先查 Redis 缓存（5 分钟内复用）
+        AdminOverviewResponse cached = redisUtils.getObject(cacheKey, AdminOverviewResponse.class);
+        if (cached != null) {
+            return cached;
+        }
+
         LocalDate today = LocalDate.now();
         LocalDateTime startOfToday = today.atStartOfDay();
         LocalDateTime rangeStart = today.minusDays(rangeDays - 1L).atStartOfDay();
@@ -59,13 +71,16 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         List<POIShare> rangeShares = poiShareRepository.findByCreatedAtGreaterThanEqualOrderByCreatedAtAsc(rangeStart);
 
-        return new AdminOverviewResponse(
+        AdminOverviewResponse response = new AdminOverviewResponse(
                 rangeDays,
                 summary,
                 buildTrend(rangeStart.toLocalDate(), today, rangeShares),
                 buildHotPois(rangeStart),
                 buildRecentShares()
         );
+
+        redisUtils.setObject(cacheKey, response, DASHBOARD_CACHE_TTL, java.util.concurrent.TimeUnit.SECONDS);
+        return response;
     }
 
     private int normalizeRangeDays(Integer days) {

@@ -5,7 +5,7 @@ import {
   register as registerApi
 } from '@/api/auth.js'
 import { getMyProfile as getMyProfileApi } from '@/api/user.js'
-import { SUPER_ADMIN_ROLE } from '@/constants/auth.js'
+import { ADMIN_ROLE, SUPER_ADMIN_ROLE } from '@/constants/auth.js'
 import {
   clearAuthState,
   getStoredUserInfo,
@@ -39,6 +39,7 @@ const buildUserInfo = (data, fallbackUsername) => {
     displayName: data?.displayName || '',
     avatarUrl: resolveAssetUrl(data?.avatarUrl || ''),
     bio: data?.bio || '',
+    email: data?.email || '',
     role: data?.role ?? null,
     status: data?.status ?? null
   }
@@ -74,6 +75,8 @@ export const useUserStore = defineStore('user', () => {
   const role = computed(() => userInfo.value?.role ?? null)
   const status = computed(() => userInfo.value?.status ?? null)
   const isSuperAdmin = computed(() => role.value === SUPER_ADMIN_ROLE)
+  const isAdmin = computed(() => role.value === ADMIN_ROLE)
+  const isAdminOrAbove = computed(() => role.value === SUPER_ADMIN_ROLE || role.value === ADMIN_ROLE)
 
   const applyUserInfo = (data, fallbackUsername) => {
     const nextUserInfo = buildUserInfo(data, fallbackUsername)
@@ -96,10 +99,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const register = async (usernameInput, password) => {
+  const register = async (usernameInput, password, email, emailCode) => {
     isLoading.value = true
     try {
-      return await registerApi(usernameInput, password)
+      return await registerApi(usernameInput, password, email, emailCode)
     } finally {
       isLoading.value = false
     }
@@ -145,6 +148,8 @@ export const useUserStore = defineStore('user', () => {
     role,
     status,
     isSuperAdmin,
+    isAdmin,
+    isAdminOrAbove,
     login,
     register,
     syncCurrentUser,

@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/system-configs")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 public class AdminSystemConfigController {
 
     private final SystemConfigService systemConfigService;

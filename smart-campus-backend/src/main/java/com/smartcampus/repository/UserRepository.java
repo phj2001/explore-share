@@ -21,6 +21,16 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
      */
     boolean existsByUsername(String username);
 
+    /**
+     * 根据邮箱查找用户
+     */
+    Optional<User> findByEmail(String email);
+
+    /**
+     * 检查邮箱是否已存在
+     */
+    boolean existsByEmail(String email);
+
     boolean existsByRole(Short role);
 
     long countByCreatedAtGreaterThanEqual(java.time.LocalDateTime createdAt);

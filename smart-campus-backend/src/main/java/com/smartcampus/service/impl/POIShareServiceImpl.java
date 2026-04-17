@@ -20,6 +20,7 @@ import com.smartcampus.repository.UserRepository;
 import com.smartcampus.security.UserRole;
 import com.smartcampus.service.POIShareService;
 import com.smartcampus.util.ImageThumbnailUtils;
+import com.smartcampus.util.RedisUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,6 +63,10 @@ public class POIShareServiceImpl implements POIShareService {
     private static final int MAX_REPLY_LENGTH = 200;
     private static final int MAX_REPLY_PAGE_SIZE = 100;
     private static final String IMAGE_URL_PREFIX = "/uploads/poi-shares/";
+    // 点赞/评论计数缓存 key 前缀，TTL 2 分钟
+    private static final String LIKE_COUNT_PREFIX  = "share:likes:";
+    private static final String REPLY_COUNT_PREFIX = "share:replies:";
+    private static final long   COUNT_CACHE_TTL    = 120L;
 
     private final POIShareRepository poiShareRepository;
     private final POIShareLikeRepository poiShareLikeRepository;
@@ -69,6 +74,7 @@ public class POIShareServiceImpl implements POIShareService {
     private final POIRepository poiRepository;
     private final UserRepository userRepository;
     private final RecommendedShareRepository recommendedShareRepository;
+    private final RedisUtils redisUtils;
 
     @Value("${app.upload.poi-share-dir:uploads/poi-shares}")
     private String poiShareUploadDir;
@@ -98,10 +104,12 @@ public class POIShareServiceImpl implements POIShareService {
 
         Map<Long, Long> likeCountMap = shareIds.isEmpty()
                 ? Map.of()
-                : getCountMap(poiShareLikeRepository.countGroupedByShareIds(shareIds));
+                : getCachedCounts(shareIds, LIKE_COUNT_PREFIX,
+                    ids -> getCountMap(poiShareLikeRepository.countGroupedByShareIds(ids)));
         Map<Long, Long> replyCountMap = shareIds.isEmpty()
                 ? Map.of()
-                : getCountMap(poiShareReplyRepository.countGroupedByShareIds(shareIds));
+                : getCachedCounts(shareIds, REPLY_COUNT_PREFIX,
+                    ids -> getCountMap(poiShareReplyRepository.countGroupedByShareIds(ids)));
         Set<Long> likedShareIds = getLikedShareIds(shareIds, currentUser != null ? currentUser.getId() : null);
         Map<Long, List<POIShareReplyResponse>> previewReplyMap = getPreviewReplyMap(
                 shareRecords,
@@ -204,7 +212,9 @@ public class POIShareServiceImpl implements POIShareService {
             poiShareLikeRepository.save(like);
         }
 
-        return new POIShareLikeResponse(shareId, poiShareLikeRepository.countByShareId(shareId), true);
+        long likeCount = poiShareLikeRepository.countByShareId(shareId);
+        redisUtils.set(LIKE_COUNT_PREFIX + shareId, String.valueOf(likeCount), COUNT_CACHE_TTL, java.util.concurrent.TimeUnit.SECONDS);
+        return new POIShareLikeResponse(shareId, likeCount, true);
     }
 
     @Override
@@ -213,7 +223,9 @@ public class POIShareServiceImpl implements POIShareService {
         ensureShareExists(shareId);
         poiShareLikeRepository.findByShareIdAndUserId(shareId, userId)
                 .ifPresent(poiShareLikeRepository::delete);
-        return new POIShareLikeResponse(shareId, poiShareLikeRepository.countByShareId(shareId), false);
+        long likeCount = poiShareLikeRepository.countByShareId(shareId);
+        redisUtils.set(LIKE_COUNT_PREFIX + shareId, String.valueOf(likeCount), COUNT_CACHE_TTL, java.util.concurrent.TimeUnit.SECONDS);
+        return new POIShareLikeResponse(shareId, likeCount, false);
     }
 
     @Override
@@ -358,6 +370,38 @@ public class POIShareServiceImpl implements POIShareService {
         for (Object[] row : rows) {
             result.put((Long) row[0], (Long) row[1]);
         }
+        return result;
+    }
+
+    /**
+     * 缓存优先的批量计数查询：
+     * 1. 先从 Redis 按 shareId 取缓存命中项
+     * 2. 对未命中的 shareId 批量查数据库
+     * 3. 将数据库查询结果写入 Redis（2 分钟 TTL）
+     */
+    private Map<Long, Long> getCachedCounts(List<Long> shareIds, String keyPrefix,
+            java.util.function.Function<List<Long>, Map<Long, Long>> dbQuery) {
+        Map<Long, Long> result = new HashMap<>();
+        List<Long> missIds = new ArrayList<>();
+
+        for (Long shareId : shareIds) {
+            String cached = redisUtils.get(keyPrefix + shareId);
+            if (cached != null) {
+                result.put(shareId, Long.parseLong(cached));
+            } else {
+                missIds.add(shareId);
+            }
+        }
+
+        if (!missIds.isEmpty()) {
+            Map<Long, Long> dbResult = dbQuery.apply(missIds);
+            for (Long shareId : missIds) {
+                long count = dbResult.getOrDefault(shareId, 0L);
+                result.put(shareId, count);
+                redisUtils.set(keyPrefix + shareId, String.valueOf(count), COUNT_CACHE_TTL, java.util.concurrent.TimeUnit.SECONDS);
+            }
+        }
+
         return result;
     }
 

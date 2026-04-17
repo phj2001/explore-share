@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 public class AdminContentController {
 
     private final AdminContentService adminContentService;

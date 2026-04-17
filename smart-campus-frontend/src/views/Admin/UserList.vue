@@ -24,6 +24,7 @@
 
       <el-select v-model="roleFilter" clearable placeholder="筛选角色" class="filter-select" @change="handleSearch">
         <el-option :value="USER_ROLE" label="普通用户" />
+        <el-option :value="ADMIN_ROLE" label="管理员" />
         <el-option :value="SUPER_ADMIN_ROLE" label="超级管理员" />
       </el-select>
 
@@ -59,7 +60,7 @@
         </el-table-column>
         <el-table-column label="角色" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.role === SUPER_ADMIN_ROLE ? 'danger' : 'info'" effect="plain">
+            <el-tag :type="row.role === SUPER_ADMIN_ROLE ? 'danger' : row.role === ADMIN_ROLE ? 'warning' : 'info'" effect="plain">
               {{ getRoleLabel(row.role) }}
             </el-tag>
           </template>
@@ -80,16 +81,20 @@
           <template #default="{ row }">
             <div class="action-group">
               <el-button size="small" @click="openDetail(row)">查看</el-button>
+              <!-- 角色变更：仅超级管理员可操作，且不能操作超管账号 -->
               <el-button
+                v-if="currentUserIsSuperAdmin && row.role !== SUPER_ADMIN_ROLE"
                 size="small"
-                :type="row.role === SUPER_ADMIN_ROLE ? 'warning' : 'primary'"
+                :type="row.role === ADMIN_ROLE ? 'warning' : 'primary'"
                 :disabled="isCurrentUser(row)"
                 :loading="roleUpdatingId === row.id"
                 @click="toggleRole(row)"
               >
-                {{ row.role === SUPER_ADMIN_ROLE ? '降为普通用户' : '设为管理员' }}
+                {{ row.role === ADMIN_ROLE ? '降为普通用户' : '设为管理员' }}
               </el-button>
+              <!-- 状态变更：不能操作超管账号；ADMIN 只能操作普通用户 -->
               <el-button
+                v-if="row.role !== SUPER_ADMIN_ROLE && (currentUserIsSuperAdmin || row.role === USER_ROLE)"
                 size="small"
                 :type="row.status === ACTIVE_STATUS ? 'danger' : 'success'"
                 :disabled="isCurrentUser(row)"
@@ -131,7 +136,7 @@
               </div>
             </div>
             <div class="drawer-tags">
-              <el-tag :type="selectedUser.role === SUPER_ADMIN_ROLE ? 'danger' : 'info'" effect="plain">
+              <el-tag :type="selectedUser.role === SUPER_ADMIN_ROLE ? 'danger' : selectedUser.role === ADMIN_ROLE ? 'warning' : 'info'" effect="plain">
                 {{ getRoleLabel(selectedUser.role) }}
               </el-tag>
               <el-tag :type="selectedUser.status === ACTIVE_STATUS ? 'success' : 'warning'" effect="plain">
@@ -184,7 +189,8 @@
             <h3>管理说明</h3>
             <ul class="tips-list">
               <li>用户禁用后将无法登录，已登录状态会在后续请求中失效。</li>
-              <li>当前登录管理员不能禁用自己，也不能把自己降级为普通用户。</li>
+              <li>当前登录账号不能禁用自己，超级管理员账号不可被降级或禁用。</li>
+              <li>角色变更仅超级管理员可操作；管理员只能调整普通用户的账号状态。</li>
               <li>第一版不提供删除用户功能，避免破坏现有分享与互动数据。</li>
             </ul>
           </div>
@@ -206,12 +212,14 @@ import {
   updateAdminUserStatus
 } from '@/api/adminUser'
 import { useUserStore } from '@/stores/user'
-import { SUPER_ADMIN_ROLE } from '@/constants/auth'
+import { ADMIN_ROLE, SUPER_ADMIN_ROLE } from '@/constants/auth'
 import { API_ORIGIN } from '@/utils/request'
 
 const USER_ROLE = 1
 const ACTIVE_STATUS = 1
 const DISABLED_STATUS = 0
+
+const currentUserIsSuperAdmin = computed(() => userStore.isSuperAdmin)
 
 const userStore = useUserStore()
 const route = useRoute()
@@ -294,7 +302,7 @@ const toggleRole = async (row) => {
     return
   }
 
-  const nextRole = row.role === SUPER_ADMIN_ROLE ? USER_ROLE : SUPER_ADMIN_ROLE
+  const nextRole = row.role === ADMIN_ROLE ? USER_ROLE : ADMIN_ROLE
   const nextLabel = getRoleLabel(nextRole)
 
   try {
@@ -352,7 +360,11 @@ const toggleStatus = async (row) => {
 }
 
 const getDisplayName = (row) => row.displayName || row.username || '未命名用户'
-const getRoleLabel = (role) => (role === SUPER_ADMIN_ROLE ? '超级管理员' : '普通用户')
+const getRoleLabel = (role) => {
+  if (role === SUPER_ADMIN_ROLE) return '超级管理员'
+  if (role === ADMIN_ROLE) return '管理员'
+  return '普通用户'
+}
 const getStatusLabel = (status) => (status === ACTIVE_STATUS ? '正常' : '禁用')
 const isCurrentUser = (row) => row.id === currentUserId.value
 

@@ -6,6 +6,7 @@ import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.SystemConfigEntryRepository;
 import com.smartcampus.service.AdminOperationLogService;
 import com.smartcampus.service.SystemConfigService;
+import com.smartcampus.util.RedisUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import org.springframework.util.StringUtils;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 @Service
@@ -21,9 +23,12 @@ import java.util.function.Function;
 public class SystemConfigServiceImpl implements SystemConfigService {
 
     private static final Map<String, ConfigDefinition> DEFINITIONS = buildDefinitions();
+    private static final String CONFIG_CACHE_KEY = "config:all";
+    private static final long   CONFIG_CACHE_TTL = 600L; // 10 分钟
 
     private final SystemConfigEntryRepository systemConfigEntryRepository;
     private final AdminOperationLogService adminOperationLogService;
+    private final RedisUtils redisUtils;
 
     @Override
     @Transactional(readOnly = true)
@@ -55,6 +60,9 @@ public class SystemConfigServiceImpl implements SystemConfigService {
                 "更新配置 " + definition.label() + " 为 " + normalizedValue
         );
 
+        // 配置变更后清除缓存
+        redisUtils.delete(CONFIG_CACHE_KEY);
+
         return toResponse(definition, normalizedValue);
     }
 
@@ -85,9 +93,18 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         return Boolean.parseBoolean(resolveValue(definition, loadValueMap().get(configKey)));
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, String> loadValueMap() {
-        return systemConfigEntryRepository.findAll().stream()
+        // 先查 Redis 缓存
+        Map<String, String> cached = redisUtils.getObject(CONFIG_CACHE_KEY, LinkedHashMap.class);
+        if (cached != null) {
+            return cached;
+        }
+        // 缓存未命中：查数据库并写入缓存
+        Map<String, String> valueMap = systemConfigEntryRepository.findAll().stream()
                 .collect(LinkedHashMap::new, (map, entry) -> map.put(entry.getConfigKey(), entry.getConfigValue()), Map::putAll);
+        redisUtils.setObject(CONFIG_CACHE_KEY, valueMap, CONFIG_CACHE_TTL, TimeUnit.SECONDS);
+        return valueMap;
     }
 
     private AdminSystemConfigItemResponse toResponse(ConfigDefinition definition, String currentValue) {

@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/poi-categories")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 public class AdminPoiCategoryController {
 
     private final AdminPoiCategoryService adminPoiCategoryService;

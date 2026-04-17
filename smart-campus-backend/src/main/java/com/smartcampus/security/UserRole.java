@@ -7,7 +7,8 @@ import java.util.Arrays;
 public enum UserRole {
 
     USER((short) 1, "USER", "ROLE_USER"),
-    SUPER_ADMIN((short) 2, "SUPER_ADMIN", "ROLE_SUPER_ADMIN");
+    SUPER_ADMIN((short) 2, "SUPER_ADMIN", "ROLE_SUPER_ADMIN"),
+    ADMIN((short) 3, "ADMIN", "ROLE_ADMIN");
 
     private final short code;
     private final String roleName;

@@ -61,6 +61,21 @@ public class JwtTokenProvider {
         }
     }
 
+    /** 获取 token 签发时间（epoch 毫秒），用于黑名单校验 */
+    public long getIssuedAtFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.getIssuedAt().getTime();
+    }
+
+    /** 获取 JWT 配置的有效期（毫秒） */
+    public long getExpirationMs() {
+        return jwtConfig.getExpiration();
+    }
+
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
