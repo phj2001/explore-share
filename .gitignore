@@ -4,6 +4,8 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+.claude
+
 
 # Frontend build artifacts
 smart-campus-frontend/node_modules/
