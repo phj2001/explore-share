@@ -50,6 +50,17 @@
         </el-upload>
 
         <div class="composer-actions">
+          <div class="tag-input-row">
+            <span class="tag-label">#</span>
+            <input
+              v-model="tagInput"
+              type="text"
+              class="tag-input"
+              placeholder="添加标签，空格分隔（最多5个）"
+              maxlength="200"
+              @keydown.enter.prevent="submitShare"
+            />
+          </div>
           <span class="upload-tip">支持 JPG / PNG / WEBP，单张不超过 5MB，最多 3 张。</span>
           <el-button type="primary" :loading="submitting" @click="submitShare">发布打卡</el-button>
         </div>
@@ -71,7 +82,7 @@
     <div v-else-if="shares.length" class="share-list">
           <article v-for="share in shares" :key="share.id" class="share-card">
             <div class="share-card-head">
-              <div class="author-block">
+              <router-link :to="'/user/' + share.authorUserId" class="author-block author-link">
             <el-avatar :size="42" :src="share.authorAvatarResolvedUrl || undefined" class="author-avatar">
               {{ (share.authorDisplayName || share.authorUsername || 'U').slice(0, 1).toUpperCase() }}
             </el-avatar>
@@ -82,7 +93,7 @@
               </div>
               <time>{{ share.formattedCreatedAt }}</time>
             </div>
-          </div>
+          </router-link>
 
           <div class="card-actions">
             <el-button
@@ -106,6 +117,10 @@
         </div>
 
         <p v-if="share.content" class="share-content">{{ share.content }}</p>
+
+        <div v-if="share.tags?.length" class="share-tags">
+          <span v-for="tag in share.tags" :key="tag" class="share-tag">#{{ tag }}</span>
+        </div>
 
         <div v-if="share.displayImageUrls?.length" class="share-images">
           <el-image
@@ -281,6 +296,7 @@ import {
   likePoiShare,
   unlikePoiShare
 } from '@/api/poiShare'
+import { updateShareTags } from '@/api/tag'
 import { createReplyReport, createShareReport } from '@/api/contentReport'
 import { REPORT_REASON_OPTIONS, REPORT_REASON_OTHER } from '@/constants/contentReport'
 import { useUserStore } from '@/stores/user'
@@ -312,6 +328,7 @@ const shareContent = ref('')
 const loading = ref(false)
 const loadingMore = ref(false)
 const submitting = ref(false)
+const tagInput = ref('')
 const deletingId = ref(null)
 const total = ref(0)
 const page = ref(0)
@@ -573,10 +590,17 @@ const submitShare = async () => {
       content: trimmedContent,
       images
     })
+
+    const tags = tagInput.value.trim().split(/[\s,，]+/).filter(t => t.length > 0)
+    if (tags.length && createdShare?.id) {
+      try { await updateShareTags(createdShare.id, tags) } catch { /* 静默 */ }
+    }
+
     ElMessage.success('打卡发布成功')
     shareContent.value = ''
+    tagInput.value = ''
     clearUploadFiles()
-    shares.value = [createShareState(createdShare), ...shares.value]
+    shares.value = [{ ...createShareState(createdShare), tags }, ...shares.value]
     total.value += 1
     hasMore.value = shares.value.length < total.value
   } catch (error) {
@@ -835,6 +859,17 @@ onBeforeUnmount(() => {
   margin-bottom: 16px;
 }
 
+.author-link {
+  text-decoration: none;
+  color: inherit;
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+
+.author-link:hover {
+  background: #f1f5f9;
+}
+
 .composer-avatar,
 .author-avatar,
 .reply-avatar {
@@ -937,6 +972,49 @@ onBeforeUnmount(() => {
   color: #1e293b;
   line-height: 1.75;
   white-space: pre-wrap;
+}
+
+.share-tags {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.share-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tag-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.tag-label {
+  color: #2563eb;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.tag-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.tag-input:focus {
+  border-color: #0ea5e9;
 }
 
 .share-images {

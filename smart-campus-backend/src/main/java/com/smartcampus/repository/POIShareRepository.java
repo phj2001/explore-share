@@ -46,4 +46,16 @@ public interface POIShareRepository extends JpaRepository<POIShare, Long>, JpaSp
     List<Object[]> countGroupedByPoiIdsSince(@Param("start") LocalDateTime start);
 
     long countByUserId(Long userId);
+
+    @EntityGraph(attributePaths = {"poi", "user", "images"})
+    Page<POIShare> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    @Query("SELECT s.user.id, COUNT(s.id) FROM POIShare s GROUP BY s.user.id ORDER BY COUNT(s.id) DESC")
+    List<Object[]> countGroupedByUserIdDesc();
+
+    @Query("SELECT s.user.id, COUNT(s.id) FROM POIShare s WHERE s.createdAt >= :start GROUP BY s.user.id ORDER BY COUNT(s.id) DESC")
+    List<Object[]> countGroupedByUserIdSinceDesc(@Param("start") LocalDateTime start);
+
+    @EntityGraph(attributePaths = {"poi", "user", "images"})
+    Page<POIShare> findByUserIdInOrderByCreatedAtDesc(List<Long> userIds, Pageable pageable);
 }

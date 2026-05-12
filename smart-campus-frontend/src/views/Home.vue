@@ -24,6 +24,24 @@
           <RecommendedRouteSection />
         </LazyMount>
       </section>
+
+      <section id="leaderboard-section">
+        <LazyMount min-height="480px">
+          <LeaderboardSection />
+        </LazyMount>
+      </section>
+
+      <section id="feed-section">
+        <LazyMount min-height="480px">
+          <FeedSection />
+        </LazyMount>
+      </section>
+
+      <section id="user-route-section">
+        <LazyMount min-height="480px">
+          <UserRouteSection />
+        </LazyMount>
+      </section>
     </div>
 
     <section id="announcement-section">
@@ -47,6 +65,9 @@ const AnnouncementSection = defineAsyncComponent(() => import('@/components/anno
 const RecommendedShareSection = defineAsyncComponent(() => import('@/components/recommendation/RecommendedShareSection.vue'))
 const ActivitySection = defineAsyncComponent(() => import('@/components/activity/ActivitySection.vue'))
 const RecommendedRouteSection = defineAsyncComponent(() => import('@/components/route/RecommendedRouteSection.vue'))
+const LeaderboardSection = defineAsyncComponent(() => import('@/components/leaderboard/LeaderboardSection.vue'))
+const FeedSection = defineAsyncComponent(() => import('@/components/feed/FeedSection.vue'))
+const UserRouteSection = defineAsyncComponent(() => import('@/components/route/UserRouteSection.vue'))
 </script>
 
 <style scoped>

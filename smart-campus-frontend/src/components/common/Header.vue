@@ -20,6 +20,8 @@
             <span>搜索</span>
           </el-button>
 
+          <NotificationBell v-if="userStore.isLoggedIn" class="mobile-notification-bell" />
+
           <router-link
             v-if="userStore.isLoggedIn"
             to="/settings"
@@ -87,6 +89,8 @@
 
         <div class="user-actions">
           <template v-if="userStore.isLoggedIn">
+            <NotificationBell />
+
             <router-link to="/settings" class="profile-link front-panel">
               <el-avatar :size="38" :src="avatarUrl || undefined" class="user-avatar">
                 {{ displayName.slice(0, 1).toUpperCase() }}
@@ -116,6 +120,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import NotificationBell from '@/components/common/NotificationBell.vue'
 import { usePOIStore } from '@/stores/poi'
 import { useUserStore } from '@/stores/user'
 
@@ -498,6 +503,18 @@ const toggleMobileSearch = () => {
 
   .mobile-search-button {
     order: 1;
+  }
+
+  .mobile-notification-bell {
+    order: 2;
+  }
+
+  .mobile-notification-bell :deep(.notification-bell) {
+    min-height: 34px;
+    padding: 0 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(23, 135, 166, 0.14);
+    background: rgba(255, 255, 255, 0.96);
   }
 
   .mobile-logout-button {

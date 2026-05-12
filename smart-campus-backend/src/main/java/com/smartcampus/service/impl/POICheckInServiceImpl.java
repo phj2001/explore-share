@@ -8,6 +8,7 @@ import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.POICheckInRepository;
 import com.smartcampus.repository.POIRepository;
 import com.smartcampus.repository.UserRepository;
+import com.smartcampus.service.AchievementService;
 import com.smartcampus.service.POICheckInService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class POICheckInServiceImpl implements POICheckInService {
     private final POICheckInRepository poiCheckInRepository;
     private final POIRepository poiRepository;
     private final UserRepository userRepository;
+    private final AchievementService achievementService;
 
     @Override
     @Transactional(readOnly = true)
@@ -41,6 +43,11 @@ public class POICheckInServiceImpl implements POICheckInService {
             checkIn.setPoi(poi);
             checkIn.setUser(user);
             poiCheckInRepository.save(checkIn);
+        }
+
+        try {
+            achievementService.checkAndUnlock(userId);
+        } catch (Exception ignored) {
         }
 
         return buildStatus(poi.getId(), user.getId(), true);

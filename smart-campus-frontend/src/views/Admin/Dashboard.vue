@@ -54,6 +54,10 @@
           <el-icon><WarningFilled /></el-icon>
           <span>举报审核</span>
         </router-link>
+        <router-link to="/admin/poi-applications" class="nav-item">
+          <el-icon><MapLocation /></el-icon>
+          <span>地点审核</span>
+        </router-link>
         <router-link to="/admin/logs" class="nav-item">
           <el-icon><Tickets /></el-icon>
           <span>系统日志</span>
@@ -112,6 +116,7 @@ import {
   Guide,
   HomeFilled,
   Location,
+  MapLocation,
   Setting,
   Star,
   Tickets,
