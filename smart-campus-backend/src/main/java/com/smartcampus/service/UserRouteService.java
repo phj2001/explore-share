@@ -24,4 +24,8 @@ public interface UserRouteService {
     boolean toggleLike(Long routeId, Long userId);
 
     boolean toggleFavorite(Long routeId, Long userId);
+
+    PageResponse<UserRouteListItemResponse> adminGetRoutes(Short status, String keyword, Integer page, Integer size);
+
+    void adminReviewRoute(Long routeId, Short newStatus, String rejectReason, Long adminUserId);
 }

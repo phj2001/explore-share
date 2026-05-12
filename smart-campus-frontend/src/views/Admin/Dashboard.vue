@@ -58,6 +58,10 @@
           <el-icon><MapLocation /></el-icon>
           <span>地点审核</span>
         </router-link>
+        <router-link to="/admin/user-route-reviews" class="nav-item">
+          <el-icon><Finished /></el-icon>
+          <span>路线审核</span>
+        </router-link>
         <router-link to="/admin/logs" class="nav-item">
           <el-icon><Tickets /></el-icon>
           <span>系统日志</span>
@@ -113,6 +117,7 @@ import {
   CollectionTag,
   DataAnalysis,
   Files,
+  Finished,
   Guide,
   HomeFilled,
   Location,

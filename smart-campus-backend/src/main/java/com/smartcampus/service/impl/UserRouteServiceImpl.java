@@ -17,6 +17,7 @@ import com.smartcampus.repository.UserRouteFavoriteRepository;
 import com.smartcampus.repository.UserRouteLikeRepository;
 import com.smartcampus.repository.UserRouteRepository;
 import com.smartcampus.service.AchievementService;
+import com.smartcampus.service.NotificationService;
 import com.smartcampus.service.UserRouteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -34,7 +37,9 @@ public class UserRouteServiceImpl implements UserRouteService {
 
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final int MAX_PAGE_SIZE = 50;
+    private static final short STATUS_PENDING = 0;
     private static final short STATUS_PUBLISHED = 1;
+    private static final short STATUS_REJECTED = 2;
 
     private final UserRouteRepository userRouteRepository;
     private final UserRouteLikeRepository userRouteLikeRepository;
@@ -42,6 +47,7 @@ public class UserRouteServiceImpl implements UserRouteService {
     private final UserRepository userRepository;
     private final POIRepository poiRepository;
     private final AchievementService achievementService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -50,7 +56,6 @@ public class UserRouteServiceImpl implements UserRouteService {
         UserRoute route = buildRoute(user, request);
         addWaypoints(route, request.getWaypoints());
         userRouteRepository.save(route);
-        try { achievementService.checkAndUnlock(userId); } catch (Exception ignored) {}
         return toDetailResponse(route, userId);
     }
 
@@ -173,7 +178,7 @@ public class UserRouteServiceImpl implements UserRouteService {
         route.setDescription(request.getDescription());
         route.setDefaultMode(request.getDefaultMode() != null ? request.getDefaultMode() : "walking");
         route.setCoverImageUrl(request.getCoverImageUrl());
-        route.setStatus(STATUS_PUBLISHED);
+        route.setStatus(STATUS_PENDING);
         return route;
     }
 
@@ -259,7 +264,9 @@ public class UserRouteServiceImpl implements UserRouteService {
                 route.getLikeCount(),
                 route.getFavoriteCount(),
                 route.getWaypoints() != null ? route.getWaypoints().size() : 0,
-                route.getCreatedAt()
+                route.getCreatedAt(),
+                route.getStatus(),
+                route.getRejectReason()
         );
     }
 
@@ -275,6 +282,69 @@ public class UserRouteServiceImpl implements UserRouteService {
     private User getRequiredUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(404, "用户不存在"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<UserRouteListItemResponse> adminGetRoutes(Short status, String keyword, Integer page, Integer size) {
+        Pageable pageable = buildPageable(page, size);
+        Page<UserRoute> result = userRouteRepository.adminSearchRoutes(status, keyword, pageable);
+        List<UserRouteListItemResponse> records = result.getContent().stream()
+                .map(this::toListResponse)
+                .toList();
+        return new PageResponse<>(records, result.getNumber(), result.getSize(), result.getTotalElements(), result.hasNext());
+    }
+
+    @Override
+    @Transactional
+    public void adminReviewRoute(Long routeId, Short newStatus, String rejectReason, Long adminUserId) {
+        UserRoute route = userRouteRepository.findById(routeId)
+                .orElseThrow(() -> new BusinessException(404, "路线不存在"));
+        if (newStatus != STATUS_PUBLISHED && newStatus != STATUS_REJECTED) {
+            throw new BusinessException(400, "无效的审核状态");
+        }
+        route.setStatus(newStatus);
+        if (newStatus == STATUS_REJECTED) {
+            route.setRejectReason(rejectReason);
+        } else {
+            route.setRejectReason(null);
+        }
+        userRouteRepository.save(route);
+
+        Long routeOwnerId = route.getUser().getId();
+        String routeTitle = route.getTitle();
+
+        // 事务提交后异步触发成就检查与通知，避免污染当前事务
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (newStatus == STATUS_PUBLISHED) {
+                    try { achievementService.checkAndUnlock(routeOwnerId); } catch (Exception ignored) {}
+                    try {
+                        notificationService.sendNotification(
+                                routeOwnerId, adminUserId,
+                                "ROUTE_APPROVED",
+                                "路线审核通过",
+                                "您的路线「" + routeTitle + "」已通过审核，现已公开发布！",
+                                "ROUTE", routeId
+                        );
+                    } catch (Exception ignored) {}
+                } else {
+                    String content = (rejectReason != null && !rejectReason.isBlank())
+                            ? "驳回原因：" + rejectReason
+                            : "您的路线「" + routeTitle + "」未通过审核";
+                    try {
+                        notificationService.sendNotification(
+                                routeOwnerId, adminUserId,
+                                "ROUTE_REJECTED",
+                                "路线审核未通过",
+                                content,
+                                "ROUTE", routeId
+                        );
+                    } catch (Exception ignored) {}
+                }
+            }
+        });
     }
 
     private Pageable buildPageable(Integer page, Integer size) {

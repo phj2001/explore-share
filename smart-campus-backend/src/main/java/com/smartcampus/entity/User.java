@@ -49,6 +49,9 @@ public class User {
     @Column(name = "email", length = 255)
     private String email;
 
+    @Column(name = "can_reset_password", nullable = false)
+    private Boolean canResetPassword = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

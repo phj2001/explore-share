@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -49,7 +51,7 @@ public class AdminUserController {
             @Valid @RequestBody AdminUpdateUserRoleRequest request,
             Authentication authentication
     ) {
-        return Result.success(adminUserService.updateUserRole(userId, request.getRole(), getCurrentUserId(authentication)));
+        return Result.success(adminUserService.updateUserRole(userId, request.getRole(), request.getCanResetPassword(), getCurrentUserId(authentication)));
     }
 
     @PutMapping("/{userId}/status")
@@ -59,6 +61,27 @@ public class AdminUserController {
             Authentication authentication
     ) {
         return Result.success(adminUserService.updateUserStatus(userId, request.getStatus(), getCurrentUserId(authentication)));
+    }
+
+    @PutMapping("/{userId}/can-reset-password")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public Result<AdminUserDetailResponse> updateCanResetPassword(
+            @PathVariable Long userId,
+            @RequestBody Map<String, Boolean> body,
+            Authentication authentication
+    ) {
+        Boolean canReset = body.get("canResetPassword");
+        return Result.success(adminUserService.updateCanResetPassword(userId, canReset, getCurrentUserId(authentication)));
+    }
+
+    @PutMapping("/{userId}/password")
+    public Result<Void> resetUserPassword(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> body,
+            Authentication authentication
+    ) {
+        adminUserService.resetUserPassword(userId, body.get("newPassword"), getCurrentUserId(authentication));
+        return Result.success(null);
     }
 
     private Long getCurrentUserId(Authentication authentication) {

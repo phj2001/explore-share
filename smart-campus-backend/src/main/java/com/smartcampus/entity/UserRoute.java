@@ -58,6 +58,9 @@ public class UserRoute {
     @Column(name = "status", nullable = false)
     private Short status = 1;
 
+    @Column(name = "reject_reason", columnDefinition = "TEXT")
+    private String rejectReason;
+
     @Column(name = "like_count", nullable = false)
     private int likeCount = 0;
 

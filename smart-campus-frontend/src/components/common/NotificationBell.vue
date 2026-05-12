@@ -71,7 +71,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, Star, ChatDotRound, Trophy, User, Location, Warning } from '@element-plus/icons-vue'
+import { ElNotification } from 'element-plus'
+import { Bell, Star, ChatDotRound, Trophy, User, Location, Warning, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import { getNotifications, getUnreadCount, markAsRead, markAllAsRead } from '@/api/notification'
 import { API_ORIGIN } from '@/utils/request'
 
@@ -91,9 +92,19 @@ const page = ref(0)
 const hasMore = ref(false)
 
 let pollTimer = null
+let prevUnreadCount = -1
 
 const typeIcon = (type) => {
-  const map = { LIKE: Star, REPLY: ChatDotRound, FOLLOW: User, ACHIEVEMENT: Trophy, POI_APPROVED: Location, POI_REJECTED: Warning }
+  const map = {
+    LIKE: Star,
+    REPLY: ChatDotRound,
+    FOLLOW: User,
+    ACHIEVEMENT: Trophy,
+    POI_APPROVED: Location,
+    POI_REJECTED: Warning,
+    ROUTE_APPROVED: CircleCheck,
+    ROUTE_REJECTED: CircleClose
+  }
   return map[type] || Bell
 }
 
@@ -110,10 +121,40 @@ const formatTime = (dateStr) => {
   return new Date(dateStr).toLocaleDateString()
 }
 
+const showLatestToast = async () => {
+  try {
+    const notifRes = await getNotifications({ page: 0, size: 1 })
+    const latest = notifRes?.records?.[0]
+    if (latest && !latest.read) {
+      const isRejected = latest.type?.includes('REJECTED')
+      ElNotification({
+        title: latest.title,
+        message: latest.content || '',
+        type: isRejected ? 'warning' : 'success',
+        duration: 6000,
+        position: 'top-right'
+      })
+    }
+  } catch {}
+}
+
 const fetchUnreadCount = async () => {
   try {
     const res = await getUnreadCount()
-    unreadCount.value = res?.count || 0
+    const newCount = res?.count || 0
+
+    if (prevUnreadCount === -1) {
+      // 首次加载：只要有未读就弹提示（包含登录后已有的路线审核结果）
+      if (newCount > 0) {
+        await showLatestToast()
+      }
+    } else if (newCount > prevUnreadCount) {
+      // 浏览过程中新到的通知
+      await showLatestToast()
+    }
+
+    prevUnreadCount = newCount
+    unreadCount.value = newCount
   } catch {}
 }
 
@@ -156,6 +197,8 @@ const handleClick = async (item) => {
     window.dispatchEvent(new CustomEvent('poi:navigate-to-share', { detail: { shareId: item.targetId } }))
   } else if (item.targetType === 'USER' && item.targetId) {
     router.push(`/user/${item.targetId}`)
+  } else if (item.targetType === 'ROUTE' && item.targetId) {
+    router.push(`/route/${item.targetId}`)
   }
 }
 
@@ -174,7 +217,7 @@ const onPopoverOpen = () => {
 
 onMounted(() => {
   fetchUnreadCount()
-  pollTimer = setInterval(fetchUnreadCount, 60000)
+  pollTimer = setInterval(fetchUnreadCount, 30000)
 })
 
 onUnmounted(() => {

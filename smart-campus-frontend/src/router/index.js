@@ -101,6 +101,12 @@ const routes = [
         meta: { title: '地点审核', requiresAuth: true, requiresAdmin: true }
       },
       {
+        path: 'user-route-reviews',
+        name: 'AdminUserRouteReviews',
+        component: () => import('@/views/Admin/UserRouteReviewList.vue'),
+        meta: { title: '路线审核', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
         path: 'reviews',
         name: 'AdminReviews',
         component: () => import('@/views/Admin/ReviewList.vue'),

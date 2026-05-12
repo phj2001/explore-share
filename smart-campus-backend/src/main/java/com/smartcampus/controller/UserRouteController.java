@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 public class UserRouteController {
@@ -85,6 +87,31 @@ public class UserRouteController {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
         return Result.success(userRouteService.getMyFavoriteRoutes(getRequiredUserId(authentication), page, size));
+    }
+
+    @GetMapping("/api/admin/user-routes")
+    public Result<PageResponse<UserRouteListItemResponse>> adminGetRoutes(
+            @RequestParam(required = false) Short status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return Result.success(userRouteService.adminGetRoutes(status, keyword, page, size));
+    }
+
+    @PutMapping("/api/admin/user-routes/{id}/status")
+    public Result<Void> adminReviewRoute(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            Authentication authentication) {
+        Object statusObj = body.get("status");
+        if (statusObj == null) {
+            throw new IllegalArgumentException("缺少 status 字段");
+        }
+        Short newStatus = ((Number) statusObj).shortValue();
+        String rejectReason = (String) body.get("rejectReason");
+        Long adminUserId = getOptionalUserId(authentication);
+        userRouteService.adminReviewRoute(id, newStatus, rejectReason, adminUserId);
+        return Result.success(null);
     }
 
     private Long getOptionalUserId(Authentication authentication) {

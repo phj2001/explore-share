@@ -21,6 +21,14 @@
         </el-button>
         <el-button
           v-if="userStore.isLoggedIn"
+          plain
+          class="map-toolbar-button"
+          @click="router.push({ name: 'RouteCreate' })"
+        >
+          创建路线
+        </el-button>
+        <el-button
+          v-if="userStore.isLoggedIn"
           type="primary"
           plain
           class="map-toolbar-button"
@@ -244,7 +252,7 @@
 
 <script setup>
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RoutePolyline from '@/components/map/RoutePolyline.vue'
 import { useUserStore } from '@/stores/user'
@@ -273,6 +281,7 @@ const resolveMediaUrl = (value) => {
   return `${API_ORIGIN_RESOLVED}${value.startsWith('/') ? value : `/${value}`}`
 }
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const poiStore = usePOIStore()
@@ -1405,6 +1414,18 @@ onMounted(async () => {
     window.addEventListener('poi:fit-search-results', handleFitSearchResults)
     await loadInitialMapData()
     drawRoute()
+
+    const targetPoiId = Number(route.query.poiId)
+    if (targetPoiId) {
+      try {
+        const poi = await poiStore.fetchPOIById(targetPoiId)
+        if (poi) {
+          mapStore.selectPOI(poi)
+        }
+      } catch {
+        // 静默，不影响主流程
+      }
+    }
   } catch (error) {
     sdkError.value = error.message || '高德地图初始化失败'
     ElMessage.error(sdkError.value)

@@ -28,26 +28,46 @@
             </div>
           </section>
 
+          <!-- 路线地图 -->
+          <div v-if="detail.waypoints?.length" class="route-map-section">
+            <h3>路线地图</h3>
+            <div class="route-map-wrap">
+              <div ref="mapRoot" class="route-map"></div>
+              <div v-if="mapError" class="map-error">{{ mapError }}</div>
+            </div>
+          </div>
+
           <div v-if="detail.description" class="route-desc">
             <h3>路线介绍</h3>
             <p>{{ detail.description }}</p>
           </div>
 
           <div class="waypoints-section">
-            <h3>途经点 ({{ detail.waypoints?.length || 0 }})</h3>
-            <div class="waypoints-list">
-              <div v-for="(wp, idx) in detail.waypoints" :key="wp.id" class="waypoint-item">
-                <span class="wp-marker">{{ idx + 1 }}</span>
-                <div class="wp-body">
+            <h3>途经点 <span class="wp-count-badge">{{ detail.waypoints?.length || 0 }}</span></h3>
+            <div class="wp-timeline">
+              <div
+                v-for="(wp, idx) in detail.waypoints"
+                :key="wp.id"
+                class="wp-step"
+              >
+                <div class="wp-step-left">
+                  <div
+                    class="wp-dot"
+                    :class="{
+                      'wp-dot--start': idx === 0,
+                      'wp-dot--end': idx === detail.waypoints.length - 1
+                    }"
+                  >{{ idx + 1 }}</div>
+                  <div v-if="idx < detail.waypoints.length - 1" class="wp-connector" />
+                </div>
+                <div class="wp-step-body">
                   <strong>{{ wp.poiName || wp.waypointName || '未命名站点' }}</strong>
                   <span class="wp-coords">{{ wp.latitude }}, {{ wp.longitude }}</span>
                   <router-link
                     v-if="wp.poiId"
                     :to="{ name: 'Home', query: { poiId: wp.poiId } }"
                     class="wp-link"
-                  >
-                    查看POI详情
-                  </router-link>
+                  >查看 POI 详情</router-link>
                 </div>
               </div>
             </div>
@@ -63,18 +83,85 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import Header from '@/components/common/Header.vue'
 import Footer from '@/components/common/Footer.vue'
 import { useUserStore } from '@/stores/user'
 import { getRouteDetail, toggleRouteLike, toggleRouteFavorite } from '@/api/userRoute'
+import { loadAmapSdk, toAmapCoordinate } from '@/utils/amap'
 
 const vueRoute = useRoute()
 const userStore = useUserStore()
 const loading = ref(true)
 const detail = ref(null)
+const mapRoot = ref(null)
+const mapError = ref('')
+
+let routeMap = null
+let routeAMapRef = null
+
+const createMarkerContent = (index) => `
+  <div style="
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff;
+    border: 2px solid rgba(255,255,255,0.9);
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    user-select: none;
+  ">${index}</div>
+`
+
+const initRouteMap = async () => {
+  if (!mapRoot.value || !detail.value?.waypoints?.length) return
+  mapError.value = ''
+  try {
+    routeAMapRef = await loadAmapSdk()
+    const firstWp = detail.value.waypoints[0]
+    const center = toAmapCoordinate(Number(firstWp.latitude), Number(firstWp.longitude))
+
+    routeMap = new routeAMapRef.Map(mapRoot.value, {
+      viewMode: '2D',
+      zoom: 14,
+      center: center ? [center.lng, center.lat] : [116.397428, 39.90923],
+      resizeEnable: true,
+      zooms: [3, 20]
+    })
+
+    const positions = []
+    detail.value.waypoints.forEach((wp, idx) => {
+      const coord = toAmapCoordinate(Number(wp.latitude), Number(wp.longitude))
+      if (!coord) return
+      const pos = [coord.lng, coord.lat]
+      positions.push(pos)
+      const marker = new routeAMapRef.Marker({
+        position: pos,
+        content: createMarkerContent(idx + 1),
+        anchor: 'center',
+        title: wp.poiName || wp.waypointName || `途经点 ${idx + 1}`
+      })
+      routeMap.add(marker)
+    })
+
+    if (positions.length >= 2) {
+      const polyline = new routeAMapRef.Polyline({
+        path: positions,
+        strokeColor: '#2563eb',
+        strokeWeight: 4,
+        strokeOpacity: 0.8,
+        strokeStyle: 'solid',
+        lineJoin: 'round',
+        lineCap: 'round'
+      })
+      routeMap.add(polyline)
+      routeMap.setFitView(null, false, [30, 30, 30, 30])
+    }
+  } catch (e) {
+    mapError.value = '地图加载失败'
+  }
+}
 
 const loadRoute = async (id) => {
   loading.value = true
@@ -83,8 +170,10 @@ const loadRoute = async (id) => {
   } catch (error) {
     ElMessage.error(error.message || '加载路线失败')
   } finally {
-    loading.value = false
+    loading.value = false       // 先关 loading，让地图容器渲染到 DOM
   }
+  await nextTick()              // 等 DOM 更新完成
+  initRouteMap()                // 此时 mapRoot.value 已有效
 }
 
 const handleLike = async () => {
@@ -118,6 +207,13 @@ const handleFavorite = async () => {
 onMounted(() => {
   const id = Number(vueRoute.params.id)
   if (id) loadRoute(id)
+})
+
+onUnmounted(() => {
+  if (routeMap) {
+    routeMap.destroy()
+    routeMap = null
+  }
 })
 </script>
 
@@ -177,6 +273,43 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+/* 路线地图 */
+.route-map-section {
+  padding: 20px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+}
+
+.route-map-section h3 {
+  margin: 0 0 14px;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.route-map-wrap {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.route-map {
+  width: 100%;
+  height: 420px;
+}
+
+.map-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 250, 252, 0.9);
+  font-size: 13px;
+  color: #94a3b8;
+}
+
 .route-desc {
   padding: 20px;
   border-radius: 22px;
@@ -198,68 +331,117 @@ onMounted(() => {
 }
 
 .waypoints-section {
-  padding: 20px;
+  padding: 20px 20px 8px;
   border-radius: 22px;
   background: #fff;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
 }
 
 .waypoints-section h3 {
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   font-size: 18px;
   color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.waypoints-list {
+.wp-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* 时间轴容器 */
+.wp-timeline {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
-.waypoint-item {
+.wp-step {
   display: flex;
-  align-items: flex-start;
   gap: 14px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: #f8fafc;
+  min-height: 44px;
 }
 
-.wp-marker {
-  width: 30px;
-  height: 30px;
+/* 左侧：圆点 + 连接线 */
+.wp-step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.wp-dot {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, #38bdf8, #2563eb);
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
-.wp-body {
+.wp-dot--start {
+  background: linear-gradient(135deg, #34d399, #059669);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+}
+
+.wp-dot--end {
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+}
+
+.wp-connector {
+  flex: 1;
+  width: 2px;
+  min-height: 16px;
+  margin: 3px 0;
+  background: linear-gradient(180deg, #bfdbfe, #dbeafe);
+  border-radius: 1px;
+}
+
+/* 右侧：内容 */
+.wp-step-body {
+  padding: 4px 0 18px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  min-width: 0;
 }
 
-.wp-body strong {
+.wp-step-body strong {
+  font-size: 14px;
+  font-weight: 600;
   color: #0f172a;
-  font-size: 15px;
+  line-height: 1.4;
 }
 
 .wp-coords {
+  font-size: 11px;
   color: #94a3b8;
-  font-size: 12px;
   font-family: monospace;
 }
 
 .wp-link {
+  font-size: 12px;
   color: #0ea5e9;
-  font-size: 13px;
   text-decoration: none;
+  width: fit-content;
 }
 
 .wp-link:hover {
@@ -282,6 +464,10 @@ onMounted(() => {
 
   .hero-actions :deep(.el-button) {
     flex: 1;
+  }
+
+  .route-map {
+    height: 280px;
   }
 }
 </style>

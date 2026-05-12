@@ -96,6 +96,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/pois/**").hasAnyRole(UserRole.SUPER_ADMIN.getRoleName(), UserRole.ADMIN.getRoleName())
                         .requestMatchers(HttpMethod.PATCH, "/api/pois/**").hasAnyRole(UserRole.SUPER_ADMIN.getRoleName(), UserRole.ADMIN.getRoleName())
                         .requestMatchers("/api/routes/**").permitAll()
+                        .requestMatchers("/api/admin/user-routes/**").hasAnyRole(UserRole.SUPER_ADMIN.getRoleName(), UserRole.ADMIN.getRoleName())
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

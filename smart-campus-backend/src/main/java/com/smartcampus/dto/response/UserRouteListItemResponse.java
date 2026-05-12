@@ -36,4 +36,8 @@ public class UserRouteListItemResponse {
     private int waypointCount;
 
     private LocalDateTime createdAt;
+
+    private Short status;
+
+    private String rejectReason;
 }

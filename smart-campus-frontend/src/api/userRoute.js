@@ -35,3 +35,11 @@ export const getMyRoutes = (params = {}) => {
 export const getMyFavoriteRoutes = (params = {}) => {
   return request.get('/users/me/favorite-routes', { params })
 }
+
+export const adminGetUserRoutes = (params = {}) => {
+  return request.get('/admin/user-routes', { params })
+}
+
+export const adminReviewUserRoute = (id, status, rejectReason) => {
+  return request.put(`/admin/user-routes/${id}/status`, { status, rejectReason })
+}

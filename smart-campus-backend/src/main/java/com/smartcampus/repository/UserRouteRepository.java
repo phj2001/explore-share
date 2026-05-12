@@ -24,4 +24,7 @@ public interface UserRouteRepository extends JpaRepository<UserRoute, Long> {
     UserRoute findWithDetailsById(@Param("id") Long id);
 
     long countByUserId(Long userId);
+
+    @Query("SELECT r FROM UserRoute r JOIN FETCH r.user WHERE (:status IS NULL OR r.status = :status) AND (:keyword IS NULL OR :keyword = '' OR LOWER(r.title) LIKE LOWER(CONCAT('%',:keyword,'%')) OR LOWER(r.summary) LIKE LOWER(CONCAT('%',:keyword,'%'))) ORDER BY r.createdAt DESC")
+    Page<UserRoute> adminSearchRoutes(@Param("status") Short status, @Param("keyword") String keyword, Pageable pageable);
 }

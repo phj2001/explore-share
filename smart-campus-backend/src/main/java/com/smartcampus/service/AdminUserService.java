@@ -10,7 +10,11 @@ public interface AdminUserService {
 
     AdminUserDetailResponse getUserDetail(Long userId);
 
-    AdminUserDetailResponse updateUserRole(Long targetUserId, Short role, Long operatorUserId);
+    AdminUserDetailResponse updateUserRole(Long targetUserId, Short role, Boolean canResetPassword, Long operatorUserId);
 
     AdminUserDetailResponse updateUserStatus(Long targetUserId, Short status, Long operatorUserId);
+
+    AdminUserDetailResponse updateCanResetPassword(Long targetUserId, Boolean canResetPassword, Long operatorUserId);
+
+    void resetUserPassword(Long targetUserId, String newPassword, Long operatorUserId);
 }

@@ -216,10 +216,11 @@
               :key="ach.id"
               :class="['ach-badge', { locked: !ach.unlocked }]"
             >
-              <span class="ach-icon">{{ ach.unlocked ? '&#9733;' : '?' }}</span>
+              <span class="ach-icon">{{ ach.unlocked ? '★' : '?' }}</span>
               <div class="ach-info">
                 <strong>{{ ach.name }}</strong>
-                <span>{{ ach.unlocked ? ach.description : '???' }}</span>
+                <span>{{ ach.description }}</span>
+                <time v-if="ach.unlocked && ach.unlockedAt">{{ formatTime(ach.unlockedAt) }}</time>
               </div>
             </div>
           </div>
@@ -1180,6 +1181,11 @@ onBeforeUnmount(() => {
 .ach-info span {
   color: var(--front-text-muted);
   font-size: 12px;
+}
+
+.ach-info time {
+  color: var(--front-text-muted);
+  font-size: 11px;
 }
 
 .my-routes-section {
