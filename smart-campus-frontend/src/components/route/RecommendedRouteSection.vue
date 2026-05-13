@@ -1,57 +1,57 @@
 <template>
-  <section class="front-shell route-section">
+  <section v-if="!dataLoaded || routes.length > 0" class="front-shell route-section">
     <div class="section-header">
-      <div>
+      <div class="head-left">
         <span class="section-kicker">精选路线</span>
         <h2>按路线去探索地点</h2>
-        <p>
-          把多个地点串成一条完整体验线。打开路线后，地图会按途经顺序自动规划，适合漫步、骑行和轻旅行场景。
-        </p>
       </div>
-      <el-button text @click="loadRoutes">刷新路线</el-button>
+      <button class="refresh-btn" :disabled="loading" title="刷新路线" @click="loadRoutes(true)">
+        <svg class="refresh-icon" :class="{ spinning: loading }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+      </button>
     </div>
 
-    <div v-loading="loading">
-      <div v-if="routes.length" class="route-grid">
-        <article v-for="item in routes" :key="item.id" class="route-card">
-          <div class="route-cover-wrap">
-            <img v-if="item.coverImageUrl" :src="resolveAssetUrl(item.coverThumbnailUrl || item.coverImageUrl)" :alt="item.title" class="route-cover" loading="lazy">
-            <div v-else class="route-cover route-cover-fallback">
-              <span>{{ item.defaultModeLabel }}</span>
-            </div>
+    <el-skeleton v-if="loading && !routes.length" :rows="4" animated />
 
-            <div class="route-glance">
-              <span>{{ item.waypointCount }} 个地点</span>
-              <span>{{ item.startPoiName }} -> {{ item.endPoiName }}</span>
-            </div>
+    <div v-else-if="routes.length" class="route-grid">
+      <article v-for="item in routes" :key="item.id" class="route-card">
+        <div class="route-cover-wrap">
+          <img v-if="item.coverImageUrl" :src="resolveAssetUrl(item.coverThumbnailUrl || item.coverImageUrl)" :alt="item.title" class="route-cover" loading="lazy">
+          <div v-else class="route-cover route-cover-fallback">
+            <span>{{ item.defaultModeLabel }}</span>
           </div>
 
-          <div class="route-card-body">
-            <div class="route-badges">
-              <span class="badge badge-mode">{{ item.defaultModeLabel }}</span>
-              <span class="badge">{{ getRouteTempoLabel(item) }}</span>
-            </div>
-
-            <h3>{{ item.title }}</h3>
-            <p class="route-summary">{{ item.summary }}</p>
-
-            <div class="route-meta">
-              <span class="meta-line">起点：{{ item.startPoiName || '未设置' }}</span>
-              <span class="meta-line">终点：{{ item.endPoiName || '未设置' }}</span>
-              <span v-if="item.recommendationText" class="meta-note">推荐语：{{ item.recommendationText }}</span>
-            </div>
-
-            <div class="route-actions">
-              <el-button plain @click="openDetail(item.id)">查看详情</el-button>
-              <el-button type="primary" :loading="activatingId === item.id" @click="activateRoute(item.id)">
-                在地图中查看
-              </el-button>
-            </div>
+          <div class="route-glance">
+            <span>{{ item.waypointCount }} 个地点</span>
+            <span>{{ item.startPoiName }} → {{ item.endPoiName }}</span>
           </div>
-        </article>
-      </div>
+        </div>
 
-      <el-empty v-else description="当前还没有已发布的推荐路线" />
+        <div class="route-card-body">
+          <div class="route-badges">
+            <span class="badge badge-mode">{{ item.defaultModeLabel }}</span>
+            <span class="badge">{{ getRouteTempoLabel(item) }}</span>
+          </div>
+
+          <h3>{{ item.title }}</h3>
+          <p class="route-summary">{{ item.summary }}</p>
+
+          <div class="route-meta">
+            <span class="meta-line">起点：{{ item.startPoiName || '未设置' }}</span>
+            <span class="meta-line">终点：{{ item.endPoiName || '未设置' }}</span>
+            <span v-if="item.recommendationText" class="meta-note">{{ item.recommendationText }}</span>
+          </div>
+
+          <div class="route-actions">
+            <el-button plain size="small" @click="openDetail(item.id)">查看详情</el-button>
+            <el-button type="primary" size="small" :loading="activatingId === item.id" @click="activateRoute(item.id)">
+              在地图中查看
+            </el-button>
+          </div>
+        </div>
+      </article>
     </div>
 
     <el-dialog v-model="dialogVisible" title="推荐路线详情" width="760px" destroy-on-close>
@@ -112,33 +112,25 @@ import { useMapStore } from '@/stores/map'
 const mapStore = useMapStore()
 
 const loading = ref(false)
+const dataLoaded = ref(false)
 const routes = ref([])
 const dialogVisible = ref(false)
 const selectedRoute = ref(null)
 const activatingId = ref(null)
 
 const resolveAssetUrl = (value) => {
-  if (!value) {
-    return ''
-  }
-  if (/^https?:\/\//i.test(value)) {
-    return value
-  }
+  if (!value) return ''
+  if (/^https?:\/\//i.test(value)) return value
   return `${API_ORIGIN}${value.startsWith('/') ? value : `/${value}`}`
 }
 
 const getRouteTempoLabel = (item) => {
-  if ((item.waypointCount || 0) >= 6) {
-    return '长线探索'
-  }
-  if ((item.waypointCount || 0) >= 4) {
-    return '半日路线'
-  }
+  if ((item.waypointCount || 0) >= 6) return '长线探索'
+  if ((item.waypointCount || 0) >= 4) return '半日路线'
   return '轻量路线'
 }
 
-const loadRoutes = async (forceRefreshOrEvent = false) => {
-  const forceRefresh = forceRefreshOrEvent === true || typeof forceRefreshOrEvent === 'object'
+const loadRoutes = async (forceRefresh = false) => {
   loading.value = true
   try {
     routes.value = await getRecommendedRouteList({ limit: 4 }, { forceRefresh })
@@ -146,6 +138,7 @@ const loadRoutes = async (forceRefreshOrEvent = false) => {
     ElMessage.error(error.message || '加载推荐路线失败')
   } finally {
     loading.value = false
+    dataLoaded.value = true
   }
 }
 
@@ -164,7 +157,7 @@ const activateRoute = async (routeId) => {
     const detail = await getRecommendedRouteDetail(routeId)
     await mapStore.applyRecommendedRoute(detail)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    ElMessage.success(`已切换到路线“${detail.title}”`)
+    ElMessage.success(`已切换到路线"${detail.title}"`)
   } catch (error) {
     ElMessage.error(error.message || '加载路线失败')
   } finally {
@@ -173,15 +166,13 @@ const activateRoute = async (routeId) => {
 }
 
 const activateSelectedRoute = async () => {
-  if (!selectedRoute.value) {
-    return
-  }
+  if (!selectedRoute.value) return
   activatingId.value = selectedRoute.value.id
   try {
     await mapStore.applyRecommendedRoute(selectedRoute.value)
     dialogVisible.value = false
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    ElMessage.success(`已切换到路线“${selectedRoute.value.title}”`)
+    ElMessage.success(`已切换到路线"${selectedRoute.value.title}"`)
   } catch (error) {
     ElMessage.error(error.message || '加载路线失败')
   } finally {
@@ -199,12 +190,12 @@ const focusWaypoint = async (point) => {
   }
 }
 
-onMounted(loadRoutes)
+onMounted(() => loadRoutes(false))
 </script>
 
 <style scoped>
 .route-section {
-  padding: 8px 0 0;
+  padding: 24px 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -212,33 +203,73 @@ onMounted(loadRoutes)
 
 .section-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
+  gap: 12px;
+}
+
+.head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .section-kicker {
   display: inline-flex;
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: rgba(20, 184, 166, 0.1);
   color: #0f766e;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
 }
 
 .section-header h2 {
-  margin: 14px 0 8px;
+  margin: 0;
   color: var(--front-text);
-  font-size: clamp(24px, 3vw, 32px);
+  font-size: 20px;
+  font-weight: 700;
 }
 
-.section-header p {
-  margin: 0;
-  max-width: 760px;
-  color: var(--front-text-soft);
-  line-height: 1.8;
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--front-border);
+  background: transparent;
+  color: var(--front-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: rgba(20, 184, 166, 0.1);
+  color: #0f766e;
+  border-color: transparent;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.refresh-icon {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
 }
 
 .route-grid {
@@ -249,7 +280,7 @@ onMounted(loadRoutes)
 
 .route-card {
   overflow: hidden;
-  border-radius: 26px;
+  border-radius: 22px;
   border: 1px solid var(--front-border);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--front-shadow-soft);
@@ -257,7 +288,7 @@ onMounted(loadRoutes)
 
 .route-cover-wrap {
   position: relative;
-  height: 188px;
+  height: 180px;
   overflow: hidden;
 }
 
@@ -281,40 +312,40 @@ onMounted(loadRoutes)
 
 .route-glance {
   position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.62);
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.6);
   color: #f8fafc;
   backdrop-filter: blur(10px);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .route-card-body {
-  padding: 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .route-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .badge {
   display: inline-flex;
-  padding: 5px 10px;
+  padding: 4px 9px;
   border-radius: 999px;
   background: rgba(229, 239, 242, 0.84);
   color: var(--front-text-soft);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .badge-mode {
@@ -326,22 +357,23 @@ onMounted(loadRoutes)
 .detail-copy h3 {
   margin: 0;
   color: var(--front-text);
-  font-size: 20px;
+  font-size: 17px;
 }
 
 .route-summary,
 .route-description {
   margin: 0;
   color: var(--front-text-soft);
-  line-height: 1.75;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .route-meta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   color: var(--front-text-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .meta-note {
@@ -351,7 +383,7 @@ onMounted(loadRoutes)
 .route-actions,
 .dialog-footer {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -363,54 +395,57 @@ onMounted(loadRoutes)
 
 .detail-cover {
   width: 100%;
-  height: 260px;
+  height: 240px;
   object-fit: cover;
-  border-radius: 22px;
+  border-radius: 20px;
 }
 
 .detail-copy {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 6px;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 .timeline-item {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  padding: 12px 14px;
-  border-radius: 18px;
+  padding: 10px 12px;
+  border-radius: 16px;
   background: rgba(247, 251, 252, 0.92);
   border: 1px solid var(--front-border);
 }
 
 .timeline-index {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: rgba(23, 135, 166, 0.14);
   color: var(--front-accent-strong);
   font-weight: 700;
+  font-size: 12px;
 }
 
 .timeline-copy strong {
   color: var(--front-text);
+  font-size: 13px;
 }
 
 .timeline-copy p {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--front-text-muted);
+  font-size: 12px;
 }
 
 @media (max-width: 1280px) {
@@ -421,7 +456,7 @@ onMounted(loadRoutes)
 
 @media (max-width: 760px) {
   .route-section {
-    padding-top: 0;
+    padding: 20px 0;
   }
 
   .section-header,
@@ -429,6 +464,11 @@ onMounted(loadRoutes)
   .dialog-footer {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .section-header {
+    flex-direction: row;
+    align-items: center;
   }
 
   .route-grid {
@@ -441,18 +481,8 @@ onMounted(loadRoutes)
 }
 
 @media (max-width: 560px) {
-  .section-header {
-    gap: 10px;
-  }
-
   .section-header h2 {
-    margin: 8px 0 6px;
-    font-size: 20px;
-  }
-
-  .section-header p {
-    font-size: 12px;
-    line-height: 1.55;
+    font-size: 17px;
   }
 
   .route-grid {
@@ -467,61 +497,14 @@ onMounted(loadRoutes)
     height: 150px;
   }
 
-  .route-glance {
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    padding: 7px 9px;
-    border-radius: 12px;
-    font-size: 11px;
-  }
-
   .route-card-body {
     padding: 12px;
     gap: 10px;
   }
 
-  .route-card h3,
-  .detail-copy h3 {
-    font-size: 17px;
-  }
-
-  .route-summary,
-  .route-description,
-  .route-meta {
-    font-size: 12px;
-    line-height: 1.6;
-  }
-
-  .route-badges {
-    gap: 6px;
-  }
-
-  .badge {
-    font-size: 10px;
-    padding: 4px 8px;
-  }
-
-  .route-actions :deep(.el-button),
-  .dialog-footer :deep(.el-button) {
-    width: 100%;
-    min-height: 40px;
-  }
-
   .detail-cover {
     height: 200px;
-    border-radius: 18px;
-  }
-
-  .timeline-item {
-    padding: 12px;
     border-radius: 16px;
-  }
-
-  .timeline-item :deep(.el-button) {
-    grid-column: 2;
-    justify-content: flex-start;
-    padding-left: 0;
   }
 }
 </style>

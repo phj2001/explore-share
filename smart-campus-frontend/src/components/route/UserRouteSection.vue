@@ -1,10 +1,9 @@
 <template>
   <section class="front-shell user-route-section">
     <div class="section-head">
-      <div>
+      <div class="head-left">
         <span class="section-kicker">社区路线</span>
         <h2>用户自创路线</h2>
-        <p>发现其他探索者精心规划的游玩路线。</p>
       </div>
       <router-link v-if="isLoggedIn" to="/route/create">
         <el-button type="primary" size="small">创建路线</el-button>
@@ -17,7 +16,15 @@
       <UserRouteCard v-for="route in routes" :key="route.id" :route="route" />
     </div>
 
-    <el-empty v-else description="还没有用户创建路线" />
+    <div v-else class="empty-cta">
+      <p>还没有用户创建的路线，成为第一个探索者</p>
+      <router-link v-if="isLoggedIn" to="/route/create">
+        <el-button type="primary">创建第一条路线</el-button>
+      </router-link>
+      <router-link v-else to="/login">
+        <el-button type="primary">登录后创建</el-button>
+      </router-link>
+    </div>
 
     <div v-if="hasMore" class="load-more">
       <el-button :loading="loadingMore" @click="loadMore">加载更多</el-button>
@@ -61,46 +68,47 @@ const loadData = async (reset = false) => {
 
 const loadMore = () => loadData(false)
 
-onMounted(() => {
-  loadData(true)
-})
+onMounted(() => loadData(true))
 </script>
 
 <style scoped>
 .user-route-section {
+  padding: 24px 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .section-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
 }
 
-.section-head .section-kicker {
-  display: inline-block;
-  margin-bottom: 6px;
-  padding: 3px 12px;
+.head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-kicker {
+  display: inline-flex;
+  padding: 4px 10px;
   border-radius: 999px;
   background: #fef3c7;
   color: #d97706;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
 }
 
 .section-head h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
+  font-weight: 700;
   color: #0f172a;
-}
-
-.section-head p {
-  margin: 6px 0 0;
-  color: #64748b;
-  font-size: 14px;
 }
 
 .routes-grid {
@@ -109,10 +117,28 @@ onMounted(() => {
   gap: 18px;
 }
 
+.empty-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 20px;
+  border-radius: 20px;
+  background: #fffbeb;
+  border: 1px dashed rgba(217, 119, 6, 0.3);
+  text-align: center;
+}
+
+.empty-cta p {
+  margin: 0;
+  color: var(--front-text-soft);
+  font-size: 13px;
+}
+
 .load-more {
   display: flex;
   justify-content: center;
-  padding-top: 12px;
+  padding-top: 4px;
 }
 
 @media (max-width: 900px) {
@@ -122,16 +148,16 @@ onMounted(() => {
 }
 
 @media (max-width: 560px) {
+  .user-route-section {
+    padding: 20px 0;
+  }
+
   .routes-grid {
     grid-template-columns: 1fr;
   }
 
   .section-head h2 {
-    font-size: 20px;
-  }
-
-  .section-head {
-    flex-direction: column;
+    font-size: 17px;
   }
 }
 </style>

@@ -1,10 +1,9 @@
 <template>
   <section class="front-shell leaderboard-section">
     <div class="section-head">
-      <div>
+      <div class="head-left">
         <span class="section-kicker">探索排行</span>
         <h2>活跃用户排行榜</h2>
-        <p>看看谁是最活跃的探索者，每周一刷新周榜。</p>
       </div>
     </div>
 
@@ -43,7 +42,7 @@
         <span :class="['rank-badge', { gold: item.rank === 1, silver: item.rank === 2, bronze: item.rank === 3 }]">
           {{ item.rank }}
         </span>
-        <el-avatar :size="40" :src="item.avatarUrl || undefined" class="item-avatar">
+        <el-avatar :size="38" :src="item.avatarUrl || undefined" class="item-avatar">
           {{ (item.displayName || 'U').slice(0, 1).toUpperCase() }}
         </el-avatar>
         <div class="item-info">
@@ -53,7 +52,7 @@
       </router-link>
     </div>
 
-    <el-empty v-else description="暂无排行数据" />
+    <div v-else class="empty-hint">暂无排行数据</div>
   </section>
 </template>
 
@@ -72,11 +71,7 @@ const periodTabs = [
   { value: 'week', label: '周榜' }
 ]
 
-const countLabels = {
-  checkin: '次打卡',
-  share: '次分享',
-  likes: '个赞'
-}
+const countLabels = { checkin: '次打卡', share: '次分享', likes: '个赞' }
 
 const activeType = ref('checkin')
 const activePeriod = ref('total')
@@ -88,11 +83,7 @@ const countLabel = computed(() => countLabels[activeType.value] || '')
 const loadData = async () => {
   loading.value = true
   try {
-    const data = await getLeaderboard({
-      type: activeType.value,
-      period: activePeriod.value,
-      limit: 10
-    })
+    const data = await getLeaderboard({ type: activeType.value, period: activePeriod.value, limit: 10 })
     items.value = data || []
   } catch {
     items.value = []
@@ -101,51 +92,51 @@ const loadData = async () => {
   }
 }
 
-const switchType = (type) => {
-  activeType.value = type
-}
+const switchType = (type) => { activeType.value = type }
+const switchPeriod = (period) => { activePeriod.value = period }
 
-const switchPeriod = (period) => {
-  activePeriod.value = period
-}
-
-watch([activeType, activePeriod], () => {
-  loadData()
-})
-
-onMounted(() => {
-  loadData()
-})
+watch([activeType, activePeriod], () => loadData())
+onMounted(() => loadData())
 </script>
 
 <style scoped>
 .leaderboard-section {
+  padding: 24px 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
-.section-head .section-kicker {
-  display: inline-block;
-  margin-bottom: 6px;
-  padding: 3px 12px;
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-kicker {
+  display: inline-flex;
+  padding: 4px 10px;
   border-radius: 999px;
   background: #ecfdf5;
   color: #059669;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
 }
 
 .section-head h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
+  font-weight: 700;
   color: #0f172a;
-}
-
-.section-head p {
-  margin: 6px 0 0;
-  color: #64748b;
-  font-size: 14px;
 }
 
 .leaderboard-tabs {
@@ -163,8 +154,8 @@ onMounted(() => {
 
 .tab-btn,
 .period-btn {
-  padding: 8px 18px;
-  font-size: 14px;
+  padding: 7px 16px;
+  font-size: 13px;
   font-weight: 600;
   color: #64748b;
   background: none;
@@ -193,17 +184,17 @@ onMounted(() => {
 .leaderboard-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .leaderboard-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  border-radius: 18px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
   background: #fff;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
   text-decoration: none;
   color: inherit;
   transition: transform 0.15s, box-shadow 0.15s;
@@ -211,18 +202,18 @@ onMounted(() => {
 
 .leaderboard-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.09);
 }
 
 .rank-badge {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   color: #64748b;
   background: #f1f5f9;
   flex-shrink: 0;
@@ -259,15 +250,26 @@ onMounted(() => {
 
 .item-info strong {
   color: #0f172a;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .item-count {
   color: #64748b;
+  font-size: 12px;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 20px;
+  color: var(--front-text-muted);
   font-size: 13px;
 }
 
 @media (max-width: 640px) {
+  .leaderboard-section {
+    padding: 20px 0;
+  }
+
   .leaderboard-tabs {
     flex-direction: column;
     align-items: stretch;
@@ -278,7 +280,7 @@ onMounted(() => {
   }
 
   .section-head h2 {
-    font-size: 20px;
+    font-size: 17px;
   }
 }
 </style>

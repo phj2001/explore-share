@@ -1,15 +1,21 @@
 <template>
-  <section class="front-shell recommendation-section">
+  <section v-if="!dataLoaded || recommendations.length > 0" class="front-shell recommendation-section">
     <div class="section-head">
-      <div>
+      <div class="head-left">
         <span class="section-kicker">推荐打卡</span>
         <h2>精选地点分享</h2>
-        <p>后台精选的优质分享会在这里展示，点击卡片可直接在地图中查看对应地点。</p>
       </div>
-      <el-button text :loading="loading" @click="loadRecommendations">刷新推荐</el-button>
+      <button class="refresh-btn" :disabled="loading" :title="'刷新推荐'" @click="loadRecommendations(true)">
+        <svg class="refresh-icon" :class="{ spinning: loading }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+      </button>
     </div>
 
-    <div v-if="recommendations.length" class="recommendation-grid">
+    <el-skeleton v-if="loading && !recommendations.length" :rows="4" animated />
+
+    <div v-else-if="recommendations.length" class="recommendation-grid">
       <article
         v-for="item in recommendations"
         :key="item.recommendationId"
@@ -36,7 +42,7 @@
 
         <div class="card-body">
           <div class="author-row">
-            <el-avatar :size="36" :src="resolveAssetUrl(item.authorAvatarUrl) || undefined" class="author-avatar">
+            <el-avatar :size="32" :src="resolveAssetUrl(item.authorAvatarUrl) || undefined" class="author-avatar">
               {{ getNameInitial(item.authorDisplayName || item.authorUsername) }}
             </el-avatar>
             <div>
@@ -58,8 +64,6 @@
         </div>
       </article>
     </div>
-
-    <el-empty v-else v-loading="loading" description="当前还没有推荐内容" />
   </section>
 </template>
 
@@ -73,12 +77,12 @@ import { API_ORIGIN } from '@/utils/request'
 
 const recommendations = ref([])
 const loading = ref(false)
+const dataLoaded = ref(false)
 
 const poiStore = usePOIStore()
 const mapStore = useMapStore()
 
-const loadRecommendations = async (forceRefreshOrEvent = false) => {
-  const forceRefresh = forceRefreshOrEvent === true || typeof forceRefreshOrEvent === 'object'
+const loadRecommendations = async (forceRefresh = false) => {
   loading.value = true
   try {
     recommendations.value = await getRecommendedShareList(undefined, { forceRefresh })
@@ -86,16 +90,14 @@ const loadRecommendations = async (forceRefreshOrEvent = false) => {
     ElMessage.error(error.message || '加载推荐内容失败')
   } finally {
     loading.value = false
+    dataLoaded.value = true
   }
 }
 
 const focusPoi = async (item) => {
   try {
     let poi = poiStore.getCachedPOIById(item.poiId)
-    if (!poi) {
-      poi = await poiStore.fetchPOIById(item.poiId)
-    }
-
+    if (!poi) poi = await poiStore.fetchPOIById(item.poiId)
     mapStore.selectPOI(poi)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (error) {
@@ -104,60 +106,91 @@ const focusPoi = async (item) => {
 }
 
 const resolveAssetUrl = (value) => {
-  if (!value) {
-    return ''
-  }
-
-  if (/^https?:\/\//i.test(value)) {
-    return value
-  }
-
+  if (!value) return ''
+  if (/^https?:\/\//i.test(value)) return value
   return `${API_ORIGIN}${value.startsWith('/') ? value : `/${value}`}`
 }
 
 const getNameInitial = (value) => (value || 'U').slice(0, 1).toUpperCase()
 
-onMounted(async () => {
-  await loadRecommendations()
-})
+onMounted(() => loadRecommendations(false))
 </script>
 
 <style scoped>
 .recommendation-section {
-  padding: 8px 0 0;
-  background: transparent;
+  padding: 24px 0;
 }
 
 .section-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 18px;
+}
+
+.head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .section-kicker {
   display: inline-flex;
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: var(--front-accent-soft);
   color: var(--front-accent-strong);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
 }
 
 .section-head h2 {
-  margin: 14px 0 10px;
+  margin: 0;
   color: var(--front-text);
-  font-size: clamp(24px, 3vw, 32px);
+  font-size: 20px;
+  font-weight: 700;
 }
 
-.section-head p {
-  margin: 0;
-  max-width: 720px;
-  color: var(--front-text-soft);
-  line-height: 1.8;
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--front-border);
+  background: transparent;
+  color: var(--front-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: var(--front-accent-soft);
+  color: var(--front-accent-strong);
+  border-color: transparent;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.refresh-icon {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
 }
 
 .recommendation-grid {
@@ -168,7 +201,7 @@ onMounted(async () => {
 
 .recommendation-card {
   overflow: hidden;
-  border-radius: 26px;
+  border-radius: 22px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--front-border);
   box-shadow: var(--front-shadow-soft);
@@ -187,7 +220,7 @@ onMounted(async () => {
 
 .card-cover {
   width: 100%;
-  height: 220px;
+  height: 200px;
   display: block;
 }
 
@@ -202,86 +235,89 @@ onMounted(async () => {
 
 .card-badges {
   position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .badge {
   display: inline-flex;
-  padding: 6px 10px;
+  padding: 5px 9px;
   border-radius: 999px;
-  background: rgba(18, 41, 49, 0.74);
+  background: rgba(18, 41, 49, 0.72);
   color: #f8fafc;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .badge-soft {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.9);
   color: var(--front-text-soft);
 }
 
 .card-body {
-  padding: 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .author-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .author-avatar {
   background: linear-gradient(135deg, var(--front-accent), var(--front-accent-strong));
   color: #fff;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .author-row strong {
   color: var(--front-text);
+  font-size: 13px;
 }
 
 .author-row p {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   color: var(--front-text-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .recommend-text {
   margin: 0;
-  padding: 12px 14px;
-  border-radius: 18px;
+  padding: 10px 12px;
+  border-radius: 14px;
   background: rgba(233, 244, 246, 0.9);
   color: var(--front-accent-strong);
-  line-height: 1.65;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .content-preview {
   margin: 0;
   color: var(--front-text-soft);
-  line-height: 1.75;
-  min-height: 88px;
+  font-size: 13px;
+  line-height: 1.7;
+  min-height: 66px;
 }
 
 .card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   color: var(--front-text-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .metric-group {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .card-action {
@@ -297,13 +333,7 @@ onMounted(async () => {
 
 @media (max-width: 720px) {
   .recommendation-section {
-    padding-top: 0;
-  }
-
-  .section-head,
-  .card-footer {
-    flex-direction: column;
-    align-items: stretch;
+    padding: 20px 0;
   }
 
   .recommendation-grid {
@@ -313,18 +343,11 @@ onMounted(async () => {
 
 @media (max-width: 560px) {
   .section-head {
-    gap: 10px;
     margin-bottom: 12px;
   }
 
   .section-head h2 {
-    margin: 8px 0 6px;
-    font-size: 20px;
-  }
-
-  .section-head p {
-    font-size: 12px;
-    line-height: 1.55;
+    font-size: 17px;
   }
 
   .recommendation-grid {
@@ -336,19 +359,7 @@ onMounted(async () => {
   }
 
   .card-cover {
-    height: 156px;
-  }
-
-  .card-badges {
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    gap: 6px;
-  }
-
-  .badge {
-    font-size: 10px;
-    padding: 4px 7px;
+    height: 160px;
   }
 
   .card-body {
@@ -356,38 +367,8 @@ onMounted(async () => {
     gap: 10px;
   }
 
-  .author-row {
-    gap: 8px;
-  }
-
-  .author-avatar {
-    width: 32px;
-    height: 32px;
-  }
-
-  .author-row strong {
-    font-size: 13px;
-  }
-
-  .author-row p,
-  .content-preview,
-  .recommend-text {
-    font-size: 12px;
-    line-height: 1.6;
-  }
-
   .content-preview {
     min-height: auto;
-  }
-
-  .recommend-text {
-    padding: 10px 12px;
-    border-radius: 16px;
-  }
-
-  .card-footer {
-    gap: 8px;
-    font-size: 12px;
   }
 }
 </style>

@@ -7,38 +7,38 @@
         <MapContainer />
       </section>
 
-      <section id="recommended-share-section">
-        <LazyMount min-height="520px">
+      <section id="recommended-share-section" class="section-band">
+        <LazyMount min-height="320px">
           <RecommendedShareSection />
         </LazyMount>
       </section>
 
-      <section id="activity-section">
-        <LazyMount min-height="520px">
+      <section id="activity-section" class="section-band section-band--warm">
+        <LazyMount min-height="320px">
           <ActivitySection />
         </LazyMount>
       </section>
 
-      <section id="recommended-route-section">
-        <LazyMount min-height="520px">
+      <section id="recommended-route-section" class="section-band section-band--teal">
+        <LazyMount min-height="320px">
           <RecommendedRouteSection />
         </LazyMount>
       </section>
 
-      <section id="leaderboard-section">
-        <LazyMount min-height="480px">
+      <section id="leaderboard-section" class="section-band section-band--gray">
+        <LazyMount min-height="360px">
           <LeaderboardSection />
         </LazyMount>
       </section>
 
-      <section id="feed-section">
-        <LazyMount min-height="480px">
+      <section id="feed-section" class="section-band">
+        <LazyMount min-height="300px">
           <FeedSection />
         </LazyMount>
       </section>
 
-      <section id="user-route-section">
-        <LazyMount min-height="480px">
+      <section id="user-route-section" class="section-band section-band--amber">
+        <LazyMount min-height="300px">
           <UserRouteSection />
         </LazyMount>
       </section>
@@ -81,21 +81,14 @@ const UserRouteSection = defineAsyncComponent(() => import('@/components/route/U
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 18px 0 0;
 }
 
-@media (max-width: 768px) {
-  .main-content {
-    gap: 16px;
-    padding-top: 12px;
-  }
+.section-band {
+  padding: 4px 0;
 }
 
-@media (max-width: 480px) {
-  .main-content {
-    gap: 14px;
-    padding-top: 10px;
-  }
-}
+.section-band--warm  { background: rgba(245, 158, 11, 0.04); }
+.section-band--teal  { background: rgba(20, 184, 166, 0.04); }
+.section-band--gray  { background: rgba(15, 23, 42, 0.025); }
+.section-band--amber { background: rgba(251, 191, 36, 0.06); }
 </style>
