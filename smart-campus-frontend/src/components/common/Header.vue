@@ -1,54 +1,23 @@
 <template>
   <header class="site-header">
-    <div class="front-shell header-shell">
-      <div class="brand-block">
-        <router-link to="/" class="brand-link">
-          <span class="brand-mark">FC</span>
-          <div class="brand-copy">
-            <strong>地点探索与分享</strong>
-            <span>发现地点 · 分享体验 · 串联路线</span>
-          </div>
-        </router-link>
+    <div class="front-shell header-inner">
 
-        <div class="mobile-actions">
-          <el-button
-            class="mobile-action-button mobile-search-button"
-            aria-label="打开搜索面板"
-            @click="toggleMobileSearch"
-          >
-            <el-icon><Search /></el-icon>
-            <span>搜索</span>
-          </el-button>
-
-          <NotificationBell v-if="userStore.isLoggedIn" class="mobile-notification-bell" />
-
-          <router-link
-            v-if="userStore.isLoggedIn"
-            to="/settings"
-            class="mobile-profile-link front-panel"
-            aria-label="个人中心"
-          >
-            <el-avatar :size="34" :src="avatarUrl || undefined" class="user-avatar">
-              {{ displayName.slice(0, 1).toUpperCase() }}
-            </el-avatar>
-          </router-link>
-
-          <router-link v-else to="/login" class="mobile-login-link" aria-label="登录或注册">
-            <el-button type="primary" class="mobile-action-button mobile-login-button">登录</el-button>
-          </router-link>
-
-          <el-button
-            v-if="userStore.isLoggedIn"
-            class="mobile-action-button mobile-logout-button"
-            aria-label="退出登录"
-            @click="handleMobileLogout"
-          >
-            退出
-          </el-button>
+      <!-- 品牌 -->
+      <router-link to="/" class="brand-link">
+        <span class="brand-mark">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s-8-7.5-8-13a8 8 0 1 1 16 0c0 5.5-8 13-8 13Z"/>
+            <circle cx="12" cy="9" r="2.5"/>
+          </svg>
+        </span>
+        <div class="brand-copy">
+          <strong>地点探索</strong>
+          <span class="brand-sub">发现地点 · 分享体验 · 串联路线</span>
         </div>
-      </div>
+      </router-link>
 
-      <div class="search-strip front-panel" :class="{ 'mobile-search-collapsed': !mobileSearchVisible }">
+      <!-- 搜索栏（桌面） -->
+      <div class="search-bar" :class="{ 'search-bar--active': mobileSearchVisible }">
         <el-input
           v-model="searchText"
           placeholder="搜索地点、空间或兴趣点"
@@ -60,7 +29,6 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
-
         <el-select
           v-model="selectedCategory"
           placeholder="全部分类"
@@ -70,48 +38,76 @@
         >
           <el-option label="全部分类" value="" />
           <el-option
-            v-for="category in poiCategories"
-            :key="category"
-            :label="category"
-            :value="category"
+            v-for="cat in poiCategories"
+            :key="cat"
+            :label="cat"
+            :value="cat"
           />
         </el-select>
-
-        <el-button type="primary" @click="handleSearch">开始探索</el-button>
+        <button class="search-btn" @click="handleSearch">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+          探索
+        </button>
       </div>
 
-      <div class="right-section">
-        <nav class="nav-menu front-panel">
+      <!-- 右侧 -->
+      <div class="nav-right">
+        <nav class="nav-links">
           <router-link to="/" class="nav-item">探索首页</router-link>
           <router-link v-if="userStore.isLoggedIn" to="/settings" class="nav-item">个人中心</router-link>
-          <router-link v-if="userStore.isAdminOrAbove" to="/admin/overview" class="nav-item">运营后台</router-link>
+          <router-link v-if="userStore.isAdminOrAbove" to="/admin/overview" class="nav-item nav-item--admin">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            后台
+          </router-link>
         </nav>
 
-        <div class="user-actions">
-          <template v-if="userStore.isLoggedIn">
-            <NotificationBell />
-
-            <router-link to="/settings" class="profile-link front-panel">
-              <el-avatar :size="38" :src="avatarUrl || undefined" class="user-avatar">
-                {{ displayName.slice(0, 1).toUpperCase() }}
-              </el-avatar>
-              <div class="profile-copy">
-                <strong>{{ displayName }}</strong>
-                <span>查看资料与安全设置</span>
-              </div>
-            </router-link>
-            <el-button text class="logout-button" @click="handleLogout">退出</el-button>
-          </template>
-
-          <template v-else>
-            <router-link to="/login" class="login-link">
-              <el-button type="primary">登录 / 注册</el-button>
-            </router-link>
-          </template>
-        </div>
+        <template v-if="userStore.isLoggedIn">
+          <NotificationBell />
+          <router-link to="/settings" class="profile-chip">
+            <el-avatar :size="30" :src="avatarUrl || undefined" class="profile-avatar">
+              {{ displayName.slice(0, 1).toUpperCase() }}
+            </el-avatar>
+            <div class="profile-info">
+              <strong>{{ displayName }}</strong>
+              <span>个人中心</span>
+            </div>
+          </router-link>
+          <button class="logout-btn" @click="handleLogout">退出</button>
+        </template>
+        <template v-else>
+          <router-link to="/login" class="login-btn">登录 / 注册</router-link>
+        </template>
       </div>
+
+      <!-- 移动端操作 -->
+      <div class="mobile-actions">
+        <button class="mobile-btn" aria-label="搜索" @click="toggleMobileSearch">
+          <el-icon><Search /></el-icon>
+        </button>
+        <NotificationBell v-if="userStore.isLoggedIn" />
+        <router-link v-if="userStore.isLoggedIn" to="/settings" class="mobile-avatar-link">
+          <el-avatar :size="32" :src="avatarUrl || undefined" class="profile-avatar">
+            {{ displayName.slice(0, 1).toUpperCase() }}
+          </el-avatar>
+        </router-link>
+        <router-link v-else to="/login" class="mobile-login-link">登录</router-link>
+      </div>
+
     </div>
 
+    <!-- 移动端搜索展开 -->
+    <div v-if="mobileSearchVisible" class="mobile-search-panel">
+      <div class="front-shell mobile-search-inner">
+        <el-input v-model="searchText" placeholder="搜索地点、空间或兴趣点" clearable @keyup.enter="handleSearch">
+          <template #prefix><el-icon><Search /></el-icon></template>
+        </el-input>
+        <el-select v-model="selectedCategory" placeholder="全部分类" clearable style="flex:1" @change="handleCategoryFilter">
+          <el-option label="全部分类" value="" />
+          <el-option v-for="cat in poiCategories" :key="cat" :label="cat" :value="cat" />
+        </el-select>
+        <button class="search-btn" @click="handleSearch">探索</button>
+      </div>
+    </div>
   </header>
 </template>
 
@@ -135,23 +131,17 @@ const mobileSearchVisible = ref(false)
 
 const displayName = computed(() => userStore.displayName || '当前用户')
 const avatarUrl = computed(() => userStore.avatarUrl)
-const SEARCH_RESULT_LIMIT_MESSAGE = '当前结果数量较多，系统仅展示前一部分地点。建议继续输入更精确的关键词或放大地图后查看。'
-const EMPTY_SEARCH_RESULT_MESSAGE = '没有找到符合条件的地点，请尝试更换关键词或分类。'
 
-const notifyMapFitSearchResults = () => {
-  window.dispatchEvent(new CustomEvent('poi:fit-search-results'))
-}
+const notifyMapFitSearchResults = () => window.dispatchEvent(new CustomEvent('poi:fit-search-results'))
 
 const handleSearchResultFeedback = () => {
   if (!poiStore.searchPoiList.length) {
-    ElMessage.info(EMPTY_SEARCH_RESULT_MESSAGE)
+    ElMessage.info('没有找到符合条件的地点，请尝试更换关键词或分类。')
     return
   }
-
   if (poiStore.searchSummary.truncated) {
-    ElMessage.warning(SEARCH_RESULT_LIMIT_MESSAGE)
+    ElMessage.warning('当前结果数量较多，系统仅展示前一部分地点。建议继续输入更精确的关键词。')
   }
-
   notifyMapFitSearchResults()
 }
 
@@ -167,12 +157,9 @@ onMounted(async () => {
     if (userStore.isLoggedIn && !userStore.userInfo?.displayName && !userStore.userInfo?.avatarUrl) {
       await userStore.syncCurrentUser()
     }
-
     await poiStore.fetchCategories()
     poiCategories.value = poiStore.categories
-  } catch (error) {
-    console.error('加载头部数据失败:', error)
-  }
+  } catch {}
 })
 
 const handleSearch = async () => {
@@ -181,7 +168,6 @@ const handleSearch = async () => {
     mobileSearchVisible.value = false
     return
   }
-
   try {
     await poiStore.searchByName(searchText.value.trim())
     handleSearchResultFeedback()
@@ -198,7 +184,6 @@ const handleCategoryFilter = async () => {
     mobileSearchVisible.value = false
     return
   }
-
   try {
     await poiStore.fetchByCategory(selectedCategory.value)
     handleSearchResultFeedback()
@@ -214,10 +199,6 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-const handleMobileLogout = () => {
-  handleLogout()
-}
-
 const toggleMobileSearch = () => {
   mobileSearchVisible.value = !mobileSearchVisible.value
 }
@@ -228,363 +209,322 @@ const toggleMobileSearch = () => {
   position: sticky;
   top: 0;
   z-index: 1000;
-  padding: 14px 0 0;
-  background: linear-gradient(180deg, rgba(244, 248, 249, 0.92), rgba(244, 248, 249, 0));
-  backdrop-filter: blur(12px);
+  background: rgba(247,250,247,0.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--front-border);
 }
 
-.header-shell {
+.header-inner {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0,1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
+  padding: 12px 0;
 }
 
-.brand-block {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
+/* 品牌 */
 .brand-link {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
   text-decoration: none;
-}
-
-.mobile-actions {
-  display: none;
+  flex-shrink: 0;
 }
 
 .brand-mark {
-  width: 46px;
-  height: 46px;
-  border-radius: 16px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, var(--front-accent), var(--front-accent-strong));
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  box-shadow: 0 12px 24px rgba(23, 135, 166, 0.2);
+  background: linear-gradient(135deg, var(--forest-600), var(--forest-800));
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(31,140,105,0.28);
+  flex-shrink: 0;
 }
 
 .brand-copy {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .brand-copy strong {
-  color: var(--front-text);
-  font-size: 18px;
-  letter-spacing: 0.01em;
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink-900);
+  letter-spacing: -0.01em;
 }
 
-.brand-copy span {
-  color: var(--front-text-muted);
-  font-size: 12px;
+.brand-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-500);
+  text-transform: uppercase;
 }
 
-.search-strip {
+/* 搜索栏 */
+.search-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 22px;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid var(--front-border);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--front-shadow-soft);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--forest-400);
+  box-shadow: 0 0 0 3px rgba(31,140,105,0.1);
 }
 
 .search-input {
   flex: 1;
 }
+.search-input :deep(.el-input__wrapper) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  padding: 0;
+  min-height: 32px;
+}
+.search-input :deep(.el-input__inner) {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  color: var(--ink-900);
+}
 
 .category-select {
-  width: 160px;
+  width: 120px;
+  flex-shrink: 0;
+}
+.category-select :deep(.el-select__wrapper) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  min-height: 32px;
+  font-size: 13px;
 }
 
-.right-section {
+.search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--forest-700);
+  color: #fff;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.search-btn:hover { background: var(--forest-800); }
+
+/* 右侧导航 */
+.nav-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.nav-menu {
+.nav-links {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px;
-  border-radius: 18px;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--front-border);
+  border-radius: 12px;
+  background: #fff;
 }
 
 .nav-item {
-  min-height: 36px;
-  padding: 0 12px;
-  border-radius: 12px;
   display: inline-flex;
   align-items: center;
-  color: var(--front-text-soft);
-  text-decoration: none;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 8px;
   font-size: 13px;
-  font-weight: 600;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  font-weight: 500;
+  color: var(--ink-600);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
 .nav-item:hover,
 .nav-item.router-link-active {
-  background: var(--front-accent-soft);
-  color: var(--front-accent-strong);
+  background: var(--forest-50);
+  color: var(--forest-700);
 }
 
-.user-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.nav-item--admin {
+  color: var(--ink-500);
+}
+.nav-item--admin:hover,
+.nav-item--admin.router-link-active {
+  background: rgba(31,140,105,0.08);
+  color: var(--forest-700);
 }
 
-.profile-link {
+.profile-chip {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 18px;
-  color: inherit;
+  gap: 8px;
+  padding: 5px 12px 5px 6px;
+  border: 1px solid var(--front-border);
+  border-radius: 999px;
+  background: #fff;
   text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.profile-chip:hover {
+  border-color: var(--forest-400);
+  box-shadow: 0 0 0 2px rgba(31,140,105,0.1);
 }
 
-.user-avatar {
-  background: linear-gradient(135deg, var(--front-accent), var(--front-accent-strong));
+.profile-avatar {
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
   color: #fff;
-  font-weight: 700;
-}
-
-.profile-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.profile-copy strong {
-  color: var(--front-text);
+  font-weight: 600;
   font-size: 13px;
 }
 
-.profile-copy span {
-  color: var(--front-text-muted);
-  font-size: 11px;
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.profile-info strong {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+.profile-info span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-400);
+  letter-spacing: 0.06em;
 }
 
-.logout-button {
-  color: var(--front-text-soft);
+.logout-btn {
+  background: none;
+  border: 1px solid var(--front-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.logout-btn:hover {
+  background: var(--paper-100);
+  color: var(--ink-800);
 }
 
-.login-link {
+.login-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--forest-700);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.login-btn:hover { background: var(--forest-800); }
+
+/* 移动端操作 */
+.mobile-actions {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--front-border);
+  background: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--ink-600);
+  transition: background 0.15s;
+}
+.mobile-btn:hover { background: var(--paper-100); }
+
+.mobile-avatar-link {
   text-decoration: none;
 }
 
-@media (max-width: 1220px) {
-  .header-shell {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
+.mobile-login-link {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--forest-700);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
 
-  .right-section {
-    justify-content: space-between;
+/* 移动端搜索展开 */
+.mobile-search-panel {
+  border-top: 1px solid var(--front-border);
+  padding: 10px 0 12px;
+  background: rgba(247,250,247,0.96);
+}
+
+.mobile-search-inner {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 响应式 */
+@media (max-width: 1100px) {
+  .header-inner {
+    grid-template-columns: auto 1fr auto;
   }
+  .brand-sub { display: none; }
 }
 
 @media (max-width: 860px) {
-  .search-strip,
-  .right-section {
-    flex-direction: column;
-    align-items: stretch;
+  .header-inner {
+    grid-template-columns: auto 1fr auto;
   }
-
-  .search-strip {
-    gap: 12px;
-  }
-
-  .nav-menu {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .category-select {
-    width: 100%;
-  }
-
-  .user-actions {
-    justify-content: space-between;
-  }
+  .nav-links { display: none; }
+  .profile-info { display: none; }
+  .profile-chip { padding: 4px; }
+  .logout-btn { display: none; }
 }
 
 @media (max-width: 640px) {
-  .site-header {
-    padding-top: 8px;
-  }
-
-  .header-shell {
-    gap: 8px;
-  }
-
-  .brand-block {
+  .header-inner {
+    grid-template-columns: auto auto;
     justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.88);
-    box-shadow: var(--front-shadow-soft);
+    padding: 10px 0;
   }
-
-  .brand-link {
-    min-width: 0;
-    gap: 10px;
-  }
-
-  .brand-mark {
-    width: 34px;
-    height: 34px;
-    border-radius: 12px;
-    font-size: 12px;
-    flex-shrink: 0;
-  }
-
-  .brand-copy strong {
-    font-size: 14px;
-  }
-
-  .brand-copy span {
-    display: none;
-  }
-
-  .mobile-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .mobile-profile-link {
-    padding: 4px;
-    border-radius: 14px;
-    text-decoration: none;
-    order: 2;
-  }
-
-  .mobile-login-link {
-    text-decoration: none;
-    order: 4;
-  }
-
-  .mobile-login-button {
-    color: #ffffff;
-  }
-
-  .mobile-action-button {
-    min-height: 34px;
-    padding: 0 10px;
-    border-radius: 12px;
-    border-color: rgba(23, 135, 166, 0.14);
-    background: rgba(255, 255, 255, 0.96);
-    color: var(--front-text);
-    font-size: 11px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin: 0;
-  }
-
-  .mobile-menu-button {
-    order: 1;
-  }
-
-  .mobile-search-button {
-    order: 1;
-  }
-
-  .mobile-notification-bell {
-    order: 2;
-  }
-
-  .mobile-notification-bell :deep(.notification-bell) {
-    min-height: 34px;
-    padding: 0 8px;
-    border-radius: 12px;
-    border: 1px solid rgba(23, 135, 166, 0.14);
-    background: rgba(255, 255, 255, 0.96);
-  }
-
-  .mobile-logout-button {
-    order: 3;
-  }
-
-  .search-strip {
-    padding: 8px;
-    border-radius: 16px;
-  }
-
-  .mobile-search-collapsed {
-    display: none;
-  }
-
-  .right-section {
-    display: none;
-  }
-
-  .profile-link {
-    width: 100%;
-  }
-
-  .user-actions {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .logout-button,
-  .login-link :deep(.el-button) {
-    width: 100%;
-    min-height: 42px;
-  }
-
-  .logout-button {
-    justify-content: center;
-    margin-left: 0;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.82);
-  }
+  .search-bar { display: none; }
+  .nav-right { display: none; }
+  .mobile-actions { display: flex; }
 }
 
 @media (max-width: 480px) {
-  .search-strip {
-    gap: 8px;
-  }
-
-  .search-strip :deep(.el-input__wrapper),
-  .search-strip :deep(.el-select__wrapper) {
-    min-height: 38px;
-    font-size: 13px;
-  }
-
-  .search-strip :deep(.el-button) {
-    min-height: 38px;
-    border-radius: 12px;
-    font-size: 13px;
-  }
-
-  .brand-copy strong {
-    font-size: 13px;
-  }
-
-  .mobile-action-button span {
-    line-height: 1;
-  }
-
-  .profile-copy span {
-    display: none;
-  }
+  .brand-copy strong { font-size: 15px; }
 }
 </style>

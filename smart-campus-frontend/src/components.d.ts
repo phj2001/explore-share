@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ActivitySection: typeof import('./components/activity/ActivitySection.vue')['default']
     AnnouncementSection: typeof import('./components/announcement/AnnouncementSection.vue')['default']
+    AssistantChat: typeof import('./components/assistant/AssistantChat.vue')['default']
     AvatarCropperDialog: typeof import('./components/user/AvatarCropperDialog.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']

@@ -409,8 +409,8 @@ const createPoiMarkerContent = () => {
       height: 18px;
       border-radius: 999px;
       border: 3px solid #ffffff;
-      background: linear-gradient(135deg, #0f766e, #0ea5e9);
-      box-shadow: 0 10px 20px rgba(14, 165, 233, 0.32);
+      background: linear-gradient(135deg, #1f8c69, #2d9e7a);
+      box-shadow: 0 10px 20px rgba(31, 140, 105, 0.32);
       user-select: none;
       -webkit-user-select: none;
       caret-color: transparent;
@@ -1085,7 +1085,7 @@ const drawRouteEndpoints = () => {
       ? ['#15803d', '#22c55e']
       : isEnd
         ? ['#b91c1c', '#ef4444']
-        : ['#0f766e', '#0ea5e9']
+        : ['#1f8c69', '#2d9e7a']
 
     const size = isStart || isEnd ? 36 : 32
     const offset = isStart || isEnd ? -18 : -16
@@ -1117,7 +1117,7 @@ const drawRoute = () => {
 
   routePolyline = new AMapRef.Polyline({
     path: points.map((point) => [Number(point.lng), Number(point.lat)]),
-    strokeColor: '#0ea5e9',
+    strokeColor: '#1f8c69',
     strokeOpacity: 0.92,
     strokeWeight: 7,
     strokeStyle: 'solid',
@@ -1561,8 +1561,8 @@ watch(
   overflow: hidden;
   overscroll-behavior: contain;
   background:
-    radial-gradient(circle at top right, rgba(23, 135, 166, 0.12), transparent 28%),
-    linear-gradient(180deg, #f9fcfd, #e7f0f3);
+    radial-gradient(circle at top right, rgba(31, 140, 105, 0.1), transparent 28%),
+    linear-gradient(180deg, #f7faf7, #e8f2ed);
 }
 
 .map-view {
@@ -1570,8 +1570,8 @@ watch(
   height: calc(100vh - 96px);
   touch-action: pan-x pan-y pinch-zoom;
   background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.15), transparent 28%),
-    linear-gradient(180deg, #f8fafc, #e2e8f0);
+    radial-gradient(circle at top right, rgba(31, 140, 105, 0.12), transparent 28%),
+    linear-gradient(180deg, #f7faf7, #e8f2ed);
 }
 
 @supports (height: 100svh) {
@@ -1605,10 +1605,10 @@ watch(
   z-index: 1100;
   padding: 11px 14px;
   border-radius: 14px;
-  background: rgba(23, 50, 60, 0.88);
-  color: #eff8fa;
+  background: rgba(13, 42, 35, 0.88);
+  color: var(--forest-100);
   font-size: 13px;
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 18px 36px rgba(13, 42, 35, 0.18);
 }
 
 .map-toolbar {
@@ -1623,10 +1623,10 @@ watch(
 
 .map-toolbar-button {
   border-radius: 999px;
-  border-color: rgba(15, 23, 42, 0.12);
+  border-color: var(--front-border);
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 12px 28px rgba(31, 140, 105, 0.1);
 }
 
 .map-toolbar-button:hover {
@@ -1641,9 +1641,9 @@ watch(
   max-width: 360px;
   padding: 16px 18px;
   border-radius: 18px;
-  background: rgba(23, 50, 60, 0.92);
-  color: #eff8fa;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+  background: rgba(13, 42, 35, 0.92);
+  color: var(--forest-100);
+  box-shadow: 0 20px 40px rgba(13, 42, 35, 0.18);
   backdrop-filter: blur(10px);
 }
 
@@ -1687,7 +1687,7 @@ watch(
 .poi-overview {
   padding: 24px;
   border-radius: 28px;
-  background: linear-gradient(135deg, rgba(216, 238, 244, 0.92), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(135deg, rgba(209, 237, 224, 0.92), rgba(247, 250, 247, 0.96));
 }
 
 .poi-overview-card h3 {
@@ -1794,7 +1794,7 @@ watch(
 .poi-gallery-section {
   margin-top: 20px;
   padding-top: 18px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--front-border);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1810,11 +1810,12 @@ watch(
 .gallery-head h3 {
   margin: 0;
   font-size: 16px;
-  color: #0f172a;
+  font-family: var(--font-serif);
+  color: var(--ink-900);
 }
 
 .gallery-count {
-  color: #94a3b8;
+  color: var(--ink-400);
   font-size: 13px;
 }
 
@@ -1837,8 +1838,8 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f5f9;
-  color: #94a3b8;
+  background: var(--paper-100);
+  color: var(--ink-400);
   font-size: 12px;
 }
 
@@ -1938,7 +1939,7 @@ watch(
 .poi-review-item {
   padding: 14px 16px;
   border-radius: 16px;
-  background: #f8fafc;
+  background: var(--paper-50);
 }
 
 .review-item-head {
@@ -1948,7 +1949,7 @@ watch(
 }
 
 .review-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
   color: #fff;
   font-weight: 700;
 }

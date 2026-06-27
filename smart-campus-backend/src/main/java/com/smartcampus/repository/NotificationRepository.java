@@ -16,6 +16,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     long countByRecipientIdAndIsReadFalse(Long recipientId);
 
+    /** 升级项④幂等去重：判断某 outbox 事件是否已落库。 */
+    boolean existsByOutboxId(Long outboxId);
+
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.id = :id AND n.recipient.id = :recipientId")
     void markAsRead(@Param("id") Long id, @Param("recipientId") Long recipientId);

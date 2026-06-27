@@ -830,12 +830,13 @@ onBeforeUnmount(() => {
 .share-header h3 {
   margin: 0;
   font-size: 22px;
-  color: #0f172a;
+  font-family: var(--font-serif);
+  color: var(--ink-900);
 }
 
 .share-header p {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 14px;
 }
 
@@ -843,8 +844,9 @@ onBeforeUnmount(() => {
 .share-card {
   padding: 20px;
   border-radius: 24px;
-  background: #fff;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+  background: var(--front-panel);
+  border: 1px solid var(--front-border);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .composer-user,
@@ -867,13 +869,13 @@ onBeforeUnmount(() => {
 }
 
 .author-link:hover {
-  background: #f1f5f9;
+  background: var(--paper-100);
 }
 
 .composer-avatar,
 .author-avatar,
 .reply-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
   color: #fff;
   font-weight: 700;
 }
@@ -881,7 +883,7 @@ onBeforeUnmount(() => {
 .composer-user strong,
 .author-line strong,
 .reply-meta strong {
-  color: #0f172a;
+  color: var(--ink-900);
 }
 
 .composer-user p,
@@ -889,7 +891,7 @@ onBeforeUnmount(() => {
 .login-tip p,
 .reply-meta time {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 13px;
 }
 
@@ -902,7 +904,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  color: #475569;
+  color: var(--ink-600);
 }
 
 .composer-actions,
@@ -917,7 +919,7 @@ onBeforeUnmount(() => {
 .upload-tip,
 .reply-composer-actions span,
 .reply-login-tip span {
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 13px;
 }
 
@@ -963,13 +965,13 @@ onBeforeUnmount(() => {
 }
 
 .author-username {
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 13px;
 }
 
 .share-content {
   margin: 16px 0 0;
-  color: #1e293b;
+  color: var(--ink-800);
   line-height: 1.75;
   white-space: pre-wrap;
 }
@@ -984,8 +986,8 @@ onBeforeUnmount(() => {
 .share-tag {
   padding: 2px 10px;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--forest-100);
+  color: var(--forest-700);
   font-size: 12px;
   font-weight: 600;
 }
@@ -998,7 +1000,7 @@ onBeforeUnmount(() => {
 }
 
 .tag-label {
-  color: #2563eb;
+  color: var(--forest-700);
   font-weight: 700;
   font-size: 15px;
 }
@@ -1006,7 +1008,7 @@ onBeforeUnmount(() => {
 .tag-input {
   flex: 1;
   padding: 6px 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--front-border);
   border-radius: 10px;
   font-size: 13px;
   outline: none;
@@ -1014,7 +1016,7 @@ onBeforeUnmount(() => {
 }
 
 .tag-input:focus {
-  border-color: #0ea5e9;
+  border-color: var(--forest-500);
 }
 
 .share-images {
@@ -1037,14 +1039,14 @@ onBeforeUnmount(() => {
   gap: 12px;
   margin-top: 12px;
   padding-top: 8px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--front-border);
 }
 
 .reply-section {
   margin-top: 12px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: #f8fafc;
+  background: var(--paper-50);
 }
 
 .reply-list {
@@ -1059,7 +1061,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--front-border);
 }
 
 .reply-item:last-child {
@@ -1074,7 +1076,7 @@ onBeforeUnmount(() => {
 
 .reply-body p {
   margin: 6px 0 0;
-  color: #1e293b;
+  color: var(--ink-800);
   line-height: 1.65;
   white-space: pre-wrap;
 }
@@ -1097,7 +1099,7 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   padding-top: 4px;
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 13px;
 }
 
@@ -1116,24 +1118,24 @@ onBeforeUnmount(() => {
 .report-target {
   padding: 16px 18px;
   border-radius: 18px;
-  background: #f8fafc;
+  background: var(--paper-50);
 }
 
 .report-label {
   display: inline-flex;
   margin-bottom: 10px;
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 12px;
 }
 
 .report-target strong {
   display: block;
-  color: #0f172a;
+  color: var(--ink-900);
 }
 
 .report-target p {
   margin: 10px 0 0;
-  color: #475569;
+  color: var(--ink-600);
   line-height: 1.7;
   white-space: pre-wrap;
 }

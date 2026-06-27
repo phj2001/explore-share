@@ -53,6 +53,10 @@ public class Notification {
     @Column(name = "target_id")
     private Long targetId;
 
+    /** 来源 Outbox 事件 ID（升级项④幂等去重，唯一）。同步直发或历史数据可为 null。 */
+    @Column(name = "outbox_id", unique = true)
+    private Long outboxId;
+
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 

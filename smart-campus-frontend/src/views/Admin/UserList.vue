@@ -593,18 +593,18 @@ onMounted(async () => {
 .page-hero,
 .filter-panel,
 .table-panel {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-panel);
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .page-hero {
   border-radius: 28px;
   padding: 26px 28px;
   background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.16), transparent 30%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 255, 0.9));
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(240, 253, 244, 0.9));
 }
 
 .hero-kicker {
@@ -612,8 +612,8 @@ onMounted(async () => {
   align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.08);
-  color: #2563eb;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent-strong);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -622,14 +622,15 @@ onMounted(async () => {
 
 .page-hero h1 {
   margin: 14px 0 10px;
+  font-family: var(--font-serif);
   font-size: clamp(26px, 4vw, 38px);
   line-height: 1.1;
-  color: #0f172a;
+  color: var(--admin-text);
 }
 
 .page-hero p {
   margin: 0;
-  color: #64748b;
+  color: var(--admin-text-muted);
   line-height: 1.75;
 }
 
@@ -657,7 +658,7 @@ onMounted(async () => {
 
 .user-avatar,
 .detail-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-400), var(--forest-700));
   color: #fff;
   font-weight: 700;
 }
@@ -673,7 +674,7 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 18px 6px 8px;
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 .drawer-body {
@@ -699,13 +700,14 @@ onMounted(async () => {
 
 .drawer-profile h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--admin-text);
+  font-family: var(--font-serif);
   font-size: 28px;
 }
 
 .drawer-profile p {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 .drawer-tags {
@@ -716,7 +718,8 @@ onMounted(async () => {
 
 .drawer-section h3 {
   margin: 0 0 14px;
-  color: #0f172a;
+  color: var(--admin-text);
+  font-family: var(--font-serif);
   font-size: 18px;
 }
 
@@ -730,14 +733,14 @@ onMounted(async () => {
 .stat-card {
   border-radius: 18px;
   padding: 16px;
-  background: linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(255, 255, 255, 0.96));
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .info-item span,
 .stat-card span {
   display: block;
-  color: #64748b;
+  color: var(--admin-text-muted);
   font-size: 13px;
 }
 
@@ -745,7 +748,7 @@ onMounted(async () => {
 .stat-card strong {
   display: block;
   margin-top: 10px;
-  color: #0f172a;
+  color: var(--admin-text);
   line-height: 1.6;
 }
 
@@ -767,7 +770,7 @@ onMounted(async () => {
 .tips-list {
   margin: 0;
   padding-left: 18px;
-  color: #475569;
+  color: var(--ink-600);
   line-height: 1.8;
 }
 
@@ -778,8 +781,8 @@ onMounted(async () => {
   gap: 16px;
   padding: 14px 16px;
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(255, 255, 255, 0.96));
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .perm-desc {
@@ -791,18 +794,18 @@ onMounted(async () => {
 .perm-label {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--admin-text);
 }
 
 .perm-hint {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--ink-400);
 }
 
 .reset-hint {
   margin: 0 0 14px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 .reset-dialog-body {
@@ -814,7 +817,7 @@ onMounted(async () => {
 .reset-dialog-tip {
   margin: 0;
   font-size: 13px;
-  color: #475569;
+  color: var(--ink-600);
   line-height: 1.6;
 }
 

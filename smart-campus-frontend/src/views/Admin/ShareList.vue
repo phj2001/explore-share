@@ -725,12 +725,12 @@ onMounted(async () => {
 
 <style scoped>
 .share-page {
-  --panel-bg: rgba(255, 255, 255, 0.9);
-  --panel-border: rgba(148, 163, 184, 0.18);
-  --ink: #0f172a;
-  --muted: #64748b;
-  --accent: #2563eb;
-  --accent-soft: rgba(37, 99, 235, 0.08);
+  --panel-bg: var(--admin-panel);
+  --panel-border: var(--admin-border);
+  --ink: var(--admin-text);
+  --muted: var(--admin-text-muted);
+  --accent: var(--admin-accent-strong);
+  --accent-soft: var(--admin-accent-soft);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -742,7 +742,7 @@ onMounted(async () => {
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .page-hero {
@@ -752,8 +752,8 @@ onMounted(async () => {
   grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
   gap: 20px;
   background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 26%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 247, 255, 0.94));
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.18), transparent 26%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 253, 244, 0.94));
 }
 
 .hero-kicker,
@@ -772,6 +772,7 @@ onMounted(async () => {
 
 .hero-copy h1 {
   margin: 14px 0 10px;
+  font-family: var(--font-serif);
   font-size: clamp(28px, 4vw, 40px);
   line-height: 1.08;
   color: var(--ink);
@@ -793,8 +794,8 @@ onMounted(async () => {
 .hero-stat {
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid rgba(191, 219, 254, 0.8);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 248, 255, 0.92));
+  border: 1px solid var(--admin-border);
+  background: var(--admin-panel);
 }
 
 .hero-stat span,
@@ -879,12 +880,12 @@ onMounted(async () => {
 }
 
 .preset-chip {
-  background: rgba(241, 245, 249, 0.95);
-  color: #475569;
+  background: var(--paper-100);
+  color: var(--ink-600);
 }
 
 .preset-chip:hover {
-  background: rgba(37, 99, 235, 0.1);
+  background: var(--admin-accent-soft);
   color: var(--accent);
 }
 
@@ -894,7 +895,7 @@ onMounted(async () => {
 }
 
 .active-filter-chip {
-  background: rgba(219, 234, 254, 0.95);
+  background: var(--admin-accent-soft);
   color: var(--accent);
 }
 
@@ -914,6 +915,7 @@ onMounted(async () => {
 .panel-head h2 {
   margin: 12px 0 0;
   color: var(--ink);
+  font-family: var(--font-serif);
   font-size: 24px;
 }
 
@@ -926,7 +928,7 @@ onMounted(async () => {
 
 .author-avatar,
 .reply-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-400), var(--forest-700));
   color: #fff;
   font-weight: 700;
 }
@@ -980,8 +982,8 @@ onMounted(async () => {
 .metric-pills span {
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(241, 245, 249, 0.95);
-  color: #475569;
+  background: var(--paper-100);
+  color: var(--ink-600);
   font-size: 12px;
 }
 
@@ -1064,8 +1066,8 @@ onMounted(async () => {
 .reply-card {
   border-radius: 18px;
   padding: 16px;
-  background: linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(255, 255, 255, 0.96));
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .drawer-section {
@@ -1077,6 +1079,7 @@ onMounted(async () => {
 .drawer-section h3 {
   margin: 0;
   color: var(--ink);
+  font-family: var(--font-serif);
   font-size: 18px;
 }
 
@@ -1107,7 +1110,7 @@ onMounted(async () => {
 
 .content-card,
 .reply-content {
-  color: #334155;
+  color: var(--ink-700);
   line-height: 1.8;
   white-space: pre-wrap;
 }

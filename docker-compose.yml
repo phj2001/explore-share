@@ -1,0 +1,157 @@
+# discover-share_places 一键编排
+# 包含：PostgreSQL(PostGIS) / Redis / RabbitMQ / Prometheus / Grafana / Backend / Frontend
+# 用法：cp .env.example .env && 填值 && docker compose up -d
+
+services:
+  # ---------- 数据库（必须用 postgis 镜像，普通 postgres 无法支持空间列）----------
+  postgres:
+    # 自建镜像：postgis/postgis 基础上编译加装 pgvector（解决 postgis 镜像无 pgvector 的已知坑，任务规则 4）
+    build:
+      context: ./smart-campus-backend
+      dockerfile: Dockerfile.db
+    image: discover-postgres-postgis-pgvector:local
+    container_name: discover-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-discover}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./smart-campus-backend/db/init:/docker-entrypoint-initdb.d:ro
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-discover}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------- 缓存（JWT 用户信息缓存 / 登录风控 / M2 使用）----------
+  redis:
+    image: redis:7-alpine
+    container_name: discover-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------- 消息队列（M4 Outbox 异步通知依赖）----------
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: discover-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------- 指标采集（M1 可观测性落地后开始有数据）----------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: discover-prometheus
+    volumes:
+      - ./ops/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  # ---------- 指标可视化 ----------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: discover-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
+  # ---------- 后端（Spring Boot 4 + Java 21）----------
+  backend:
+    build:
+      context: ./smart-campus-backend
+    image: discover-backend:local
+    container_name: discover-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/discover}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      JWT_SECRET: ${JWT_SECRET:-}
+      SUPER_ADMIN_USERNAME: ${SUPER_ADMIN_USERNAME:-admin}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-admin123}
+      APP_SECURITY_ALLOWED_ORIGIN_PATTERNS: ${APP_SECURITY_ALLOWED_ORIGIN_PATTERNS:-http://localhost:5173}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      AMAP_WEB_KEY: ${AMAP_WEB_KEY:-}
+      # AI 探索助手（DashScope OpenAI 兼容）—— 总开关默认关闭，不影响已上线主功能
+      ASSISTANT_ENABLED: ${ASSISTANT_ENABLED:-false}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      LLM_MODEL: ${LLM_MODEL:-qwen-plus}
+    ports:
+      - "8080:8080"
+    volumes:
+      - backend_storage:/app/uploads
+    healthcheck:
+      # 修复 #8：后端就绪探针（/actuator/health 已在 SecurityConfig 放行）
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # ---------- 前端（Vue 3 + Vite + nginx SPA）----------
+  frontend:
+    build:
+      context: ./smart-campus-frontend
+    image: discover-frontend:local
+    container_name: discover-frontend
+    depends_on:
+      backend:
+        condition: service_healthy   # 修复 #8：后端健康后再起前端，避免启动期 API 502
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  redis_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+  backend_storage:

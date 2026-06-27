@@ -294,20 +294,20 @@ onMounted(async () => {
 
 .info-card span {
   display: block;
-  color: #6f8790;
+  color: var(--admin-text-muted);
   font-size: 12px;
 }
 
 .info-card strong {
   display: block;
   margin: 10px 0 8px;
-  color: #18333d;
+  color: var(--admin-text);
   font-size: 16px;
 }
 
 .info-card p {
   margin: 0;
-  color: #45616c;
+  color: var(--ink-600);
   font-size: 13px;
   line-height: 1.7;
 }

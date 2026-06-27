@@ -695,12 +695,12 @@ onBeforeUnmount(() => revokeCropperUrl())
 }
 
 .strip-avatar {
-  background: linear-gradient(135deg, var(--front-accent), var(--front-accent-strong));
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
   color: #fff;
   font-size: 26px;
   font-weight: 700;
   border: 3px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 20px rgba(23, 135, 166, 0.18);
+  box-shadow: 0 8px 20px rgba(31, 140, 105, 0.22);
 }
 
 .avatar-overlay {
@@ -777,28 +777,34 @@ onBeforeUnmount(() => revokeCropperUrl())
 
 .settings-tabs :deep(.el-tabs__nav-wrap::after) {
   height: 1px;
-  background: #e2e8f0;
+  background: var(--front-border);
 }
 
 .settings-tabs :deep(.el-tabs__item) {
-  font-size: 14px;
-  font-weight: 600;
-  color: #64748b;
-  padding: 14px 20px;
-  transition: color 0.2s;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-500);
+  padding: 13px 18px;
+  transition: color 0.15s;
 }
 
 .settings-tabs :deep(.el-tabs__item:hover) {
-  color: #0f172a;
+  color: var(--ink-900);
 }
 
 .settings-tabs :deep(.el-tabs__item.is-active) {
-  color: var(--front-accent, #0ea5e9);
+  color: var(--forest-700);
 }
 
 .settings-tabs :deep(.el-tabs__active-bar) {
-  background: var(--front-accent, #0ea5e9);
+  background: var(--forest-700);
   height: 2px;
+}
+
+.settings-tabs :deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+  background: var(--front-border);
 }
 
 .settings-tabs :deep(.el-tabs__content) {
@@ -849,7 +855,7 @@ onBeforeUnmount(() => revokeCropperUrl())
 
 .safety-note strong {
   display: block;
-  color: #9a3412;
+  color: var(--clay-700);
   font-size: 13px;
 }
 
@@ -872,7 +878,7 @@ onBeforeUnmount(() => revokeCropperUrl())
   border-radius: 999px;
   border: 1px solid var(--front-border);
   background: transparent;
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -914,8 +920,8 @@ onBeforeUnmount(() => revokeCropperUrl())
 }
 
 .favorite-card:hover {
-  border-color: var(--front-accent);
-  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.1);
+  border-color: var(--forest-400);
+  box-shadow: 0 6px 16px rgba(31, 140, 105, 0.1);
 }
 
 .favorite-card-main {
@@ -1138,12 +1144,12 @@ onBeforeUnmount(() => revokeCropperUrl())
 }
 
 .follow-item:hover {
-  border-color: var(--front-accent);
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.08);
+  border-color: var(--forest-500);
+  box-shadow: 0 4px 12px rgba(31, 140, 105, 0.1);
 }
 
 .follow-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
   color: #fff;
   font-weight: 700;
   flex-shrink: 0;
@@ -1197,13 +1203,13 @@ onBeforeUnmount(() => revokeCropperUrl())
   justify-content: center;
   font-size: 16px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  background: linear-gradient(135deg, var(--clay-400), var(--clay-600));
   color: #fff;
 }
 
 .ach-badge.locked .ach-icon {
-  background: #e2e8f0;
-  color: #94a3b8;
+  background: var(--paper-200);
+  color: var(--ink-400);
 }
 
 .ach-info {
@@ -1225,7 +1231,7 @@ onBeforeUnmount(() => revokeCropperUrl())
   gap: 12px;
   padding: 32px 20px;
   border-radius: 14px;
-  background: #f8fafc;
+  background: var(--paper-50);
   border: 1px dashed var(--front-border);
   text-align: center;
 }

@@ -154,8 +154,8 @@ const createWaypointMarkerContent = (index) => {
       font-weight: 700;
       color: #ffffff;
       border: 3px solid rgba(255, 255, 255, 0.92);
-      background: linear-gradient(135deg, #0f766e, #0ea5e9);
-      box-shadow: 0 8px 18px rgba(14, 165, 233, 0.35);
+      background: linear-gradient(135deg, #1f8c69, #2d9e7a);
+      box-shadow: 0 8px 18px rgba(31, 140, 105, 0.35);
       user-select: none;
       -webkit-user-select: none;
     ">${index}</div>
@@ -196,7 +196,7 @@ const redrawMarkers = () => {
   if (positions.length >= 2) {
     routePolyline = new AMapRef.Polyline({
       path: positions,
-      strokeColor: '#0ea5e9',
+      strokeColor: '#1f8c69',
       strokeWeight: 4,
       strokeOpacity: 0.85,
       strokeStyle: 'solid',
@@ -353,18 +353,19 @@ onUnmounted(() => {
 
 .card-head h2 {
   margin: 10px 0 0;
-  color: #0f172a;
+  font-family: var(--font-serif);
+  color: var(--ink-900);
   font-size: 22px;
 }
 
 .create-form :deep(.el-form-item__label) {
   font-weight: 600;
-  color: #334155;
+  color: var(--ink-700);
 }
 
 .waypoints-section {
   margin-top: 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--front-border);
   padding-top: 18px;
 }
 
@@ -379,17 +380,17 @@ onUnmounted(() => {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ink-900);
 }
 
 .wp-count {
-  color: #64748b;
+  color: var(--ink-500);
   font-weight: 500;
 }
 
 .wp-hint {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--ink-400);
 }
 
 .waypoints-list {
@@ -407,15 +408,15 @@ onUnmounted(() => {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--paper-50);
+  border: 1px solid var(--front-border);
 }
 
 .wp-seq {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0f766e, #0ea5e9);
+  background: linear-gradient(135deg, var(--forest-600), var(--forest-800));
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -440,34 +441,34 @@ onUnmounted(() => {
 }
 
 .wp-coords {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--ink-400);
 }
 
 .poi-option-name {
   font-size: 13px;
-  color: #0f172a;
+  color: var(--ink-900);
 }
 
 .poi-option-cat {
   margin-left: 8px;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--ink-400);
 }
 
 .poi-option-empty {
   margin: 0;
   padding: 10px 0;
   text-align: center;
-  color: #94a3b8;
+  color: var(--ink-400);
   font-size: 13px;
 }
 
 .wp-empty {
   padding: 18px 0;
   text-align: center;
-  color: #94a3b8;
+  color: var(--ink-400);
   font-size: 13px;
 }
 
@@ -476,7 +477,7 @@ onUnmounted(() => {
   justify-content: flex-end;
   gap: 12px;
   padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--front-border);
   margin-top: 20px;
 }
 
@@ -489,13 +490,14 @@ onUnmounted(() => {
   gap: 0;
   border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--front-border);
+  box-shadow: var(--front-shadow-md, 0 8px 28px rgba(31, 140, 105, 0.08));
 }
 
 .map-tip {
   padding: 12px 18px;
-  background: rgba(23, 50, 60, 0.88);
-  color: #e0f2f7;
+  background: var(--forest-900);
+  color: var(--forest-100);
   font-size: 13px;
   text-align: center;
 }

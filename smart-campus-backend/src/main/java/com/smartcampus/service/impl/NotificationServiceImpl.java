@@ -1,9 +1,12 @@
 package com.smartcampus.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.smartcampus.dto.common.PageResponse;
 import com.smartcampus.dto.response.NotificationResponse;
 import com.smartcampus.entity.Notification;
-import com.smartcampus.entity.User;
+import com.smartcampus.entity.NotificationEventOutbox;
+import com.smartcampus.repository.NotificationEventOutboxRepository;
 import com.smartcampus.repository.NotificationRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.NotificationService;
@@ -14,7 +17,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -29,26 +31,43 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final NotificationEventOutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional  // 升级项④：默认 REQUIRED，与业务同事务（Outbox 模式核心——业务回滚则事件回滚）
     public void sendNotification(Long recipientId, Long actorId, String type, String title, String content, String targetType, Long targetId) {
-        if (recipientId.equals(actorId)) return; // 不给自己发通知
+        // 保留原"不给自己发通知"守卫
+        if (recipientId.equals(actorId)) return;
+        if (userRepository.findById(recipientId).isEmpty()) return;
 
-        User recipient = userRepository.findById(recipientId).orElse(null);
-        if (recipient == null) return;
+        // 写 outbox 事件（业务成功则事件必存；业务回滚则事件回滚）
+        NotificationEventOutbox event = new NotificationEventOutbox();
+        event.setEventType(type);
+        event.setAggregateType(targetType);
+        event.setAggregateId(targetId);
+        event.setRoutingKey(buildRoutingKey(type));
+        event.setPayloadJson(buildPayloadJson(recipientId, actorId, type, title, content, targetType, targetId));
+        event.setDeliveryStatus(NotificationEventOutbox.STATUS_PENDING);
+        event.setAttemptCount(0);
+        outboxRepository.save(event);
+        // 真正的 Notification 落库交给 RabbitMQ Listener 异步完成
+    }
 
-        User actor = actorId != null ? userRepository.findById(actorId).orElse(null) : null;
+    private String buildPayloadJson(Long recipientId, Long actorId, String type, String title, String content, String targetType, Long targetId) {
+        ObjectNode node = objectMapper.createObjectNode();
+        node.put("recipientId", recipientId);
+        if (actorId != null) node.put("actorId", actorId);
+        node.put("type", type);
+        node.put("title", title);
+        if (content != null) node.put("content", content);
+        if (targetType != null) node.put("targetType", targetType);
+        if (targetId != null) node.put("targetId", targetId);
+        return node.toString();
+    }
 
-        Notification notification = new Notification();
-        notification.setRecipient(recipient);
-        notification.setActor(actor);
-        notification.setType(type);
-        notification.setTitle(title);
-        notification.setContent(content);
-        notification.setTargetType(targetType);
-        notification.setTargetId(targetId);
-        notificationRepository.save(notification);
+    private String buildRoutingKey(String type) {
+        return type != null ? "notification." + type.toLowerCase() : "notification.event";
     }
 
     @Override

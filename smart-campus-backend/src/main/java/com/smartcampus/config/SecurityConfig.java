@@ -45,6 +45,10 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // 升级项①可观测性（修复 #2）：放行健康检查与 Prometheus 抓取端点，
+                        // 否则 anyRequest().authenticated() 会让 Prometheus 匿名抓取吃 401、Grafana 无数据。
+                        // 生产建议进一步限制为内网/独立 management 端口。
+                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/check").permitAll()
                         .requestMatchers("/api/auth/sendRegisterCode", "/api/auth/sendResetCode", "/api/auth/resetPassword").permitAll()
@@ -89,6 +93,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users/me/achievements").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/*/achievements").permitAll()
                         .requestMatchers("/api/notifications/**").authenticated()
+                        // AI 探索助手（AI 化升级）：登录用户可用；模块本身受 app.assistant.enabled 开关控制，默认关闭
+                        .requestMatchers("/api/assistant/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/poi-applications").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/poi-applications/my").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/pois/**").hasAnyRole(UserRole.SUPER_ADMIN.getRoleName(), UserRole.ADMIN.getRoleName())

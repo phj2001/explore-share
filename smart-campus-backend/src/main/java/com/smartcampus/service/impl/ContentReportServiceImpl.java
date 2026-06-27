@@ -1,5 +1,6 @@
 package com.smartcampus.service.impl;
 
+import com.smartcampus.annotation.OperationLog;
 import com.smartcampus.entity.ContentReport;
 import com.smartcampus.entity.POIShare;
 import com.smartcampus.entity.POIShareReply;
@@ -29,6 +30,7 @@ public class ContentReportServiceImpl implements ContentReportService {
 
     @Override
     @Transactional
+    @OperationLog(module = "内容治理", action = "举报分享", targetType = "分享", targetIdSpel = "#shareId")
     public void createShareReport(Long shareId, Long reporterId, Short reasonCode, String reasonDetail) {
         POIShare share = poiShareRepository.findWithPoiUserAndImagesById(shareId)
                 .orElseThrow(() -> new BusinessException(404, "分享不存在"));
@@ -53,6 +55,7 @@ public class ContentReportServiceImpl implements ContentReportService {
 
     @Override
     @Transactional
+    @OperationLog(module = "内容治理", action = "举报回复", targetType = "回复", targetIdSpel = "#replyId")
     public void createReplyReport(Long replyId, Long reporterId, Short reasonCode, String reasonDetail) {
         POIShareReply reply = poiShareReplyRepository.findWithUserAndShareById(replyId)
                 .orElseThrow(() -> new BusinessException(404, "回复不存在"));

@@ -298,7 +298,7 @@ onMounted(() => loadData(true))
 }
 
 .table-panel {
-  background: #fff;
+  background: var(--admin-panel);
   border-radius: 16px;
   padding: 20px;
   box-shadow: var(--front-shadow-soft);
@@ -343,7 +343,7 @@ onMounted(() => loadData(true))
 .coord-text {
   font-size: 12px;
   color: var(--front-text-muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .load-more {

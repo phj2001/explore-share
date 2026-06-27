@@ -74,83 +74,106 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ── FeedSection 新设计系统 ── */
 .feed-section {
-  padding: 24px 0;
+  padding: 48px 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 
 .section-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--front-border);
+  margin-bottom: 24px;
 }
 
 .head-left {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .section-kicker {
   display: inline-flex;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: rgba(31, 140, 105, 0.10);
+  color: var(--forest-700);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  flex-shrink: 0;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  width: fit-content;
 }
 
 .section-head h2 {
   margin: 0;
-  font-size: 20px;
+  font-family: var(--font-serif);
+  font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
+/* 未登录提示 */
 .feed-login-hint {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
-  padding: 14px 18px;
-  border-radius: 16px;
-  background: #f8fafc;
+  padding: 20px 24px;
   border: 1px solid var(--front-border);
-  font-size: 13px;
-  color: var(--front-text-soft);
+  border-radius: 12px;
+  background: #fff;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  color: var(--ink-600);
 }
 
-.feed-empty-hint {
-  padding: 20px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--front-text-muted);
-}
-
+/* 动态列表 */
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
+/* 空状态 */
+.feed-empty-hint {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-400);
+  text-align: center;
+  padding: 48px 0;
+  letter-spacing: 0.08em;
+}
+
+/* 加载更多 */
 .load-more {
-  display: flex;
-  justify-content: center;
-  padding-top: 8px;
+  text-align: center;
+  margin-top: 24px;
 }
 
+/* 响应式 */
 @media (max-width: 640px) {
   .feed-section {
-    padding: 20px 0;
+    padding: 32px 0;
   }
 
   .section-head h2 {
-    font-size: 17px;
+    font-size: 20px;
+  }
+
+  .feed-login-hint {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
   }
 }
 </style>

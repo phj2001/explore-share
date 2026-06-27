@@ -223,12 +223,12 @@ onMounted(async () => {
 
 <style scoped>
 .category-page {
-  --panel-bg: rgba(255, 255, 255, 0.9);
-  --panel-border: rgba(148, 163, 184, 0.18);
-  --ink: #0f172a;
-  --muted: #64748b;
-  --accent: #2563eb;
-  --accent-soft: rgba(37, 99, 235, 0.08);
+  --panel-bg: var(--admin-panel);
+  --panel-border: var(--admin-border);
+  --ink: var(--admin-text);
+  --muted: var(--admin-text-muted);
+  --accent: var(--admin-accent-strong);
+  --accent-soft: var(--admin-accent-soft);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -240,7 +240,7 @@ onMounted(async () => {
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .page-hero {
@@ -250,8 +250,8 @@ onMounted(async () => {
   grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.95fr);
   gap: 20px;
   background:
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 24%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(244, 250, 245, 0.95));
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.14), transparent 24%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 253, 244, 0.95));
 }
 
 .hero-kicker,
@@ -270,6 +270,7 @@ onMounted(async () => {
 
 .hero-copy h1 {
   margin: 14px 0 10px;
+  font-family: var(--font-serif);
   font-size: clamp(28px, 4vw, 40px);
   line-height: 1.08;
   color: var(--ink);
@@ -291,8 +292,8 @@ onMounted(async () => {
 .hero-stat {
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid rgba(187, 247, 208, 0.9);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(245, 252, 247, 0.93));
+  border: 1px solid var(--admin-border);
+  background: var(--admin-panel);
 }
 
 .hero-stat span,
@@ -356,7 +357,7 @@ onMounted(async () => {
   border-radius: 999px;
   font-size: 12px;
   color: var(--accent);
-  background: rgba(219, 234, 254, 0.95);
+  background: var(--admin-accent-soft);
 }
 
 .panel-head {
@@ -370,6 +371,7 @@ onMounted(async () => {
 .panel-head h2 {
   margin: 12px 0 0;
   color: var(--ink);
+  font-family: var(--font-serif);
   font-size: 24px;
 }
 

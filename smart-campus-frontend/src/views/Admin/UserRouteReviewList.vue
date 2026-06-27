@@ -312,8 +312,8 @@ const createMarkerContent = (index) => `
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700; color: #fff;
     border: 2px solid rgba(255,255,255,0.9);
-    background: linear-gradient(135deg, #0f766e, #0ea5e9);
-    box-shadow: 0 4px 12px rgba(14,165,233,0.4);
+    background: linear-gradient(135deg, #1f8c69, #2d9e7a);
+    box-shadow: 0 4px 12px rgba(31,140,105,0.4);
     user-select: none;
   ">${index}</div>
 `
@@ -355,7 +355,7 @@ const initDetailMap = async () => {
     if (positions.length >= 2) {
       const polyline = new detailAMapRef.Polyline({
         path: positions,
-        strokeColor: '#0ea5e9',
+        strokeColor: '#1f8c69',
         strokeWeight: 4,
         strokeOpacity: 0.85,
         strokeStyle: 'solid',
@@ -500,8 +500,8 @@ onMounted(loadData)
 .page-hero {
   padding: 24px 28px;
   border-radius: 20px;
-  background: linear-gradient(135deg, rgba(14, 116, 144, 0.07), rgba(23, 135, 166, 0.04));
-  border: 1px solid rgba(14, 116, 144, 0.1);
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.07), rgba(22, 163, 74, 0.04));
+  border: 1px solid var(--admin-border);
 }
 
 .hero-kicker {
@@ -509,8 +509,8 @@ onMounted(loadData)
   align-items: center;
   padding: 4px 12px;
   border-radius: 999px;
-  background: rgba(14, 116, 144, 0.1);
-  color: #0d6b85;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent-strong);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -519,21 +519,22 @@ onMounted(loadData)
 
 .hero-copy h1 {
   margin: 0 0 8px;
+  font-family: var(--font-serif);
   font-size: 20px;
-  color: #0f2b33;
+  color: var(--admin-text);
 }
 
 .hero-copy p {
   margin: 0;
   font-size: 13px;
-  color: #4a6672;
+  color: var(--admin-text-muted);
 }
 
 .filter-panel {
   padding: 16px 20px;
   border-radius: 16px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .filter-main {
@@ -553,8 +554,8 @@ onMounted(loadData)
 
 .table-panel {
   border-radius: 16px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
   overflow: hidden;
 }
 
@@ -563,7 +564,7 @@ onMounted(loadData)
   align-items: flex-end;
   justify-content: space-between;
   padding: 18px 20px 14px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--admin-border);
 }
 
 .panel-kicker {
@@ -571,15 +572,16 @@ onMounted(loadData)
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #0d6b85;
+  color: var(--admin-accent-strong);
   text-transform: uppercase;
   margin-bottom: 4px;
 }
 
 .panel-head h2 {
   margin: 0;
+  font-family: var(--font-serif);
   font-size: 16px;
-  color: #0f2b33;
+  color: var(--admin-text);
 }
 
 .user-meta {
@@ -592,7 +594,7 @@ onMounted(loadData)
 .summary-text {
   margin: 2px 0 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--admin-text-muted);
   font-weight: 400;
 }
 
@@ -601,9 +603,9 @@ onMounted(loadData)
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--admin-border);
   font-size: 13px;
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 /* 抽屉详情 — 不设 height/overflow，由 el-drawer__body 负责滚动 */
@@ -622,14 +624,15 @@ onMounted(loadData)
 
 .detail-head h2 {
   margin: 10px 0 4px;
+  font-family: var(--font-serif);
   font-size: 18px;
-  color: #0f2b33;
+  color: var(--admin-text);
 }
 
 .detail-summary {
   margin: 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--admin-text-muted);
   line-height: 1.6;
 }
 
@@ -640,7 +643,7 @@ onMounted(loadData)
   height: 260px;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--admin-border);
 }
 
 .detail-map {
@@ -654,9 +657,9 @@ onMounted(loadData)
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(248, 250, 252, 0.9);
+  background: var(--admin-panel);
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--ink-400);
 }
 
 /* 基本信息 */
@@ -668,15 +671,15 @@ onMounted(loadData)
 .detail-description {
   padding: 14px 16px;
   border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .detail-description h4 {
   margin: 0 0 8px;
   font-size: 13px;
   font-weight: 700;
-  color: #475569;
+  color: var(--ink-600);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -684,7 +687,7 @@ onMounted(loadData)
 .detail-description p {
   margin: 0;
   font-size: 14px;
-  color: #334155;
+  color: var(--ink-700);
   line-height: 1.7;
   white-space: pre-wrap;
 }
@@ -694,7 +697,7 @@ onMounted(loadData)
   margin: 0 0 14px;
   font-size: 13px;
   font-weight: 700;
-  color: #475569;
+  color: var(--ink-600);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   display: flex;
@@ -710,8 +713,8 @@ onMounted(loadData)
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent-strong);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0;
@@ -741,7 +744,7 @@ onMounted(loadData)
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-400), var(--forest-700));
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -749,7 +752,7 @@ onMounted(loadData)
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 2px 6px rgba(21, 128, 61, 0.25);
 }
 
 .wp-dot--start {
@@ -767,7 +770,7 @@ onMounted(loadData)
   width: 2px;
   min-height: 12px;
   margin: 3px 0;
-  background: linear-gradient(180deg, #bfdbfe, #dbeafe);
+  background: linear-gradient(180deg, var(--forest-200), var(--forest-100));
   border-radius: 1px;
 }
 
@@ -782,16 +785,16 @@ onMounted(loadData)
 .wp-step-body strong {
   font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--admin-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .wp-coord {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--ink-400);
 }
 
 /* 操作按钮 */
@@ -802,7 +805,7 @@ onMounted(loadData)
 }
 
 .reject-reason-text {
-  color: #b45309;
+  color: var(--clay-600);
   line-height: 1.6;
 }
 

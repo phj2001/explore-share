@@ -72,75 +72,88 @@ onMounted(() => loadData(true))
 </script>
 
 <style scoped>
+/* ── UserRouteSection 新设计系统 ── */
 .user-route-section {
-  padding: 24px 0;
+  padding: 48px 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 
 .section-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 14px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--front-border);
+  margin-bottom: 28px;
 }
 
 .head-left {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .section-kicker {
   display: inline-flex;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: #fef3c7;
-  color: #d97706;
+  background: rgba(31, 140, 105, 0.10);
+  color: var(--forest-700);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  flex-shrink: 0;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  width: fit-content;
 }
 
 .section-head h2 {
   margin: 0;
-  font-size: 20px;
+  font-family: var(--font-serif);
+  font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
+/* 路线网格 */
 .routes-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px;
 }
 
+/* 空状态 CTA */
 .empty-cta {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 28px 20px;
-  border-radius: 20px;
-  background: #fffbeb;
-  border: 1px dashed rgba(217, 119, 6, 0.3);
+  gap: 16px;
+  padding: 48px 24px;
+  border-radius: 14px;
+  background: var(--paper-50);
+  border: 1px dashed var(--front-border);
   text-align: center;
 }
 
 .empty-cta p {
   margin: 0;
-  color: var(--front-text-soft);
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-400);
+  letter-spacing: 0.06em;
 }
 
+/* 加载更多 */
 .load-more {
-  display: flex;
-  justify-content: center;
-  padding-top: 4px;
+  text-align: center;
+  margin-top: 24px;
 }
 
+/* 响应式 */
 @media (max-width: 900px) {
   .routes-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -149,15 +162,24 @@ onMounted(() => loadData(true))
 
 @media (max-width: 560px) {
   .user-route-section {
-    padding: 20px 0;
+    padding: 32px 0;
+  }
+
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+
+  .section-head h2 {
+    font-size: 20px;
   }
 
   .routes-grid {
     grid-template-columns: 1fr;
-  }
-
-  .section-head h2 {
-    font-size: 17px;
+    gap: 12px;
   }
 }
 </style>

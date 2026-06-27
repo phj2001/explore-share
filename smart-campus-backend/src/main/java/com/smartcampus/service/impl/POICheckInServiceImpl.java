@@ -1,5 +1,6 @@
 package com.smartcampus.service.impl;
 
+import com.smartcampus.annotation.OperationLog;
 import com.smartcampus.dto.response.POICheckInStatusResponse;
 import com.smartcampus.entity.POI;
 import com.smartcampus.entity.POICheckIn;
@@ -34,6 +35,7 @@ public class POICheckInServiceImpl implements POICheckInService {
 
     @Override
     @Transactional
+    @OperationLog(module = "地点打卡", action = "打卡", targetType = "地点", targetIdSpel = "#poiId")
     public POICheckInStatusResponse checkIn(Long poiId, Long userId) {
         POI poi = getRequiredPoi(poiId);
         User user = getRequiredUser(userId);

@@ -100,142 +100,139 @@ onMounted(() => loadData())
 </script>
 
 <style scoped>
+/* ── LeaderboardSection 新设计系统 ── */
 .leaderboard-section {
-  padding: 24px 0;
+  padding: 48px 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 
 .section-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--front-border);
+  margin-bottom: 24px;
 }
 
 .head-left {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .section-kicker {
   display: inline-flex;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: #ecfdf5;
-  color: #059669;
+  background: rgba(31, 140, 105, 0.10);
+  color: var(--forest-700);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  flex-shrink: 0;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  width: fit-content;
 }
 
 .section-head h2 {
   margin: 0;
-  font-size: 20px;
+  font-family: var(--font-serif);
+  font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
+/* Tab 区 */
 .leaderboard-tabs {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 24px;
 }
 
 .tab-group {
   display: flex;
-  gap: 2px;
+  gap: 6px;
 }
 
 .tab-btn,
 .period-btn {
   padding: 7px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #64748b;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
+  border-radius: 999px;
+  border: 1px solid var(--front-border);
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-600);
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
 }
 
 .tab-btn:hover,
 .period-btn:hover {
-  color: #0f172a;
+  background: var(--paper-100);
+  color: var(--ink-900);
 }
 
-.tab-btn.active {
-  color: #0ea5e9;
-  border-bottom-color: #0ea5e9;
-}
-
+.tab-btn.active,
 .period-btn.active {
-  color: #8b5cf6;
-  border-bottom-color: #8b5cf6;
+  background: var(--forest-700);
+  color: #fff;
+  border-color: var(--forest-700);
 }
 
+/* 排行列表 */
 .leaderboard-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .leaderboard-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-radius: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--front-border);
+  border-radius: 12px;
   background: #fff;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
   text-decoration: none;
   color: inherit;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .leaderboard-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.09);
+  border-color: var(--forest-500);
+  box-shadow: 0 4px 16px rgba(20, 80, 55, 0.10);
+  transform: translateY(-1px);
 }
 
+/* 排名徽章 */
 .rank-badge {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
   font-weight: 700;
-  font-size: 13px;
-  color: #64748b;
-  background: #f1f5f9;
+  width: 28px;
+  text-align: center;
+  color: var(--ink-400);
   flex-shrink: 0;
 }
 
-.rank-badge.gold {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: #fff;
-}
+.rank-badge.gold   { color: #d5b53c; }
+.rank-badge.silver { color: #97ad9f; }
+.rank-badge.bronze { color: #d9923e; }
 
-.rank-badge.silver {
-  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
-  color: #fff;
-}
-
-.rank-badge.bronze {
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  color: #fff;
-}
-
+/* 头像 */
 .item-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
   color: #fff;
   font-weight: 700;
   flex-shrink: 0;
@@ -249,30 +246,48 @@ onMounted(() => loadData())
 }
 
 .item-info strong {
-  color: #0f172a;
+  font-family: var(--font-sans);
   font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-count {
-  color: #64748b;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-400);
+  display: block;
+  margin-top: 2px;
 }
 
+/* 空状态 */
 .empty-hint {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-400);
   text-align: center;
-  padding: 20px;
-  color: var(--front-text-muted);
-  font-size: 13px;
+  padding: 48px 0;
+  letter-spacing: 0.08em;
+}
+
+/* 响应式 */
+@media (max-width: 900px) {
+  .leaderboard-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
   .leaderboard-section {
-    padding: 20px 0;
+    padding: 32px 0;
   }
 
   .leaderboard-tabs {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .tab-group {
@@ -280,7 +295,7 @@ onMounted(() => loadData())
   }
 
   .section-head h2 {
-    font-size: 17px;
+    font-size: 20px;
   }
 }
 </style>

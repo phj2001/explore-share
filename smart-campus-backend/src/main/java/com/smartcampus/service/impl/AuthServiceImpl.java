@@ -9,6 +9,7 @@ import com.smartcampus.security.UserRole;
 import com.smartcampus.security.UserStatus;
 import com.smartcampus.service.AuthService;
 import com.smartcampus.service.EmailService;
+import com.smartcampus.service.LoginRiskControlService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
     private final EmailService emailService;
+    private final LoginRiskControlService loginRiskControlService;
 
     // ----------------------------- 注册（旧方法保持兼容）-----------------------------
 
@@ -85,20 +87,36 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Optional<LoginResponse> login(String identifier, String password) {
+        // 前置风控：账号锁定则直接拒绝（升级项③）
+        loginRiskControlService.assertLoginAllowed(identifier);
+
         // 先按用户名，查不到再按邮箱
         Optional<User> userOpt = userRepository.findByUsername(identifier);
         if (userOpt.isEmpty()) {
             userOpt = userRepository.findByEmail(identifier);
         }
-        return userOpt
-                .filter(user -> passwordEncoder.matches(password, user.getPassword()))
-                .map(user -> {
-                    if (UserStatus.fromCode(user.getStatus()) == UserStatus.DISABLED) {
-                        throw new BusinessException(403, "账号已被禁用");
-                    }
-                    String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
-                    return new LoginResponse(token, user.getId(), user.getUsername(), user.getRole());
-                });
+
+        if (userOpt.isEmpty()) {
+            // 用户不存在也记失败，防止用户名枚举探测
+            loginRiskControlService.recordFailure(identifier);
+            return Optional.empty();
+        }
+
+        User user = userOpt.get();
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            // 密码错误记失败
+            loginRiskControlService.recordFailure(identifier);
+            return Optional.empty();
+        }
+
+        // 密码正确即清零失败计数——合法用户凭据已验证（即使后续因账号禁用抛异常，也先清计数）
+        loginRiskControlService.clearFailures(identifier);
+
+        if (UserStatus.fromCode(user.getStatus()) == UserStatus.DISABLED) {
+            throw new BusinessException(403, "账号已被禁用");
+        }
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
+        return Optional.of(new LoginResponse(token, user.getId(), user.getUsername(), user.getRole()));
     }
 
     @Override

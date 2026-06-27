@@ -51,33 +51,42 @@ const formatTime = (value) => value ? dateTimeFormatter.format(new Date(value)) 
 </script>
 
 <style scoped>
+/* ── FeedItem 新设计系统 ── */
 .feed-item {
   padding: 18px 20px;
-  border-radius: 22px;
+  border-radius: 14px;
   background: #fff;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--front-border);
+  box-shadow: var(--front-shadow);
   display: flex;
   flex-direction: column;
   gap: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.feed-item:hover {
+  border-color: var(--forest-500);
+  box-shadow: 0 4px 16px rgba(20, 80, 55, 0.10);
+}
+
+/* 作者行 */
 .feed-author {
   display: flex;
   align-items: center;
   gap: 12px;
   text-decoration: none;
   color: inherit;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 4px;
   transition: background 0.15s;
 }
 
 .feed-author:hover {
-  background: #f1f5f9;
+  background: var(--paper-100);
 }
 
 .author-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
   color: #fff;
   font-weight: 700;
   flex-shrink: 0;
@@ -90,15 +99,19 @@ const formatTime = (value) => value ? dateTimeFormatter.format(new Date(value)) 
 }
 
 .author-info strong {
+  font-family: var(--font-sans);
   font-size: 14px;
-  color: #0f172a;
+  font-weight: 600;
+  color: var(--ink-900);
 }
 
 .author-info time {
-  font-size: 12px;
-  color: #94a3b8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-400);
 }
 
+/* 内容区 */
 .feed-body {
   display: flex;
   flex-direction: column;
@@ -109,33 +122,38 @@ const formatTime = (value) => value ? dateTimeFormatter.format(new Date(value)) 
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 600;
-  color: #0ea5e9;
+  color: var(--forest-700);
   text-decoration: none;
 }
 
 .feed-poi:hover {
   text-decoration: underline;
+  color: var(--forest-800);
 }
 
 .poi-category {
   padding: 2px 8px;
   border-radius: 999px;
-  background: #ecfdf5;
-  color: #059669;
-  font-size: 11px;
-  font-weight: 700;
+  background: rgba(31, 140, 105, 0.10);
+  color: var(--forest-700);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
 }
 
 .feed-content {
   margin: 0;
-  color: #1e293b;
+  font-family: var(--font-sans);
+  color: var(--ink-700);
   font-size: 14px;
   line-height: 1.7;
   white-space: pre-wrap;
 }
 
+/* 图片组 */
 .feed-images {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -145,18 +163,26 @@ const formatTime = (value) => value ? dateTimeFormatter.format(new Date(value)) 
 .feed-image {
   width: 100%;
   height: 120px;
-  border-radius: 14px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
+/* 统计 */
 .feed-stats {
   display: flex;
   gap: 16px;
-  color: #64748b;
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-400);
 }
 
+/* 响应式 */
 @media (max-width: 480px) {
+  .feed-item {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
   .feed-images {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

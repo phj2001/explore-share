@@ -51,6 +51,9 @@
     </section>
 
     <Footer />
+
+    <!-- AI 探索助手（M5）：全局悬浮入口 -->
+    <AssistantChat />
   </div>
 </template>
 
@@ -61,6 +64,7 @@ import Header from '@/components/common/Header.vue'
 import Footer from '@/components/common/Footer.vue'
 import MapContainer from '@/components/map/MapContainer.vue'
 
+const AssistantChat = defineAsyncComponent(() => import('@/components/assistant/AssistantChat.vue'))
 const AnnouncementSection = defineAsyncComponent(() => import('@/components/announcement/AnnouncementSection.vue'))
 const RecommendedShareSection = defineAsyncComponent(() => import('@/components/recommendation/RecommendedShareSection.vue'))
 const ActivitySection = defineAsyncComponent(() => import('@/components/activity/ActivitySection.vue'))
@@ -75,6 +79,7 @@ const UserRouteSection = defineAsyncComponent(() => import('@/components/route/U
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background: var(--front-bg);
 }
 
 .main-content {
@@ -87,8 +92,17 @@ const UserRouteSection = defineAsyncComponent(() => import('@/components/route/U
   padding: 4px 0;
 }
 
-.section-band--warm  { background: rgba(245, 158, 11, 0.04); }
-.section-band--teal  { background: rgba(20, 184, 166, 0.04); }
-.section-band--gray  { background: rgba(15, 23, 42, 0.025); }
-.section-band--amber { background: rgba(251, 191, 36, 0.06); }
+/* 分区背景微变色，保持清新感 */
+.section-band--warm {
+  background: linear-gradient(180deg, rgba(236,90,54,0.03), rgba(236,90,54,0.02));
+}
+.section-band--teal {
+  background: linear-gradient(180deg, rgba(58,155,210,0.04), rgba(58,155,210,0.02));
+}
+.section-band--gray {
+  background: rgba(31,140,105,0.025);
+}
+.section-band--amber {
+  background: linear-gradient(180deg, rgba(217,146,62,0.04), rgba(217,146,62,0.02));
+}
 </style>

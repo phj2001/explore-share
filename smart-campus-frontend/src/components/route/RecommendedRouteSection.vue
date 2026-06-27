@@ -194,45 +194,54 @@ onMounted(() => loadRoutes(false))
 </script>
 
 <style scoped>
+/* ── RecommendedRouteSection 新设计系统 ── */
 .route-section {
-  padding: 24px 0;
+  padding: 48px 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 0;
 }
 
 .section-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--front-border);
+  margin-bottom: 28px;
 }
 
 .head-left {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .section-kicker {
   display: inline-flex;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(20, 184, 166, 0.1);
-  color: #0f766e;
+  background: rgba(31, 140, 105, 0.10);
+  color: var(--forest-700);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  flex-shrink: 0;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  width: fit-content;
 }
 
 .section-header h2 {
   margin: 0;
-  color: var(--front-text);
-  font-size: 20px;
+  font-family: var(--font-serif);
+  font-size: 24px;
   font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
+/* 刷新按钮 */
 .refresh-btn {
   display: flex;
   align-items: center;
@@ -242,16 +251,16 @@ onMounted(() => loadRoutes(false))
   border-radius: 50%;
   border: 1px solid var(--front-border);
   background: transparent;
-  color: var(--front-text-muted);
+  color: var(--ink-500);
   cursor: pointer;
   flex-shrink: 0;
-  transition: color 0.15s, background 0.15s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: rgba(20, 184, 166, 0.1);
-  color: #0f766e;
-  border-color: transparent;
+  background: var(--forest-50);
+  color: var(--forest-700);
+  border-color: var(--forest-700);
 }
 
 .refresh-btn:disabled {
@@ -272,20 +281,30 @@ onMounted(() => loadRoutes(false))
   animation: spin 0.8s linear infinite;
 }
 
+/* 路线网格 */
 .route-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px;
 }
 
+/* 路线卡片 */
 .route-card {
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: 14px;
   border: 1px solid var(--front-border);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: var(--front-shadow-soft);
+  background: #fff;
+  box-shadow: var(--front-shadow);
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
+.route-card:hover {
+  border-color: var(--forest-500);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(20, 80, 55, 0.12);
+}
+
+/* 封面 */
 .route-cover-wrap {
   position: relative;
   height: 180px;
@@ -296,43 +315,48 @@ onMounted(() => loadRoutes(false))
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .route-cover-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 34%),
-    linear-gradient(135deg, #14303a, #0f766e);
-  color: #f8fafc;
-  font-size: 18px;
-  font-weight: 700;
+  height: 100%;
+  background: linear-gradient(135deg, var(--forest-800), var(--forest-600));
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
 }
 
+/* 封面信息覆盖层 */
 .route-glance {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
   display: flex;
   flex-direction: column;
   gap: 3px;
   padding: 8px 10px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.6);
-  color: #f8fafc;
-  backdrop-filter: blur(10px);
-  font-size: 11px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
 }
 
+/* 卡片主体 */
 .route-card-body {
-  padding: 16px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
+/* 徽章 */
 .route-badges {
   display: flex;
   flex-wrap: wrap;
@@ -341,45 +365,66 @@ onMounted(() => loadRoutes(false))
 
 .badge {
   display: inline-flex;
-  padding: 4px 9px;
+  padding: 3px 9px;
   border-radius: 999px;
-  background: rgba(229, 239, 242, 0.84);
-  color: var(--front-text-soft);
-  font-size: 11px;
+  background: var(--paper-100);
+  color: var(--ink-500);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
 }
 
 .badge-mode {
-  background: rgba(20, 184, 166, 0.12);
-  color: #0f766e;
+  background: rgba(31, 140, 105, 0.10);
+  color: var(--forest-700);
 }
 
+/* 标题 */
 .route-card h3,
 .detail-copy h3 {
   margin: 0;
-  color: var(--front-text);
-  font-size: 17px;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 
+/* 摘要 & 描述 */
 .route-summary,
 .route-description {
   margin: 0;
-  color: var(--front-text-soft);
-  font-size: 13px;
-  line-height: 1.7;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink-600);
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
+.route-description {
+  -webkit-line-clamp: unset;
+}
+
+/* 元信息 */
 .route-meta {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: var(--front-text-muted);
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-400);
 }
 
 .meta-note {
-  color: var(--front-accent-strong);
+  color: var(--forest-700);
+  font-style: italic;
 }
 
+/* 操作按钮 */
 .route-actions,
 .dialog-footer {
   display: flex;
@@ -387,6 +432,7 @@ onMounted(() => loadRoutes(false))
   flex-wrap: wrap;
 }
 
+/* 详情弹窗布局 */
 .detail-layout {
   display: flex;
   flex-direction: column;
@@ -397,7 +443,7 @@ onMounted(() => loadRoutes(false))
   width: 100%;
   height: 240px;
   object-fit: cover;
-  border-radius: 20px;
+  border-radius: 12px;
 }
 
 .detail-copy {
@@ -406,10 +452,11 @@ onMounted(() => loadRoutes(false))
   gap: 12px;
 }
 
+/* 路线点时间轴 */
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin-top: 4px;
 }
 
@@ -418,10 +465,15 @@ onMounted(() => loadRoutes(false))
   grid-template-columns: 28px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: rgba(247, 251, 252, 0.92);
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--paper-50);
   border: 1px solid var(--front-border);
+  transition: border-color 0.15s;
+}
+
+.timeline-item:hover {
+  border-color: var(--forest-500);
 }
 
 .timeline-index {
@@ -431,23 +483,29 @@ onMounted(() => loadRoutes(false))
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(23, 135, 166, 0.14);
-  color: var(--front-accent-strong);
+  background: rgba(31, 140, 105, 0.12);
+  color: var(--forest-700);
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 12px;
 }
 
 .timeline-copy strong {
-  color: var(--front-text);
+  display: block;
+  font-family: var(--font-sans);
   font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900);
 }
 
 .timeline-copy p {
-  margin: 4px 0 0;
-  color: var(--front-text-muted);
-  font-size: 12px;
+  margin: 3px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-400);
 }
 
+/* 响应式 */
 @media (max-width: 1280px) {
   .route-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -456,19 +514,7 @@ onMounted(() => loadRoutes(false))
 
 @media (max-width: 760px) {
   .route-section {
-    padding: 20px 0;
-  }
-
-  .section-header,
-  .route-actions,
-  .dialog-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .section-header {
-    flex-direction: row;
-    align-items: center;
+    padding: 32px 0;
   }
 
   .route-grid {
@@ -478,19 +524,29 @@ onMounted(() => loadRoutes(false))
   .timeline-item {
     grid-template-columns: 28px minmax(0, 1fr);
   }
+
+  .route-actions,
+  .dialog-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 @media (max-width: 560px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+
   .section-header h2 {
-    font-size: 17px;
+    font-size: 20px;
   }
 
   .route-grid {
     gap: 12px;
-  }
-
-  .route-card {
-    border-radius: 18px;
   }
 
   .route-cover-wrap {
@@ -498,13 +554,13 @@ onMounted(() => loadRoutes(false))
   }
 
   .route-card-body {
-    padding: 12px;
-    gap: 10px;
+    padding: 12px 14px;
+    gap: 8px;
   }
 
   .detail-cover {
     height: 200px;
-    border-radius: 16px;
+    border-radius: 10px;
   }
 }
 </style>

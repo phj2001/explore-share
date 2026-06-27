@@ -108,8 +108,8 @@ const createMarkerContent = (index) => `
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700; color: #fff;
     border: 2px solid rgba(255,255,255,0.9);
-    background: linear-gradient(135deg, #38bdf8, #2563eb);
-    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    background: linear-gradient(135deg, #1f8c69, #2d9e7a);
+    box-shadow: 0 4px 12px rgba(31,140,105,0.4);
     user-select: none;
   ">${index}</div>
 `
@@ -148,7 +148,7 @@ const initRouteMap = async () => {
     if (positions.length >= 2) {
       const polyline = new routeAMapRef.Polyline({
         path: positions,
-        strokeColor: '#2563eb',
+        strokeColor: '#1f8c69',
         strokeWeight: 4,
         strokeOpacity: 0.8,
         strokeStyle: 'solid',
@@ -247,12 +247,13 @@ onUnmounted(() => {
 .hero-content h1 {
   margin: 0;
   font-size: 26px;
-  color: #0f172a;
+  font-family: var(--font-serif);
+  color: var(--ink-900);
 }
 
 .hero-summary {
   margin: 10px 0 0;
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -263,7 +264,7 @@ onUnmounted(() => {
   gap: 8px;
   margin-top: 14px;
   text-decoration: none;
-  color: #475569;
+  color: var(--ink-600);
   font-size: 14px;
 }
 
@@ -277,21 +278,23 @@ onUnmounted(() => {
 .route-map-section {
   padding: 20px;
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  background: var(--front-panel);
+  border: 1px solid var(--front-border);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .route-map-section h3 {
   margin: 0 0 14px;
   font-size: 18px;
-  color: #0f172a;
+  font-family: var(--font-serif);
+  color: var(--ink-900);
 }
 
 .route-map-wrap {
   position: relative;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--front-border);
 }
 
 .route-map {
@@ -305,27 +308,29 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(248, 250, 252, 0.9);
+  background: rgba(247, 250, 247, 0.9);
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--ink-400);
 }
 
 .route-desc {
   padding: 20px;
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  background: var(--front-panel);
+  border: 1px solid var(--front-border);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .route-desc h3 {
   margin: 0 0 12px;
   font-size: 18px;
-  color: #0f172a;
+  font-family: var(--font-serif);
+  color: var(--ink-900);
 }
 
 .route-desc p {
   margin: 0;
-  color: #475569;
+  color: var(--ink-600);
   line-height: 1.7;
   white-space: pre-wrap;
 }
@@ -333,14 +338,16 @@ onUnmounted(() => {
 .waypoints-section {
   padding: 20px 20px 8px;
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  background: var(--front-panel);
+  border: 1px solid var(--front-border);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .waypoints-section h3 {
   margin: 0 0 18px;
   font-size: 18px;
-  color: #0f172a;
+  font-family: var(--font-serif);
+  color: var(--ink-900);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -354,8 +361,8 @@ onUnmounted(() => {
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--forest-100);
+  color: var(--forest-700);
   font-size: 12px;
   font-weight: 700;
 }
@@ -385,7 +392,7 @@ onUnmounted(() => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -393,7 +400,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 8px rgba(31, 140, 105, 0.3);
 }
 
 .wp-dot--start {
@@ -411,7 +418,7 @@ onUnmounted(() => {
   width: 2px;
   min-height: 16px;
   margin: 3px 0;
-  background: linear-gradient(180deg, #bfdbfe, #dbeafe);
+  background: linear-gradient(180deg, var(--forest-300), var(--forest-200));
   border-radius: 1px;
 }
 
@@ -427,19 +434,19 @@ onUnmounted(() => {
 .wp-step-body strong {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--ink-900);
   line-height: 1.4;
 }
 
 .wp-coords {
   font-size: 11px;
-  color: #94a3b8;
-  font-family: monospace;
+  color: var(--ink-400);
+  font-family: var(--font-mono);
 }
 
 .wp-link {
   font-size: 12px;
-  color: #0ea5e9;
+  color: var(--forest-600);
   text-decoration: none;
   width: fit-content;
 }

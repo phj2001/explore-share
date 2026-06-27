@@ -1,0 +1,15 @@
+target/
+.idea/
+.mvn/wrapper/maven-wrapper.jar
+.git/
+.gitignore
+.gitattributes
+HELP.md
+test-api.bat
+mvnw.cmd
+测试接口文档.md
+config/application-local.properties
+config/application-local.example.properties
+uploads/
+Dockerfile
+.dockerignore

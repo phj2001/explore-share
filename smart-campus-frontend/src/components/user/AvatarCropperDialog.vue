@@ -277,7 +277,7 @@ const handleClose = () => {
   height: 320px;
   border-radius: 24px;
   overflow: hidden;
-  background: linear-gradient(135deg, #dbeafe, #eff6ff);
+  background: linear-gradient(135deg, var(--forest-100), var(--paper-100));
   cursor: grab;
   touch-action: none;
 }
@@ -322,7 +322,7 @@ const handleClose = () => {
 
 .preview-label {
   font-size: 14px;
-  color: #475569;
+  color: var(--ink-600);
 }
 
 .preview-circle {
@@ -331,8 +331,8 @@ const handleClose = () => {
   border-radius: 50%;
   overflow: hidden;
   border: 6px solid #fff;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
-  background: #f8fafc;
+  box-shadow: 0 20px 40px rgba(31, 140, 105, 0.12);
+  background: var(--paper-50);
 }
 
 .slider-row {
@@ -343,7 +343,7 @@ const handleClose = () => {
 }
 
 .slider-row span {
-  color: #475569;
+  color: var(--ink-600);
   white-space: nowrap;
 }
 

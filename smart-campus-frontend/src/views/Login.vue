@@ -1,167 +1,140 @@
 <template>
-  <div class="auth-page front-page">
-    <div class="front-shell auth-shell">
-      <section class="auth-intro">
-        <span class="front-kicker">地点探索与分享</span>
-        <h1 class="intro-title">把地点发现、体验分享和路线探索放进同一张地图里</h1>
-        <p class="intro-description">
-          登录后可以继续探索地点、查看推荐内容、参与分享互动，并维护自己的个人资料与头像信息。
-        </p>
+  <div class="auth-page">
 
-        <div class="intro-grid">
-          <article class="intro-card">
-            <span>地点发现</span>
-            <strong>从地图进入内容</strong>
-            <p>搜索地点、筛选分类，直接查看对应介绍与互动信息。</p>
-          </article>
-          <article class="intro-card">
-            <span>内容分享</span>
-            <strong>沉淀真实体验</strong>
-            <p>把图文分享和推荐内容关联到地点，而不是停留在单纯导航。</p>
-          </article>
-          <article class="intro-card">
-            <span>路线探索</span>
-            <strong>把多个地点串联</strong>
-            <p>基于地点组织路线，形成完整的探索路径与推荐体验。</p>
-          </article>
+    <!-- 左侧：深翠绿编辑面板 -->
+    <section class="auth-intro">
+      <div class="intro-coord-strip">
+        <span class="intro-coord-dot" />
+        <span>FIELD · 地点探索</span>
+        <span style="opacity:0.5">·</span>
+        <span>34.3416°N · 108.9398°E</span>
+      </div>
+
+      <h1 class="intro-title">
+        把<em>地点</em>、<br/>
+        体验与<em>路线</em>，<br/>
+        放进同一张地图。
+      </h1>
+
+      <p class="intro-description">
+        登录后可以探索地点、查看推荐内容、参与分享互动，并维护自己的路线与足迹记录。
+      </p>
+
+      <div class="intro-grid">
+        <article class="intro-card">
+          <span>DISCOVERY</span>
+          <strong>从地图进入内容</strong>
+          <p>搜索地点、筛选分类，直接查看对应介绍与互动信息。</p>
+        </article>
+        <article class="intro-card">
+          <span>SHARING</span>
+          <strong>沉淀真实体验</strong>
+          <p>把图文分享和推荐内容关联到地点，而不是停留在单纯导航。</p>
+        </article>
+        <article class="intro-card">
+          <span>ROUTE</span>
+          <strong>把多个地点串联</strong>
+          <p>基于地点组织路线，形成完整的探索路径与推荐体验。</p>
+        </article>
+      </div>
+
+      <div class="intro-bottom">
+        <div class="intro-stat"><strong>4,776</strong><span>收录地点</span></div>
+        <div class="intro-divider" />
+        <div class="intro-stat"><strong>2,184</strong><span>社区分享</span></div>
+        <div class="intro-divider" />
+        <div class="intro-stat"><strong>386</strong><span>原创路线</span></div>
+      </div>
+    </section>
+
+    <!-- 右侧：极简表单 -->
+    <section class="auth-panel">
+      <div class="auth-panel-inner">
+
+        <div class="panel-top">
+          <router-link to="/" class="panel-logo">
+            <span class="panel-logo-mark">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s-8-7.5-8-13a8 8 0 1 1 16 0c0 5.5-8 13-8 13Z"/>
+                <circle cx="12" cy="9" r="2.5"/>
+              </svg>
+            </span>
+            <span class="panel-logo-text">地点探索</span>
+          </router-link>
+          <router-link to="/" class="back-home">← 返回首页</router-link>
         </div>
-      </section>
 
-      <section class="auth-panel front-panel">
-        <!-- 登录 / 注册面板 -->
+        <!-- 登录 / 注册 -->
         <template v-if="!showForgot">
           <div class="panel-head">
-            <div>
-              <span class="front-kicker">{{ isLogin ? '账号登录' : '创建账号' }}</span>
-              <h2>{{ isLogin ? '登录你的探索空间' : '注册并开始探索' }}</h2>
-              <p>{{ isLogin ? '使用账号或邮箱继续进入平台。' : '创建账号后将自动登录并进入首页。' }}</p>
-            </div>
-            <router-link to="/" class="back-home">返回首页</router-link>
+            <span class="front-kicker">{{ isLogin ? '账号登录' : '创建账号' }}</span>
+            <h2>{{ isLogin ? '登录你的探索空间' : '注册并开始探索' }}</h2>
+            <p>{{ isLogin ? '使用账号或邮箱继续进入平台。' : '创建账号后将自动登录并进入首页。' }}</p>
           </div>
 
           <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="auth-form">
             <el-form-item label="用户名" prop="username">
-              <el-input
-                v-model="form.username"
-                :placeholder="isLogin ? '用户名 / 邮箱' : '请输入用户名'"
-                autocomplete="username"
-              />
+              <el-input v-model="form.username" :placeholder="isLogin ? '用户名 / 邮箱' : '请输入用户名'" autocomplete="username" />
             </el-form-item>
-
             <el-form-item label="密码" prop="password">
-              <el-input
-                v-model="form.password"
-                type="password"
-                placeholder="请输入密码"
-                autocomplete="current-password"
-                show-password
-              />
+              <el-input v-model="form.password" type="password" placeholder="请输入密码" autocomplete="current-password" show-password />
             </el-form-item>
-
             <template v-if="!isLogin">
               <el-form-item label="确认密码" prop="confirmPassword">
-                <el-input
-                  v-model="form.confirmPassword"
-                  type="password"
-                  placeholder="请再次输入密码"
-                  autocomplete="new-password"
-                  show-password
-                />
+                <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" autocomplete="new-password" show-password />
               </el-form-item>
-
               <el-form-item label="邮箱" prop="email">
-                <el-input
-                  v-model="form.email"
-                  placeholder="请输入邮箱（用于找回密码）"
-                  autocomplete="email"
-                />
+                <el-input v-model="form.email" placeholder="请输入邮箱（用于找回密码）" autocomplete="email" />
               </el-form-item>
-
               <el-form-item label="邮箱验证码" prop="emailCode">
                 <div class="code-row">
-                  <el-input
-                    v-model="form.emailCode"
-                    placeholder="请输入验证码"
-                    class="code-input"
-                  />
-                  <el-button
-                    :disabled="registerCountdown > 0 || !form.email || sendingRegisterCode"
-                    :loading="sendingRegisterCode"
-                    class="code-btn"
-                    @click="handleSendRegisterCode"
-                  >
+                  <el-input v-model="form.emailCode" placeholder="请输入验证码" class="code-input" />
+                  <el-button :disabled="registerCountdown > 0 || !form.email || sendingRegisterCode" :loading="sendingRegisterCode" class="code-btn" @click="handleSendRegisterCode">
                     {{ registerCountdown > 0 ? `${registerCountdown}s 后重发` : '获取验证码' }}
                   </el-button>
                 </div>
               </el-form-item>
             </template>
-
             <div class="submit-zone">
-              <el-button
-                type="primary"
-                :loading="isLoading"
-                class="submit-button"
-                @click="handleSubmit"
-              >
+              <el-button type="primary" :loading="isLoading" class="submit-button" @click="handleSubmit">
                 {{ isLogin ? '登录并进入首页' : '注册并开始探索' }}
               </el-button>
-
               <div class="action-links">
                 <button type="button" class="mode-switch" @click="toggleMode">
                   {{ isLogin ? '没有账号？切换到注册' : '已有账号？切换到登录' }}
                 </button>
-                <button v-if="isLogin" type="button" class="mode-switch forgot-link" @click="showForgot = true">
-                  忘记密码？
-                </button>
+                <button v-if="isLogin" type="button" class="mode-switch forgot-link" @click="showForgot = true">忘记密码？</button>
               </div>
             </div>
           </el-form>
         </template>
 
-        <!-- 忘记密码面板 -->
+        <!-- 忘记密码 -->
         <template v-else>
           <div class="panel-head">
-            <div>
-              <span class="front-kicker">找回密码</span>
-              <h2>重置你的账号密码</h2>
-              <p>通过绑定邮箱接收验证码，完成密码重置。</p>
-            </div>
-            <button type="button" class="back-home" style="background:none;border:none;cursor:pointer" @click="showForgot = false">
-              返回登录
-            </button>
+            <span class="front-kicker">找回密码</span>
+            <h2>重置你的账号密码</h2>
+            <p>通过绑定邮箱接收验证码，完成密码重置。</p>
           </div>
 
-          <!-- Step 1：输入邮箱 -->
           <template v-if="resetStep === 1">
             <el-form ref="resetForm1Ref" :model="resetForm" :rules="resetRules1" label-position="top" class="auth-form">
               <el-form-item label="注册邮箱" prop="email">
                 <el-input v-model="resetForm.email" placeholder="请输入注册时使用的邮箱" />
               </el-form-item>
               <div class="submit-zone">
-                <el-button
-                  type="primary"
-                  :loading="sendingResetCode"
-                  class="submit-button"
-                  @click="handleSendResetCode"
-                >
-                  发送验证码
-                </el-button>
+                <el-button type="primary" :loading="sendingResetCode" class="submit-button" @click="handleSendResetCode">发送验证码</el-button>
+                <button type="button" class="mode-switch" @click="showForgot = false">← 返回登录</button>
               </div>
             </el-form>
           </template>
 
-          <!-- Step 2：输入验证码 + 新密码 -->
           <template v-if="resetStep === 2">
             <el-form ref="resetForm2Ref" :model="resetForm" :rules="resetRules2" label-position="top" class="auth-form">
               <el-form-item label="邮箱验证码" prop="code">
                 <div class="code-row">
                   <el-input v-model="resetForm.code" placeholder="请输入验证码" class="code-input" />
-                  <el-button
-                    :disabled="resetCountdown > 0 || sendingResetCode"
-                    :loading="sendingResetCode"
-                    class="code-btn"
-                    @click="handleSendResetCode"
-                  >
+                  <el-button :disabled="resetCountdown > 0 || sendingResetCode" :loading="sendingResetCode" class="code-btn" @click="handleSendResetCode">
                     {{ resetCountdown > 0 ? `${resetCountdown}s 后重发` : '重新发送' }}
                   </el-button>
                 </div>
@@ -173,14 +146,11 @@
                 <el-input v-model="resetForm.confirmNewPassword" type="password" placeholder="请再次输入新密码" show-password />
               </el-form-item>
               <div class="submit-zone">
-                <el-button type="primary" :loading="resetting" class="submit-button" @click="handleResetPassword">
-                  确认重置密码
-                </el-button>
+                <el-button type="primary" :loading="resetting" class="submit-button" @click="handleResetPassword">确认重置密码</el-button>
               </div>
             </el-form>
           </template>
 
-          <!-- Step 3：成功 -->
           <template v-if="resetStep === 3">
             <div class="reset-success">
               <div class="success-icon">✓</div>
@@ -189,8 +159,9 @@
             </div>
           </template>
         </template>
-      </section>
-    </div>
+
+      </div>
+    </section>
   </div>
 </template>
 
@@ -444,136 +415,295 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* =========================================================
+   登录页 — 左深色面板 · 右极简表单
+   ========================================================= */
 .auth-page {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  padding: 28px 0;
-  background:
-    radial-gradient(circle at top left, rgba(23, 135, 166, 0.14), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(13, 107, 133, 0.1), transparent 18%),
-    linear-gradient(135deg, #edf5f7 0%, #f7fbfc 50%, #eef5f6 100%);
-}
-
-.auth-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.82fr);
-  gap: 22px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
 }
 
+/* 左侧：深翠绿编辑面板 */
 .auth-intro {
-  padding: 34px 12px 34px 6px;
+  position: relative;
+  overflow: hidden;
+  background: var(--forest-800);
+  padding: 56px 52px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 18px;
+  gap: 36px;
+  color: var(--forest-100);
+}
+
+.auth-intro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-radial-gradient(circle at 20% 35%,
+      transparent 0, transparent 40px,
+      rgba(74,196,154,0.06) 40px, rgba(74,196,154,0.06) 41px),
+    repeating-radial-gradient(circle at 80% 75%,
+      transparent 0, transparent 32px,
+      rgba(58,155,210,0.05) 32px, rgba(58,155,210,0.05) 33px);
+  pointer-events: none;
+}
+
+.intro-coord-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--forest-400);
+  text-transform: uppercase;
+}
+
+.intro-coord-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--clay-500);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 .intro-title {
   margin: 0;
-  color: var(--front-text);
-  font-size: clamp(32px, 4vw, 52px);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 3.2vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--forest-50);
+  font-weight: 500;
+}
+
+.intro-title em {
+  font-style: italic;
+  color: var(--clay-400);
 }
 
 .intro-description {
   margin: 0;
-  max-width: 640px;
-  color: var(--front-text-soft);
-  font-size: 15px;
-  line-height: 1.9;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--forest-300);
+  max-width: 460px;
 }
 
 .intro-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
 .intro-card {
-  min-height: 180px;
-  padding: 18px;
-  border-radius: 22px;
-  border: 1px solid var(--front-border);
-  background: rgba(255, 255, 255, 0.62);
-  box-shadow: var(--front-shadow-soft);
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(74,196,154,0.15);
+  background: rgba(255,255,255,0.04);
 }
 
 .intro-card span {
   display: block;
-  color: var(--front-text-muted);
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--clay-400);
 }
 
 .intro-card strong {
   display: block;
-  margin: 12px 0 10px;
-  color: var(--front-text);
-  font-size: 18px;
-  line-height: 1.3;
+  margin: 10px 0 8px;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--forest-50);
+  font-weight: 500;
 }
 
 .intro-card p {
   margin: 0;
-  color: var(--front-text-soft);
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--forest-300);
 }
 
+.intro-bottom {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(74,196,154,0.15);
+}
+
+.intro-stat {
+  text-align: left;
+}
+
+.intro-stat strong {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--forest-100);
+  letter-spacing: -0.02em;
+}
+
+.intro-stat span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--forest-400);
+  margin-top: 3px;
+}
+
+.intro-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(74,196,154,0.2);
+}
+
+/* 右侧：极简表单 */
 .auth-panel {
-  padding: 28px;
-  border-radius: 30px;
+  background: var(--front-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 44px;
+}
+
+.auth-panel-inner {
+  width: 100%;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
-.panel-head {
+.panel-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.panel-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+}
+
+.panel-logo-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--forest-700);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.panel-logo-text {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-900);
+}
+
+.back-home {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-500);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s;
+}
+.back-home:hover { color: var(--forest-700); }
+
+.panel-head {
   margin-bottom: 24px;
 }
 
 .panel-head h2 {
-  margin: 14px 0 8px;
-  color: var(--front-text);
-  font-size: 26px;
+  margin: 8px 0 6px;
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
 }
 
 .panel-head p {
   margin: 0;
-  color: var(--front-text-soft);
   font-size: 13px;
-  line-height: 1.75;
+  color: var(--ink-500);
+  line-height: 1.65;
 }
 
-.back-home {
-  color: var(--front-accent-strong);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 700;
+/* 表单：底边线风格 */
+.auth-form :deep(.el-form-item) {
+  margin-bottom: 18px;
 }
 
 .auth-form :deep(.el-form-item__label) {
-  color: var(--front-text);
-  font-size: 13px;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-600);
+  padding-bottom: 6px;
+}
+
+.auth-form :deep(.el-input__wrapper) {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--front-border);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 6px 0;
+  transition: border-color 0.15s;
+}
+
+.auth-form :deep(.el-input__wrapper):hover,
+.auth-form :deep(.el-input__wrapper.is-focus) {
+  border-bottom-color: var(--forest-600);
+  box-shadow: 0 1.5px 0 0 var(--forest-600);
+}
+
+.auth-form :deep(.el-input__inner) {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink-900);
+  background: transparent;
 }
 
 .submit-zone {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 6px;
+  gap: 14px;
+  padding-top: 8px;
 }
 
 .submit-button {
   width: 100%;
   height: 44px;
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .action-links {
@@ -585,17 +715,21 @@ onUnmounted(() => {
 .mode-switch {
   border: none;
   background: transparent;
-  color: var(--front-accent-strong);
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--forest-700);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 500;
   cursor: pointer;
   padding: 0;
+  transition: color 0.15s;
 }
+.mode-switch:hover { color: var(--forest-800); }
 
 .forgot-link {
-  color: #888;
+  color: var(--ink-400);
   font-weight: 400;
 }
+.forgot-link:hover { color: var(--ink-600); }
 
 .code-row {
   display: flex;
@@ -603,13 +737,12 @@ onUnmounted(() => {
   width: 100%;
 }
 
-.code-input {
-  flex: 1;
-}
+.code-input { flex: 1; }
 
 .code-btn {
   flex-shrink: 0;
-  width: 110px;
+  width: 112px;
+  border-radius: 8px;
 }
 
 .reset-success {
@@ -621,173 +754,43 @@ onUnmounted(() => {
 }
 
 .success-icon {
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: #52c41a;
+  background: var(--forest-600);
   color: #fff;
-  font-size: 28px;
+  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .reset-success p {
-  color: var(--front-text-soft);
-  font-size: 14px;
+  color: var(--ink-500);
+  font-size: 13.5px;
   text-align: center;
+  line-height: 1.65;
 }
 
-@media (max-width: 1120px) {
-  .auth-shell {
+/* 响应式 */
+@media (max-width: 960px) {
+  .auth-page {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
-
   .auth-intro {
-    padding: 10px 0 0;
+    padding: 40px 32px;
+    min-height: 280px;
   }
+  .intro-grid { display: none; }
+  .intro-bottom { display: none; }
+  .auth-panel { padding: 36px 24px; }
 }
 
-@media (max-width: 720px) {
-  .auth-page {
-    padding: 16px 0;
-    align-items: stretch;
-  }
-
-  .auth-intro {
-    order: 2;
-    padding: 0;
-    gap: 10px;
-  }
-
-  .auth-panel {
-    order: 1;
-  }
-
-  .intro-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .auth-panel {
-    padding: 20px;
-    border-radius: 24px;
-  }
-
-  .panel-head {
-    flex-direction: column;
-    align-items: flex-start;
-    margin-bottom: 20px;
-  }
-
-  .submit-button {
-    height: 42px;
-  }
-}
-
-@media (max-width: 560px) {
-  .auth-page {
-    padding: 8px 0 16px;
-  }
-
-  .auth-shell {
-    gap: 10px;
-  }
-
-  .auth-intro {
-    gap: 8px;
-  }
-
-  .intro-title {
-    font-size: clamp(20px, 7vw, 26px);
-    line-height: 1.18;
-  }
-
-  .intro-description {
-    max-width: none;
-    font-size: 12px;
-    line-height: 1.55;
-  }
-
-  .intro-grid {
-    display: none;
-  }
-
-  .auth-panel {
-    padding: 16px 14px;
-    border-radius: 18px;
-  }
-
-  .panel-head h2 {
-    margin-top: 8px;
-    font-size: 20px;
-  }
-
-  .panel-head p {
-    font-size: 12px;
-    line-height: 1.55;
-  }
-
-  .back-home {
-    font-size: 12px;
-  }
-
-  .auth-form :deep(.el-input__wrapper) {
-    min-height: 42px;
-  }
-
-  .submit-zone {
-    gap: 10px;
-  }
-
-  .submit-button {
-    height: 44px;
-  }
-
-  .mode-switch {
-    font-size: 12px;
-    padding: 6px 0;
-  }
-}
-
-@media (max-width: 420px) {
-  .auth-page {
-    padding-top: 4px;
-  }
-
-  .auth-shell {
-    gap: 8px;
-  }
-
-  .front-kicker {
-    font-size: 11px;
-  }
-
-  .auth-intro {
-    gap: 6px;
-  }
-
-  .intro-title {
-    font-size: 18px;
-  }
-
-  .intro-description {
-    display: none;
-  }
-
-  .panel-head {
-    margin-bottom: 16px;
-  }
-
-  .panel-head h2 {
-    font-size: 18px;
-  }
-
-  .panel-head p {
-    display: none;
-  }
-
-  .back-home {
-    display: none;
-  }
+@media (max-width: 520px) {
+  .auth-intro { padding: 28px 20px; }
+  .auth-panel { padding: 24px 16px; }
+  .panel-head h2 { font-size: 20px; }
+  .intro-title { font-size: 26px; }
 }
 </style>

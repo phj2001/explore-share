@@ -1,31 +1,76 @@
+// ============================================================
+// 后台主题 — 深翠绿侧栏 · 薄荷白工作区
+// ============================================================
+
 .admin-shell,
 body.admin-theme-active {
-  --admin-accent: #1787a6;
-  --admin-accent-strong: #0d6b85;
-  --admin-accent-soft: rgba(23, 135, 166, 0.1);
-  --admin-accent-soft-strong: rgba(23, 135, 166, 0.16);
-  --admin-bg: #f1f6f8;
-  --admin-bg-deep: #e8f0f3;
-  --admin-panel: rgba(255, 255, 255, 0.88);
-  --admin-panel-solid: #ffffff;
-  --admin-panel-tint: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 251, 252, 0.94));
-  --admin-border: rgba(24, 68, 84, 0.12);
-  --admin-border-strong: rgba(24, 68, 84, 0.18);
-  --admin-text: #18333d;
-  --admin-text-soft: #45616c;
-  --admin-text-muted: #6f8790;
-  --admin-shadow: 0 16px 36px rgba(17, 36, 46, 0.06);
-  --admin-shadow-soft: 0 10px 24px rgba(17, 36, 46, 0.04);
-  --admin-radius-xl: 24px;
-  --admin-radius-lg: 20px;
-  --admin-radius-md: 16px;
+  --admin-sidebar-bg:    #0d2a23;
+  --admin-sidebar-hover: rgba(132,214,179,0.1);
+  --admin-sidebar-active: rgba(132,214,179,0.15);
+  --admin-sidebar-text:  #a7d4be;
+  --admin-sidebar-text-bright: #e8f5ef;
+  --admin-sidebar-border: #1c4035;
+  --admin-sidebar-accent: #4ac49a;
+  --admin-sidebar-coral:  #f37154;
+
+  --admin-accent:        #1f8c69;
+  --admin-accent-strong: #0a5e44;
+  --admin-accent-soft:   rgba(31,140,105,0.1);
+  --admin-accent-soft-strong: rgba(31,140,105,0.16);
+  --admin-accent-coral:  #ec5a36;
+  --admin-accent-sky:    #3a9bd2;
+
+  --admin-bg:            #f7faf7;
+  --admin-bg-deep:       #eef5ef;
+  --admin-panel:         #ffffff;
+  --admin-panel-tint:    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,251,248,0.96));
+  --admin-border:        #dde7df;
+  --admin-border-strong: #bccdc1;
+  --admin-text:          #0f1f1a;
+  --admin-text-soft:     #2f4a40;
+  --admin-text-muted:    #4f6b5e;
+  --admin-text-faint:    #97ad9f;
+  --admin-shadow:        0 1px 0 rgba(20,60,40,0.04), 0 8px 24px -12px rgba(20,80,55,0.14);
+  --admin-shadow-soft:   0 2px 12px 0 rgba(20,60,40,0.06);
+  --admin-radius-xl:     16px;
+  --admin-radius-lg:     12px;
+  --admin-radius-md:     8px;
+
+  --font-serif: 'Spectral', 'Noto Serif SC', Georgia, serif;
+  --font-sans:  'IBM Plex Sans', 'Noto Sans SC', 'PingFang SC', -apple-system, sans-serif;
+  --font-mono:  'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
 }
 
 .admin-shell {
   color: var(--admin-text);
-  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
+// Element Plus 覆盖（后台作用域）
+.admin-shell {
+  --el-color-primary:         #1f8c69;
+  --el-color-primary-dark-2:  #0a5e44;
+  --el-color-primary-light-3: #4ac49a;
+  --el-color-primary-light-5: #84d6b3;
+  --el-color-primary-light-7: #b5e5ce;
+  --el-color-primary-light-9: #ebf8f1;
+  --el-color-danger:          #ec5a36;
+  --el-color-warning:         #d9923e;
+  --el-color-success:         #1aa67e;
+  --el-color-info:            #3a9bd2;
+  --el-bg-color:              #ffffff;
+  --el-bg-color-page:         #f7faf7;
+  --el-text-color-primary:    #0f1f1a;
+  --el-text-color-regular:    #2f4a40;
+  --el-text-color-secondary:  #4f6b5e;
+  --el-border-color:          #dde7df;
+  --el-border-color-light:    #e5ede7;
+  --el-fill-color:            #f4fcf7;
+  --el-fill-color-light:      #f7faf7;
+}
+
+// 内容区通用面板
 .admin-shell .content {
   color: var(--admin-text);
 }
@@ -48,13 +93,13 @@ body.admin-theme-active {
 .admin-shell .content .page-hero,
 .admin-shell .content .hero-panel {
   border-radius: var(--admin-radius-xl) !important;
-  padding: 24px 26px !important;
+  padding: 22px 24px !important;
 }
 
 .admin-shell .content .filter-panel,
 .admin-shell .content .toolbar {
   border-radius: var(--admin-radius-lg) !important;
-  padding: 16px !important;
+  padding: 14px !important;
   gap: 10px !important;
 }
 
@@ -63,15 +108,17 @@ body.admin-theme-active {
 .admin-shell .content .panel,
 .admin-shell .content .form-panel,
 .admin-shell .content .info-panel {
-  border-radius: 22px !important;
+  border-radius: var(--admin-radius-xl) !important;
   padding: 16px 16px 10px !important;
 }
 
+// 标题排版
 .admin-shell .content .page-hero h1,
 .admin-shell .content .hero-panel h1 {
-  font-size: clamp(22px, 2.3vw, 28px) !important;
-  line-height: 1.18 !important;
-  letter-spacing: -0.02em;
+  font-family: var(--font-serif) !important;
+  font-size: clamp(20px, 2.2vw, 26px) !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em !important;
 }
 
 .admin-shell .content .page-hero p,
@@ -80,37 +127,36 @@ body.admin-theme-active {
 .admin-shell .content .recent-preview,
 .admin-shell .content .route-meta p,
 .admin-shell .content .text-card p {
-  color: var(--admin-text-soft) !important;
-  font-size: 13.5px !important;
+  color: var(--admin-text-muted) !important;
+  font-size: 13px !important;
   line-height: 1.72 !important;
 }
 
+// eyebrow 标签
 .admin-shell .content .hero-kicker,
 .admin-shell .content .panel-kicker,
 .admin-shell .content .eyebrow {
-  padding: 5px 10px !important;
+  padding: 4px 10px !important;
   border-radius: 999px !important;
   background: var(--admin-accent-soft) !important;
   color: var(--admin-accent-strong) !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.08em !important;
+  font-family: var(--font-mono) !important;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
 }
 
-.admin-shell .content .panel-head,
-.admin-shell .content .pagination-bar,
-.admin-shell .content .pagination,
-.admin-shell .content .pagination-container {
-  gap: 10px;
-}
-
+// panel 标题
 .admin-shell .content .panel-head h2 {
-  margin-top: 8px !important;
-  font-size: 18px !important;
+  margin-top: 6px !important;
+  font-family: var(--font-serif) !important;
+  font-size: 17px !important;
   line-height: 1.25 !important;
   color: var(--admin-text) !important;
 }
 
+// 次要文字
 .admin-shell .content .panel-note,
 .admin-shell .content .filter-label,
 .admin-shell .content .total-text,
@@ -119,10 +165,12 @@ body.admin-theme-active {
 .admin-shell .content .hero-stat em,
 .admin-shell .content .summary-card em,
 .admin-shell .content .active-filter-list {
-  color: var(--admin-text-muted) !important;
-  font-size: 12px !important;
+  color: var(--admin-text-faint) !important;
+  font-size: 11.5px !important;
+  font-family: var(--font-mono) !important;
 }
 
+// 卡片类
 .admin-shell .content .hero-stat,
 .admin-shell .content .summary-card,
 .admin-shell .content .metric-card,
@@ -134,25 +182,27 @@ body.admin-theme-active {
 .admin-shell .content .poi-row,
 .admin-shell .content .poi-edit-row,
 .admin-shell .content .info-item {
-  border: 1px solid rgba(24, 68, 84, 0.1) !important;
-  border-radius: 18px !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 252, 0.95)) !important;
-  box-shadow: none !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: var(--admin-radius-lg) !important;
+  background: #ffffff !important;
+  box-shadow: var(--admin-shadow-soft) !important;
 }
 
 .admin-shell .content .hero-stat strong,
 .admin-shell .content .summary-card strong,
 .admin-shell .content .metric-value,
 .admin-shell .content .stat-card strong {
-  font-size: clamp(22px, 1.95vw, 28px) !important;
+  font-family: var(--font-serif) !important;
+  font-size: clamp(20px, 1.8vw, 26px) !important;
   line-height: 1 !important;
+  letter-spacing: -0.02em !important;
   color: var(--admin-text) !important;
 }
 
 .admin-shell .content .metric-card {
-  min-height: 138px !important;
-  border-radius: 20px !important;
-  padding: 18px !important;
+  min-height: 130px !important;
+  border-radius: var(--admin-radius-lg) !important;
+  padding: 16px !important;
 }
 
 .admin-shell .content .metric-label,
@@ -161,38 +211,36 @@ body.admin-theme-active {
 .admin-shell .content .info-card span,
 .admin-shell .content .info-item span,
 .admin-shell .content .stat-card span {
-  color: var(--admin-text-muted) !important;
-  font-size: 12px !important;
+  color: var(--admin-text-faint) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 10.5px !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
 }
 
-.admin-shell .content .recent-top h3,
-.admin-shell .content .drawer-profile h2 {
-  font-size: 18px !important;
-}
-
-.admin-shell .content .hot-rank,
-.admin-shell .content .idx,
-.admin-shell .content .range-chip.active {
-  box-shadow: none !important;
-}
-
+// range chip
 .admin-shell .content .range-chip {
-  padding: 10px 14px !important;
-  font-size: 13px !important;
+  padding: 8px 13px !important;
+  font-size: 12.5px !important;
+  border-radius: 999px !important;
 }
 
+// 按钮
 .admin-shell .content .el-button {
   --el-button-font-size: 13px;
-  border-radius: 12px;
-  height: 36px;
+  border-radius: 8px;
+  height: 34px;
   padding: 0 14px;
+  font-family: var(--font-sans);
 }
 
 .admin-shell .content .el-button--small {
-  height: 30px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
 }
 
+// 输入框
 .admin-shell .content .el-input__wrapper,
 .admin-shell .content .el-textarea__inner,
 .admin-shell .content .el-select__wrapper,
@@ -201,12 +249,10 @@ body.admin-theme-active {
 body.admin-theme-active .el-dialog .el-input__wrapper,
 body.admin-theme-active .el-dialog .el-textarea__inner,
 body.admin-theme-active .el-dialog .el-select__wrapper,
-body.admin-theme-active .el-dialog .el-input-number,
 body.admin-theme-active .el-drawer .el-input__wrapper,
 body.admin-theme-active .el-drawer .el-textarea__inner,
-body.admin-theme-active .el-drawer .el-select__wrapper,
-body.admin-theme-active .el-drawer .el-input-number {
-  border-radius: 12px !important;
+body.admin-theme-active .el-drawer .el-select__wrapper {
+  border-radius: 8px !important;
 }
 
 .admin-shell .content .el-input__wrapper,
@@ -215,61 +261,67 @@ body.admin-theme-active .el-dialog .el-input__wrapper,
 body.admin-theme-active .el-dialog .el-select__wrapper,
 body.admin-theme-active .el-drawer .el-input__wrapper,
 body.admin-theme-active .el-drawer .el-select__wrapper {
-  min-height: 40px;
+  min-height: 38px;
 }
 
+// 表格
 .admin-shell .content .el-table {
-  --el-table-border-color: rgba(24, 68, 84, 0.1);
-  --el-table-row-hover-bg-color: rgba(23, 135, 166, 0.05);
-  --el-table-header-bg-color: rgba(236, 245, 247, 0.92);
-  --el-table-text-color: var(--admin-text);
-  --el-table-header-text-color: #42616d;
+  --el-table-border-color:        var(--admin-border);
+  --el-table-row-hover-bg-color:  rgba(31,140,105,0.05);
+  --el-table-header-bg-color:     #f4fcf7;
+  --el-table-text-color:          var(--admin-text);
+  --el-table-header-text-color:   var(--admin-text-muted);
   font-size: 13px;
-  border-radius: 16px;
+  border-radius: var(--admin-radius-lg);
   overflow: hidden;
 }
 
 .admin-shell .content .el-table th.el-table__cell {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .admin-shell .content .el-table .el-table__cell {
-  padding: 11px 0;
+  padding: 10px 0;
 }
 
+// 标签
 .admin-shell .content .el-tag {
   border-radius: 999px;
-  font-size: 12px;
-  padding: 0 10px;
+  font-size: 11.5px;
+  padding: 0 9px;
 }
 
+// 分页
 .admin-shell .content .el-pagination {
-  --el-pagination-font-size: 13px;
+  --el-pagination-font-size: 12.5px;
 }
 
+// 对话框 & 抽屉
 body.admin-theme-active .el-dialog,
 body.admin-theme-active .el-drawer {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 252, 0.98));
+  background: var(--admin-panel);
   color: var(--admin-text);
 }
 
 body.admin-theme-active .el-dialog {
-  border-radius: 24px;
-  box-shadow: 0 22px 56px rgba(17, 36, 46, 0.16);
+  border-radius: 18px;
+  box-shadow: 0 22px 56px rgba(10,40,25,0.18);
   overflow: hidden;
 }
 
 body.admin-theme-active .el-drawer {
-  box-shadow: -24px 0 48px rgba(17, 36, 46, 0.16);
+  box-shadow: -20px 0 48px rgba(10,40,25,0.16);
 }
 
 body.admin-theme-active .el-dialog__header,
 body.admin-theme-active .el-dialog__footer,
 body.admin-theme-active .el-drawer__header {
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 22px;
+  padding-right: 22px;
 }
 
 body.admin-theme-active .el-dialog__body,
@@ -278,7 +330,7 @@ body.admin-theme-active .el-drawer__body {
 }
 
 body.admin-theme-active .el-overlay {
-  background: rgba(11, 28, 35, 0.34);
+  background: rgba(6,18,14,0.38);
   backdrop-filter: blur(6px);
 }
 
@@ -292,12 +344,12 @@ body.admin-theme-active .el-overlay {
   .admin-shell .content .panel,
   .admin-shell .content .form-panel,
   .admin-shell .content .info-panel {
-    border-radius: 18px !important;
+    border-radius: 14px !important;
   }
 
   .admin-shell .content .page-hero,
   .admin-shell .content .hero-panel {
-    padding: 18px !important;
+    padding: 16px !important;
   }
 
   .admin-shell .content .table-panel,
@@ -305,6 +357,6 @@ body.admin-theme-active .el-overlay {
   .admin-shell .content .panel,
   .admin-shell .content .form-panel,
   .admin-shell .content .info-panel {
-    padding: 14px 14px 8px !important;
+    padding: 12px 12px 8px !important;
   }
 }

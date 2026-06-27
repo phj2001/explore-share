@@ -1,5 +1,6 @@
 package com.smartcampus.service.impl;
 
+import com.smartcampus.annotation.OperationLog;
 import com.smartcampus.dto.common.PageResponse;
 import com.smartcampus.dto.response.POIShareLikeResponse;
 import com.smartcampus.dto.response.POIShareReplyResponse;
@@ -144,6 +145,7 @@ public class POIShareServiceImpl implements POIShareService {
 
     @Override
     @Transactional
+    @OperationLog(module = "内容互动", action = "发布分享", targetType = "地点", targetIdSpel = "#poiId")
     public POIShareResponse createShare(Long poiId, Long userId, String content, List<MultipartFile> images) {
         POI poi = poiRepository.findById(poiId)
                 .orElseThrow(() -> new BusinessException(404, "POI不存在"));
@@ -271,6 +273,7 @@ public class POIShareServiceImpl implements POIShareService {
 
     @Override
     @Transactional
+    @OperationLog(module = "内容互动", action = "发布回复", targetType = "分享", targetIdSpel = "#shareId")
     public POIShareReplyResponse createReply(Long shareId, Long userId, String content) {
         POIShare share = poiShareRepository.findById(shareId)
                 .orElseThrow(() -> new BusinessException(404, "分享不存在"));

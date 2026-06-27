@@ -170,13 +170,14 @@ onMounted(() => {
 
 .admin-page-head h2 {
   margin: 0;
+  font-family: var(--font-serif);
   font-size: 22px;
-  color: #0f172a;
+  color: var(--admin-text);
 }
 
 .admin-page-head p {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--admin-text-muted);
   font-size: 14px;
 }
 
@@ -203,13 +204,13 @@ onMounted(() => {
 }
 
 .sub-text {
-  color: #94a3b8;
+  color: var(--ink-400);
   font-size: 12px;
 }
 
 .review-stars-compact span {
   font-size: 14px;
-  color: #d1d5db;
+  color: var(--ink-400);
 }
 
 .review-stars-compact span.filled {
