@@ -599,11 +599,11 @@ onMounted(async () => {
 
 <style scoped>
 .recommend-page {
-  --panel-bg: rgba(255, 255, 255, 0.9);
-  --panel-border: rgba(148, 163, 184, 0.18);
-  --ink: #0f172a;
-  --muted: #64748b;
-  --accent: #2563eb;
+  --panel-bg: var(--admin-panel);
+  --panel-border: var(--admin-border);
+  --ink: var(--admin-text);
+  --muted: var(--admin-text-muted);
+  --accent: var(--admin-accent-strong);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -615,7 +615,7 @@ onMounted(async () => {
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .page-hero {
@@ -636,7 +636,7 @@ onMounted(async () => {
   padding: 6px 12px;
   border-radius: 999px;
   background: rgba(250, 204, 21, 0.14);
-  color: #a16207;
+  color: var(--clay-700);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -645,6 +645,7 @@ onMounted(async () => {
 
 .hero-copy h1 {
   margin: 14px 0 10px;
+  font-family: var(--font-serif);
   font-size: clamp(28px, 4vw, 40px);
   line-height: 1.08;
   color: var(--ink);
@@ -667,7 +668,7 @@ onMounted(async () => {
   padding: 18px;
   border-radius: 22px;
   border: 1px solid rgba(253, 224, 71, 0.48);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(254, 252, 232, 0.92));
+  background: var(--admin-panel);
 }
 
 .hero-stat span,
@@ -729,6 +730,7 @@ onMounted(async () => {
 .panel-head h2 {
   margin: 12px 0 0;
   color: var(--ink);
+  font-family: var(--font-serif);
   font-size: 24px;
 }
 
@@ -764,8 +766,8 @@ onMounted(async () => {
 .metric-pills span {
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(241, 245, 249, 0.95);
-  color: #475569;
+  background: var(--paper-100);
+  color: var(--ink-600);
   font-size: 12px;
 }
 
@@ -807,8 +809,8 @@ onMounted(async () => {
 .candidate-form-wrap,
 .selected-preview {
   border-radius: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(255, 255, 255, 0.96));
+  border: 1px solid var(--admin-border);
+  background: var(--admin-panel);
 }
 
 .candidate-table-wrap {

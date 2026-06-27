@@ -51,6 +51,31 @@ public class AdminOperationLog {
     @Column(name = "summary", nullable = false, length = 300)
     private String summary;
 
+    // ----- 升级项② AOP 审计增强字段（允许 null，向后兼容历史数据）-----
+    /** HTTP 方法（GET/POST/PUT/DELETE） */
+    @Column(name = "request_method", length = 10)
+    private String requestMethod;
+
+    /** 请求 URI */
+    @Column(name = "request_uri", length = 200)
+    private String requestUri;
+
+    /** 客户端 IP */
+    @Column(name = "ip_address", length = 50)
+    private String ipAddress;
+
+    /** 操作状态：1=成功, 0=失败 */
+    @Column(name = "operation_status")
+    private Integer operationStatus;
+
+    /** 链路追踪 ID（与日志/指标串联） */
+    @Column(name = "trace_id", length = 40)
+    private String traceId;
+
+    /** 耗时（毫秒） */
+    @Column(name = "duration_ms")
+    private Long durationMs;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

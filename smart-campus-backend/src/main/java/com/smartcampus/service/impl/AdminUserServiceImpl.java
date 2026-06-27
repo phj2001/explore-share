@@ -16,6 +16,7 @@ import com.smartcampus.service.AdminUserService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -39,6 +40,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final POIShareReplyRepository poiShareReplyRepository;
     private final POIShareLikeRepository poiShareLikeRepository;
     private final AdminOperationLogService adminOperationLogService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -48,7 +50,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         int pageNo = Math.max(page == null ? 0 : page, 0);
         int pageSize = Math.min(Math.max(size == null ? 10 : size, 1), MAX_PAGE_SIZE);
-        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
+        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.unsorted());
 
         Page<User> userPage = userRepository.findAll(buildSpecification(keyword, role, status), pageable);
         List<AdminUserListItemResponse> records = userPage.getContent().stream()
@@ -73,7 +75,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     @Transactional
-    public AdminUserDetailResponse updateUserRole(Long targetUserId, Short role, Long operatorUserId) {
+    public AdminUserDetailResponse updateUserRole(Long targetUserId, Short role, Boolean canResetPassword, Long operatorUserId) {
         validateRole(role);
         User targetUser = getRequiredUser(targetUserId);
         User operatorUser = getRequiredUser(operatorUserId);
@@ -91,6 +93,14 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
 
         targetUser.setRole(role);
+        if (role == UserRole.ADMIN.getCode()) {
+            // 晋升为管理员时，按参数决定是否授予重置密码权限
+            targetUser.setCanResetPassword(Boolean.TRUE.equals(canResetPassword));
+        } else {
+            // 降级为普通用户时，清除重置密码权限
+            targetUser.setCanResetPassword(false);
+        }
+
         User savedUser = userRepository.save(targetUser);
         adminOperationLogService.record(
                 operatorUserId,
@@ -101,6 +111,70 @@ public class AdminUserServiceImpl implements AdminUserService {
                 "将用户 @" + savedUser.getUsername() + " 的角色更新为" + getRoleLabel(savedUser.getRole())
         );
         return buildUserDetail(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public AdminUserDetailResponse updateCanResetPassword(Long targetUserId, Boolean canResetPassword, Long operatorUserId) {
+        User targetUser = getRequiredUser(targetUserId);
+        User operatorUser = getRequiredUser(operatorUserId);
+
+        if (operatorUser.getRole() != UserRole.SUPER_ADMIN.getCode()) {
+            throw new BusinessException(403, "仅超级管理员可修改重置密码权限");
+        }
+        if (targetUser.getRole() != UserRole.ADMIN.getCode()) {
+            throw new BusinessException(400, "仅管理员账号支持该操作");
+        }
+
+        targetUser.setCanResetPassword(Boolean.TRUE.equals(canResetPassword));
+        User savedUser = userRepository.save(targetUser);
+        adminOperationLogService.record(
+                operatorUserId,
+                "用户管理",
+                "更新重置密码权限",
+                "用户",
+                savedUser.getId(),
+                (Boolean.TRUE.equals(canResetPassword) ? "授予" : "撤销") + "用户 @" + savedUser.getUsername() + " 的重置密码权限"
+        );
+        return buildUserDetail(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public void resetUserPassword(Long targetUserId, String newPassword, Long operatorUserId) {
+        if (newPassword == null || newPassword.length() < 6 || newPassword.length() > 64) {
+            throw new BusinessException(400, "新密码长度须在 6~64 位之间");
+        }
+
+        User targetUser = getRequiredUser(targetUserId);
+        User operatorUser = getRequiredUser(operatorUserId);
+
+        if (targetUser.getRole() == UserRole.SUPER_ADMIN.getCode()) {
+            throw new BusinessException(403, "不能重置超级管理员的密码");
+        }
+
+        boolean isSuperAdmin = operatorUser.getRole() == UserRole.SUPER_ADMIN.getCode();
+        boolean isAdminWithPermission = operatorUser.getRole() == UserRole.ADMIN.getCode()
+                && Boolean.TRUE.equals(operatorUser.getCanResetPassword());
+
+        if (!isSuperAdmin && !isAdminWithPermission) {
+            throw new BusinessException(403, "无权重置用户密码");
+        }
+
+        if (isAdminWithPermission && targetUser.getRole() != UserRole.USER.getCode()) {
+            throw new BusinessException(403, "管理员只能重置普通用户的密码");
+        }
+
+        targetUser.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(targetUser);
+        adminOperationLogService.record(
+                operatorUserId,
+                "用户管理",
+                "重置用户密码",
+                "用户",
+                targetUserId,
+                "重置了用户 @" + targetUser.getUsername() + " 的密码"
+        );
     }
 
     @Override
@@ -162,6 +236,16 @@ public class AdminUserServiceImpl implements AdminUserService {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));
             }
 
+            // 非 count 查询时加自定义排序：超级管理员(2)→管理员(3)→普通用户(1)，同级按 id 升序
+            if (!Long.class.equals(query.getResultType())) {
+                jakarta.persistence.criteria.Expression<Integer> roleOrder = criteriaBuilder
+                        .<Integer>selectCase()
+                        .when(criteriaBuilder.equal(root.<Short>get("role"), (short) UserRole.SUPER_ADMIN.getCode()), 0)
+                        .when(criteriaBuilder.equal(root.<Short>get("role"), (short) UserRole.ADMIN.getCode()), 1)
+                        .otherwise(2);
+                query.orderBy(criteriaBuilder.asc(roleOrder), criteriaBuilder.asc(root.get("id")));
+            }
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
@@ -206,7 +290,6 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     private boolean isSupportedRole(Short role) {
         return UserRole.USER.getCode() == role
-                || UserRole.ADMIN.getCode() == role
-                || UserRole.SUPER_ADMIN.getCode() == role;
+                || UserRole.ADMIN.getCode() == role;
     }
 }

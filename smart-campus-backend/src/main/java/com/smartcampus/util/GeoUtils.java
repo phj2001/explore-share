@@ -52,4 +52,24 @@ public class GeoUtils {
                 centerLng + lngDelta
         };
     }
+
+    /**
+     * Haversine 球面距离（米）。
+     *
+     * <p>用途（M2）：边界框 {@link #calculateBounds} 是半径圆的外接正方形，四角超出真实半径，
+     * 需用它对候选 POI 做精确二次过滤，补齐 ST_DWithin 圆域精度（方案 §6.2，任务规则 4：
+     * 边界框预过滤 + 精确距离过滤）。M3 {@code nearbyPois} 工具同样复用。
+     *
+     * @return 两点间大圆距离（米），地球平均半径取 6371000m
+     */
+    public static double haversineMeters(double lat1, double lng1, double lat2, double lng2) {
+        final double earthRadiusMeters = 6371000.0;
+        double phi1 = Math.toRadians(lat1);
+        double phi2 = Math.toRadians(lat2);
+        double dPhi = Math.toRadians(lat2 - lat1);
+        double dLambda = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dPhi / 2) * Math.sin(dPhi / 2)
+                + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) * Math.sin(dLambda / 2);
+        return 2 * earthRadiusMeters * Math.asin(Math.min(1.0, Math.sqrt(a)));
+    }
 }

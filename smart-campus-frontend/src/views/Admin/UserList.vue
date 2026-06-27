@@ -185,6 +185,37 @@
             </div>
           </div>
 
+          <!-- 重置密码权限（仅超管查看管理员时显示） -->
+          <div
+            v-if="currentUserIsSuperAdmin && selectedUser.role === ADMIN_ROLE"
+            class="drawer-section"
+          >
+            <h3>重置密码权限</h3>
+            <div class="perm-row">
+              <div class="perm-desc">
+                <span class="perm-label">允许该管理员重置普通用户密码</span>
+                <span class="perm-hint">开启后，该管理员可在用户详情中重置普通用户的密码</span>
+              </div>
+              <el-switch
+                :model-value="selectedUser.canResetPassword"
+                :loading="canResetUpdatingId === selectedUser.id"
+                @change="toggleCanResetPassword(selectedUser)"
+              />
+            </div>
+          </div>
+
+          <!-- 重置密码操作 -->
+          <div
+            v-if="canShowResetPassword(selectedUser)"
+            class="drawer-section"
+          >
+            <h3>重置密码</h3>
+            <p class="reset-hint">将强制覆盖该用户的当前密码，操作不可撤销，请谨慎使用。</p>
+            <el-button type="danger" plain @click="openResetPasswordDialog(selectedUser)">
+              重置该用户密码
+            </el-button>
+          </div>
+
           <div class="drawer-section">
             <h3>管理说明</h3>
             <ul class="tips-list">
@@ -197,6 +228,48 @@
         </template>
       </div>
     </el-drawer>
+
+    <!-- 重置密码对话框 -->
+    <el-dialog
+      v-model="resetPasswordDialogVisible"
+      title="重置用户密码"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <div class="reset-dialog-body" v-if="resetPasswordTarget">
+        <p class="reset-dialog-tip">
+          正在重置用户
+          <strong>@{{ resetPasswordTarget.username }}</strong>
+          的密码，新密码将立即生效。
+        </p>
+        <el-form label-position="top">
+          <el-form-item label="新密码">
+            <el-input
+              v-model="newPassword"
+              type="password"
+              show-password
+              placeholder="请输入新密码（6~64 位）"
+              maxlength="64"
+            />
+          </el-form-item>
+          <el-form-item label="确认新密码">
+            <el-input
+              v-model="newPasswordConfirm"
+              type="password"
+              show-password
+              placeholder="再次输入新密码"
+              maxlength="64"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="resetPasswordDialogVisible = false">取消</el-button>
+        <el-button type="danger" :loading="resetPasswordLoading" @click="confirmResetPassword">
+          确认重置
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -209,7 +282,9 @@ import {
   getAdminUserDetail,
   getAdminUserPage,
   updateAdminUserRole,
-  updateAdminUserStatus
+  updateAdminUserStatus,
+  updateAdminUserCanResetPassword,
+  resetAdminUserPassword
 } from '@/api/adminUser'
 import { useUserStore } from '@/stores/user'
 import { ADMIN_ROLE, SUPER_ADMIN_ROLE } from '@/constants/auth'
@@ -237,6 +312,13 @@ const detailLoading = ref(false)
 const selectedUser = ref(null)
 const roleUpdatingId = ref(null)
 const statusUpdatingId = ref(null)
+const canResetUpdatingId = ref(null)
+const resetPasswordDialogVisible = ref(false)
+const resetPasswordTarget = ref(null)
+const newPassword = ref('')
+const newPasswordConfirm = ref('')
+const resetPasswordLoading = ref(false)
+const grantResetOnPromote = ref(false)
 
 const currentUserId = computed(() => userStore.userInfo?.id ?? null)
 
@@ -298,15 +380,75 @@ const refreshDetailIfNeeded = async (userId) => {
 }
 
 const toggleRole = async (row) => {
-  if (isCurrentUser(row)) {
-    return
-  }
+  if (isCurrentUser(row)) return
 
   const nextRole = row.role === ADMIN_ROLE ? USER_ROLE : ADMIN_ROLE
   const nextLabel = getRoleLabel(nextRole)
+  let canReset = false
 
+  if (nextRole === ADMIN_ROLE) {
+    // 晋升管理员：弹带复选框的确认框
+    grantResetOnPromote.value = false
+    try {
+      await ElMessageBox.confirm(
+        `<div>确定将该用户设为<strong>管理员</strong>吗？</div>
+         <div style=”margin-top:12px;display:flex;align-items:center;gap:8px;”>
+           <input type=”checkbox” id=”grantReset” style=”width:16px;height:16px;cursor:pointer;”
+             onchange=”window.__grantReset = this.checked” />
+           <label for=”grantReset” style=”cursor:pointer;font-size:13px;color:#374151;”>
+             同时授予该管理员重置用户密码的权限
+           </label>
+         </div>`,
+        '设为管理员',
+        {
+          type: 'warning',
+          confirmButtonText: '确认',
+          cancelButtonText: '取消',
+          dangerouslyUseHTMLString: true,
+          beforeClose: (action, _instance, done) => {
+            if (action === 'confirm') {
+              canReset = !!window.__grantReset
+              window.__grantReset = false
+            }
+            done()
+          }
+        }
+      )
+    } catch {
+      return
+    }
+  } else {
+    // 降级：普通确认
+    try {
+      await ElMessageBox.confirm(`确定将该用户角色设置为”${nextLabel}”吗？`, '修改角色', {
+        type: 'warning',
+        confirmButtonText: '确认',
+        cancelButtonText: '取消'
+      })
+    } catch {
+      return
+    }
+  }
+
+  roleUpdatingId.value = row.id
   try {
-    await ElMessageBox.confirm(`确定将该用户角色设置为“${nextLabel}”吗？`, '修改角色', {
+    const detail = await updateAdminUserRole(row.id, nextRole, nextRole === ADMIN_ROLE ? canReset : undefined)
+    row.role = detail.role
+    row.canResetPassword = detail.canResetPassword
+    await refreshDetailIfNeeded(row.id)
+    ElMessage.success('用户角色已更新')
+  } catch (error) {
+    ElMessage.error(error.message || '更新用户角色失败')
+  } finally {
+    roleUpdatingId.value = null
+  }
+}
+
+const toggleCanResetPassword = async (row) => {
+  const next = !row.canResetPassword
+  const action = next ? '授予' : '撤销'
+  try {
+    await ElMessageBox.confirm(`确定${action}该管理员的重置密码权限？`, `${action}权限`, {
       type: 'warning',
       confirmButtonText: '确认',
       cancelButtonText: '取消'
@@ -315,16 +457,46 @@ const toggleRole = async (row) => {
     return
   }
 
-  roleUpdatingId.value = row.id
+  canResetUpdatingId.value = row.id
   try {
-    const detail = await updateAdminUserRole(row.id, nextRole)
-    row.role = detail.role
-    await refreshDetailIfNeeded(row.id)
-    ElMessage.success('用户角色已更新')
+    const detail = await updateAdminUserCanResetPassword(row.id, next)
+    row.canResetPassword = detail.canResetPassword
+    if (selectedUser.value?.id === row.id) {
+      selectedUser.value = { ...selectedUser.value, canResetPassword: detail.canResetPassword }
+    }
+    ElMessage.success(`重置密码权限已${action}`)
   } catch (error) {
-    ElMessage.error(error.message || '更新用户角色失败')
+    ElMessage.error(error.message || '操作失败')
   } finally {
-    roleUpdatingId.value = null
+    canResetUpdatingId.value = null
+  }
+}
+
+const openResetPasswordDialog = (user) => {
+  resetPasswordTarget.value = user
+  newPassword.value = ''
+  newPasswordConfirm.value = ''
+  resetPasswordDialogVisible.value = true
+}
+
+const confirmResetPassword = async () => {
+  if (!newPassword.value || newPassword.value.length < 6) {
+    ElMessage.warning('密码不能少于 6 位')
+    return
+  }
+  if (newPassword.value !== newPasswordConfirm.value) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  resetPasswordLoading.value = true
+  try {
+    await resetAdminUserPassword(resetPasswordTarget.value.id, newPassword.value)
+    ElMessage.success(`已成功重置 @${resetPasswordTarget.value.username} 的密码`)
+    resetPasswordDialogVisible.value = false
+  } catch (error) {
+    ElMessage.error(error.message || '重置密码失败')
+  } finally {
+    resetPasswordLoading.value = false
   }
 }
 
@@ -357,6 +529,15 @@ const toggleStatus = async (row) => {
   } finally {
     statusUpdatingId.value = null
   }
+}
+
+const canShowResetPassword = (targetUser) => {
+  if (!targetUser) return false
+  if (targetUser.role === SUPER_ADMIN_ROLE) return false
+  if (userStore.isSuperAdmin) return true
+  // 有重置权限的管理员只能操作普通用户
+  if (userStore.isAdmin && userStore.userInfo?.canResetPassword && targetUser.role === USER_ROLE) return true
+  return false
 }
 
 const getDisplayName = (row) => row.displayName || row.username || '未命名用户'
@@ -412,18 +593,18 @@ onMounted(async () => {
 .page-hero,
 .filter-panel,
 .table-panel {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-panel);
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .page-hero {
   border-radius: 28px;
   padding: 26px 28px;
   background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.16), transparent 30%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 255, 0.9));
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(240, 253, 244, 0.9));
 }
 
 .hero-kicker {
@@ -431,8 +612,8 @@ onMounted(async () => {
   align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.08);
-  color: #2563eb;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent-strong);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -441,14 +622,15 @@ onMounted(async () => {
 
 .page-hero h1 {
   margin: 14px 0 10px;
+  font-family: var(--font-serif);
   font-size: clamp(26px, 4vw, 38px);
   line-height: 1.1;
-  color: #0f172a;
+  color: var(--admin-text);
 }
 
 .page-hero p {
   margin: 0;
-  color: #64748b;
+  color: var(--admin-text-muted);
   line-height: 1.75;
 }
 
@@ -476,7 +658,7 @@ onMounted(async () => {
 
 .user-avatar,
 .detail-avatar {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--forest-400), var(--forest-700));
   color: #fff;
   font-weight: 700;
 }
@@ -492,7 +674,7 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 18px 6px 8px;
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 .drawer-body {
@@ -518,13 +700,14 @@ onMounted(async () => {
 
 .drawer-profile h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--admin-text);
+  font-family: var(--font-serif);
   font-size: 28px;
 }
 
 .drawer-profile p {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 .drawer-tags {
@@ -535,7 +718,8 @@ onMounted(async () => {
 
 .drawer-section h3 {
   margin: 0 0 14px;
-  color: #0f172a;
+  color: var(--admin-text);
+  font-family: var(--font-serif);
   font-size: 18px;
 }
 
@@ -549,14 +733,14 @@ onMounted(async () => {
 .stat-card {
   border-radius: 18px;
   padding: 16px;
-  background: linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(255, 255, 255, 0.96));
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .info-item span,
 .stat-card span {
   display: block;
-  color: #64748b;
+  color: var(--admin-text-muted);
   font-size: 13px;
 }
 
@@ -564,7 +748,7 @@ onMounted(async () => {
 .stat-card strong {
   display: block;
   margin-top: 10px;
-  color: #0f172a;
+  color: var(--admin-text);
   line-height: 1.6;
 }
 
@@ -586,8 +770,55 @@ onMounted(async () => {
 .tips-list {
   margin: 0;
   padding-left: 18px;
-  color: #475569;
+  color: var(--ink-600);
   line-height: 1.8;
+}
+
+.perm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
+}
+
+.perm-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.perm-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.perm-hint {
+  font-size: 12px;
+  color: var(--ink-400);
+}
+
+.reset-hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--admin-text-muted);
+}
+
+.reset-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reset-dialog-tip {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-600);
+  line-height: 1.6;
 }
 
 @media (max-width: 1100px) {

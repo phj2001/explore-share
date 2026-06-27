@@ -285,16 +285,16 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #0f766e, #0ea5e9);
+  background: linear-gradient(135deg, var(--forest-600), var(--forest-800));
   color: #fff;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+  box-shadow: 0 12px 28px rgba(31, 140, 105, 0.22);
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .route-trigger:hover {
   transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.26);
+  box-shadow: 0 16px 32px rgba(31, 140, 105, 0.28);
 }
 
 .route-trigger .el-icon {
@@ -316,9 +316,10 @@ onUnmounted(() => {
   max-height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(247, 250, 247, 0.96);
   border-radius: 16px;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  border: 1px solid var(--front-border);
+  box-shadow: 0 12px 32px rgba(31, 140, 105, 0.14);
   overflow: hidden;
   backdrop-filter: blur(8px);
 }
@@ -337,7 +338,7 @@ onUnmounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   padding: 16px 18px 12px;
-  background: linear-gradient(135deg, #0f766e, #0ea5e9);
+  background: linear-gradient(135deg, var(--forest-700), var(--forest-900));
   color: #fff;
 }
 
@@ -380,8 +381,8 @@ onUnmounted(() => {
 }
 
 .recommended-banner {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(16, 185, 129, 0.12));
-  border: 1px solid rgba(14, 165, 233, 0.18);
+  background: linear-gradient(135deg, rgba(31, 140, 105, 0.1), rgba(58, 155, 210, 0.08));
+  border: 1px solid rgba(31, 140, 105, 0.18);
 }
 
 .banner-copy {
@@ -392,18 +393,18 @@ onUnmounted(() => {
 
 .banner-kicker {
   font-size: 12px;
-  color: #0369a1;
+  color: var(--forest-700);
   font-weight: 700;
 }
 
 .banner-copy strong {
-  color: #0f172a;
+  color: var(--ink-900);
   font-size: 15px;
 }
 
 .banner-copy p {
   margin: 0;
-  color: #475569;
+  color: var(--ink-600);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -413,8 +414,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  background: #ecfeff;
-  color: #0f766e;
+  background: var(--forest-50);
+  color: var(--forest-700);
   font-size: 12px;
 }
 
@@ -462,15 +463,15 @@ onUnmounted(() => {
 
 .point-tag-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 8px 18px rgba(31, 140, 105, 0.18);
 }
 
 .point-tag-button.is-active {
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22);
+  box-shadow: 0 0 0 3px rgba(31, 140, 105, 0.22);
 }
 
 .point-tag.start {
-  background: #16a34a;
+  background: var(--forest-600);
 }
 
 .point-tag.end {
@@ -484,12 +485,12 @@ onUnmounted(() => {
 }
 
 .point-text strong {
-  color: #0f172a;
+  color: var(--ink-900);
   font-size: 14px;
 }
 
 .point-text span {
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 12px;
 }
 
@@ -500,8 +501,8 @@ onUnmounted(() => {
 }
 
 .waypoint-list {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--paper-50);
+  border: 1px solid var(--front-border);
 }
 
 .waypoint-head {
@@ -509,7 +510,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
-  color: #475569;
+  color: var(--ink-600);
   font-size: 12px;
 }
 
@@ -526,8 +527,8 @@ onUnmounted(() => {
 .waypoint-chip {
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(224, 242, 254, 0.95);
-  color: #0369a1;
+  background: var(--forest-100);
+  color: var(--forest-700);
   font-size: 12px;
 }
 
@@ -535,7 +536,7 @@ onUnmounted(() => {
   margin: 0 18px 16px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: #f8fafc;
+  background: var(--paper-50);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
@@ -549,12 +550,12 @@ onUnmounted(() => {
 }
 
 .summary-item span {
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 12px;
 }
 
 .summary-item strong {
-  color: #0f172a;
+  color: var(--ink-900);
   font-size: 14px;
 }
 
@@ -576,15 +577,15 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   padding: 12px 0;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--front-border);
 }
 
 .step-index {
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--forest-100);
+  color: var(--forest-700);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -595,7 +596,7 @@ onUnmounted(() => {
 
 .step-content p {
   margin: 0;
-  color: #1e293b;
+  color: var(--ink-800);
   line-height: 1.5;
   font-size: 13px;
 }
@@ -603,7 +604,7 @@ onUnmounted(() => {
 .step-content span {
   display: inline-block;
   margin-top: 4px;
-  color: #64748b;
+  color: var(--ink-500);
   font-size: 12px;
 }
 
@@ -625,8 +626,8 @@ onUnmounted(() => {
     max-height: 60svh;
     height: 60svh;
     border-radius: 22px 22px 18px 18px;
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: 0 20px 40px rgba(31, 140, 105, 0.15);
+    border: 1px solid var(--front-border);
   }
 
   .route-panel.has-route {

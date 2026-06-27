@@ -8,4 +8,7 @@ public class AdminUpdateUserRoleRequest {
 
     @NotNull(message = "角色不能为空")
     private Short role;
+
+    /** 晋升为管理员时是否授予重置密码权限，其他场景忽略 */
+    private Boolean canResetPassword;
 }

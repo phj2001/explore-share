@@ -1,35 +1,160 @@
+// ============================================================
+// 前台主题 — 清新亮色 · 翠玉绿体系
+// ============================================================
+
 :root {
-  --front-accent: #1787a6;
-  --front-accent-strong: #0d6b85;
-  --front-accent-soft: rgba(23, 135, 166, 0.1);
-  --front-accent-soft-strong: rgba(23, 135, 166, 0.16);
-  --front-bg: #f4f8f9;
-  --front-bg-soft: #eef4f6;
-  --front-bg-deep: #e3edf1;
-  --front-surface: rgba(255, 255, 255, 0.88);
-  --front-surface-solid: #ffffff;
-  --front-surface-muted: rgba(247, 250, 251, 0.96);
-  --front-border: rgba(23, 61, 73, 0.12);
-  --front-border-strong: rgba(23, 61, 73, 0.18);
-  --front-text: #17323c;
-  --front-text-soft: #4c6670;
-  --front-text-muted: #738890;
-  --front-shadow: 0 18px 40px rgba(16, 35, 43, 0.08);
-  --front-shadow-soft: 0 12px 26px rgba(16, 35, 43, 0.05);
-  --front-radius-xl: 30px;
-  --front-radius-lg: 24px;
-  --front-radius-md: 18px;
+  // --- 品牌色阶 ---
+  --forest-900: #053625;
+  --forest-800: #0a5e44;
+  --forest-700: #1f8c69;
+  --forest-600: #2eaa83;
+  --forest-500: #4ac49a;
+  --forest-400: #84d6b3;
+  --forest-300: #b5e5ce;
+  --forest-200: #d8efe1;
+  --forest-100: #ebf8f1;
+  --forest-50:  #f4fcf7;
+
+  // --- 珊瑚橘 ---
+  --clay-900: #8a2818;
+  --clay-700: #c14628;
+  --clay-600: #ec5a36;
+  --clay-500: #f37154;
+  --clay-400: #f7967c;
+  --clay-300: #fbb7a3;
+  --clay-200: #fdd5c8;
+  --clay-100: #ffe9e0;
+
+  // --- 天青蓝 ---
+  --sky-900: #0b3d62;
+  --sky-700: #2a6494;
+  --sky-600: #3a9bd2;
+  --sky-500: #62b2e0;
+  --sky-300: #a8d3ed;
+  --sky-100: #e3f1fb;
+
+  // --- 底色 ---
+  --paper-50:  #f7faf7;
+  --paper-100: #eef5ef;
+  --paper-200: #dfece2;
+  --paper-300: #c7d9cb;
+
+  // --- 墨色 ---
+  --ink-950: #06120e;
+  --ink-900: #0f1f1a;
+  --ink-800: #1c2e26;
+  --ink-700: #2f4a40;
+  --ink-600: #4f6b5e;
+  --ink-500: #708a7c;
+  --ink-400: #97ad9f;
+  --ink-300: #becbc1;
+  --ink-200: #dde6df;
+
+  // --- 地图语义色 ---
+  --water:     #62b2e0;
+  --water-100: #d8ecf6;
+  --trail:     #ec5a36;
+  --road:      #c5d4c7;
+
+  // --- 分类色 ---
+  --cat-view:    #1aa67e;
+  --cat-food:    #ec5a36;
+  --cat-camp:    #d9923e;
+  --cat-stay:    #3a9bd2;
+  --cat-trail:   #9b7adb;
+  --cat-culture: #d4537e;
+  --cat-special: #d5b53c;
+
+  // --- 语义变量（前台） ---
+  --front-bg:           var(--paper-50);
+  --front-bg-soft:      var(--paper-100);
+  --front-bg-deep:      var(--paper-200);
+  --front-surface:      #ffffff;
+  --front-surface-muted: var(--paper-50);
+  --front-border:       #dde7df;
+  --front-border-strong:#bccdc1;
+  --front-text:         var(--ink-900);
+  --front-text-soft:    var(--ink-700);
+  --front-text-muted:   var(--ink-500);
+  --front-accent:       var(--forest-700);
+  --front-accent-strong:var(--forest-800);
+  --front-accent-soft:  rgba(31,140,105,0.1);
+  --front-accent-soft-strong: rgba(31,140,105,0.16);
+  --front-coral:        var(--clay-600);
+  --front-sky:          var(--sky-600);
+  --front-shadow:       0 1px 0 rgba(20,60,40,0.04), 0 8px 24px -12px rgba(20,80,55,0.16);
+  --front-shadow-soft:  0 2px 12px 0 rgba(20,60,40,0.08);
+  --front-shadow-pop:   0 18px 48px -20px rgba(20,80,55,0.28), 0 4px 12px -6px rgba(20,80,55,0.14);
+  --front-radius-xl:    22px;
+  --front-radius-lg:    14px;
+  --front-radius-md:    8px;
   --front-content-width: 1360px;
+
+  // --- 字体 ---
+  --font-serif: 'Spectral', 'Noto Serif SC', Georgia, serif;
+  --font-sans:  'IBM Plex Sans', 'Noto Sans SC', 'PingFang SC', -apple-system, sans-serif;
+  --font-mono:  'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+// Element Plus 主题覆盖
+:root {
+  --el-color-primary:         #1f8c69;
+  --el-color-primary-light-3: #4ac49a;
+  --el-color-primary-light-5: #84d6b3;
+  --el-color-primary-light-7: #b5e5ce;
+  --el-color-primary-light-8: #d8efe1;
+  --el-color-primary-light-9: #ebf8f1;
+  --el-color-primary-dark-2:  #0a5e44;
+  --el-color-danger:          #ec5a36;
+  --el-color-warning:         #d9923e;
+  --el-color-success:         #1aa67e;
+  --el-color-info:            #3a9bd2;
+  --el-bg-color:              #ffffff;
+  --el-bg-color-page:         #f7faf7;
+  --el-text-color-primary:    #0f1f1a;
+  --el-text-color-regular:    #2f4a40;
+  --el-text-color-secondary:  #4f6b5e;
+  --el-text-color-placeholder:#97ad9f;
+  --el-border-color:          #dde7df;
+  --el-border-color-light:    #e5ede7;
+  --el-border-color-lighter:  #eef5ef;
+  --el-border-radius-base:    6px;
+  --el-border-radius-small:   4px;
+  --el-border-radius-round:   20px;
+  --el-fill-color:            #f4fcf7;
+  --el-fill-color-light:      #f7faf7;
+  --el-fill-color-lighter:    #fafcfa;
 }
 
 body {
-  background:
-    radial-gradient(circle at top left, rgba(23, 135, 166, 0.08), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(13, 107, 133, 0.06), transparent 18%),
-    linear-gradient(180deg, var(--front-bg) 0%, #f7fafb 100%);
+  font-family: var(--font-sans);
+  background: var(--front-bg);
   color: var(--front-text);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.005em;
 }
 
+// 等高线背景纹理
+.fc-contour-bg {
+  background-color: var(--paper-100);
+  background-image:
+    repeating-radial-gradient(circle at 22% 38%,
+      transparent 0, transparent 36px,
+      rgba(31,140,105,0.05) 36px, rgba(31,140,105,0.05) 37px),
+    repeating-radial-gradient(circle at 78% 72%,
+      transparent 0, transparent 28px,
+      rgba(58,155,210,0.04) 28px, rgba(58,155,210,0.04) 29px);
+}
+
+// 薄荷渐变背景
+.fc-paper {
+  background:
+    radial-gradient(ellipse 800px 600px at 80% 10%, rgba(58,155,210,0.06), transparent 60%),
+    radial-gradient(ellipse 600px 400px at 10% 90%, rgba(31,140,105,0.07), transparent 60%),
+    var(--paper-50);
+}
+
+// 布局容器
 .front-page {
   color: var(--front-text);
 }
@@ -39,39 +164,143 @@ body {
   margin: 0 auto;
 }
 
+// 通用面板
 .front-panel {
   border: 1px solid var(--front-border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 252, 0.94));
+  background: var(--front-surface);
   box-shadow: var(--front-shadow);
-  backdrop-filter: blur(16px);
 }
 
+// eyebrow 标签
 .front-kicker {
   display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 5px 11px;
   border-radius: 999px;
   background: var(--front-accent-soft);
-  color: var(--front-accent-strong);
+  color: var(--forest-800);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
+.front-kicker--coral {
+  background: rgba(236,90,54,0.1);
+  color: var(--clay-700);
+}
+
+.front-kicker--sky {
+  background: rgba(58,155,210,0.1);
+  color: var(--sky-700);
+}
+
+// 标题
 .front-title {
   margin: 14px 0 10px;
   color: var(--front-text);
+  font-family: var(--font-serif);
   font-size: clamp(24px, 3vw, 34px);
-  line-height: 1.16;
+  line-height: 1.12;
   letter-spacing: -0.02em;
 }
 
+// 描述文字
 .front-description {
   margin: 0;
   color: var(--front-text-soft);
   font-size: 14px;
   line-height: 1.8;
+}
+
+// 坐标小字
+.fc-coord {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-500);
+}
+
+// 徽章式分类标签
+.fc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid currentColor;
+}
+
+// 卡片
+.fc-card {
+  background: var(--front-surface);
+  border: 1px solid var(--front-border);
+  border-radius: var(--front-radius-lg);
+  box-shadow: var(--front-shadow);
+  overflow: hidden;
+}
+
+// 主按钮
+.fc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  background: var(--forest-700);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.fc-btn:hover { background: var(--forest-800); }
+.fc-btn--ghost {
+  background: transparent;
+  border-color: var(--front-border-strong);
+  color: var(--ink-800);
+}
+.fc-btn--ghost:hover { background: var(--paper-100); }
+.fc-btn--coral {
+  background: var(--clay-600);
+}
+.fc-btn--coral:hover { background: var(--clay-700); }
+
+// 虚线分隔线
+.fc-divider-dotted {
+  background-image: radial-gradient(circle, var(--ink-400) 0.8px, transparent 1.2px);
+  background-size: 6px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+  height: 1px;
+}
+
+// 刻度尺装饰
+.fc-ruler {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.fc-ruler::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 6px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ink-700) 0, var(--ink-700) 1px,
+    transparent 1px, transparent 4px
+  );
+  opacity: 0.4;
+  margin-right: 6px;
 }
 
 @media (max-width: 768px) {

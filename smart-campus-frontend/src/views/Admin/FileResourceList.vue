@@ -380,10 +380,10 @@ onMounted(async () => {
 
 <style scoped>
 .resource-page {
-  --panel-bg: rgba(255, 255, 255, 0.9);
-  --panel-border: rgba(148, 163, 184, 0.18);
-  --ink: #0f172a;
-  --muted: #64748b;
+  --panel-bg: var(--admin-panel);
+  --panel-border: var(--admin-border);
+  --ink: var(--admin-text);
+  --muted: var(--admin-text-muted);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -395,7 +395,7 @@ onMounted(async () => {
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .page-hero {
@@ -405,8 +405,8 @@ onMounted(async () => {
   grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.9fr);
   gap: 20px;
   background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 26%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.92));
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.16), transparent 26%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 253, 244, 0.92));
 }
 
 .hero-kicker,
@@ -415,8 +415,8 @@ onMounted(async () => {
   align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent-strong);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -425,6 +425,7 @@ onMounted(async () => {
 
 .hero-copy h1 {
   margin: 14px 0 10px;
+  font-family: var(--font-serif);
   font-size: clamp(28px, 4vw, 40px);
   line-height: 1.08;
   color: var(--ink);
@@ -446,8 +447,8 @@ onMounted(async () => {
 .hero-stat {
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid rgba(147, 197, 253, 0.55);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.92));
+  border: 1px solid var(--admin-border);
+  background: var(--admin-panel);
 }
 
 .hero-stat span,
@@ -511,6 +512,7 @@ onMounted(async () => {
 .panel-head h2 {
   margin: 12px 0 0;
   color: var(--ink);
+  font-family: var(--font-serif);
   font-size: 24px;
 }
 
@@ -519,7 +521,7 @@ onMounted(async () => {
   height: 70px;
   border-radius: 16px;
   overflow: hidden;
-  background: #f8fafc;
+  background: var(--paper-50);
 }
 
 .file-meta {

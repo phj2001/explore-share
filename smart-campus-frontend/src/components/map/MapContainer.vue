@@ -19,6 +19,23 @@
         <el-button plain class="map-toolbar-button" @click="clearAllPoiLabels">
           清除名称
         </el-button>
+        <el-button
+          v-if="userStore.isLoggedIn"
+          plain
+          class="map-toolbar-button"
+          @click="router.push({ name: 'RouteCreate' })"
+        >
+          创建路线
+        </el-button>
+        <el-button
+          v-if="userStore.isLoggedIn"
+          type="primary"
+          plain
+          class="map-toolbar-button"
+          @click="showPOIApplyDialog = true"
+        >
+          申请添加地点
+        </el-button>
       </div>
 
       <div v-if="!sdkError && activeResultSummary.truncated" class="map-limit-tip">
@@ -79,9 +96,144 @@
               {{ poiCheckInStatus.checkedIn ? '取消打卡' : (userStore.isLoggedIn ? '打卡' : '登录后打卡') }}
             </el-button>
           </div>
+
+          <div class="poi-check-in-card">
+            <div class="poi-check-in-meta">
+              <span class="poi-check-in-label">收藏状态</span>
+              <strong>{{ poiFavoriteStatus.favoriteCount }} 人收藏</strong>
+              <p>
+                {{ poiFavoriteStatus.favorited ? '你已经收藏了这个地点。' : '感兴趣的话，可以收藏起来。' }}
+              </p>
+            </div>
+
+            <el-button
+              :type="poiFavoriteStatus.favorited ? 'danger' : 'primary'"
+              :plain="poiFavoriteStatus.favorited"
+              :loading="poiFavoriteLoading"
+              @click="togglePOIFavorite"
+            >
+              {{ poiFavoriteStatus.favorited ? '取消收藏' : (userStore.isLoggedIn ? '收藏' : '登录后收藏') }}
+            </el-button>
+          </div>
         </section>
 
+        <div class="poi-review-section">
+          <div class="poi-review-header">
+            <div>
+              <h3>评分与评价</h3>
+              <p v-if="poiRatingSummary.reviewCount > 0">
+                平均 {{ poiRatingSummary.avgRating }} 分 · {{ poiRatingSummary.reviewCount }} 条评价
+              </p>
+              <p v-else>暂无评价，来做第一个评价的人吧</p>
+            </div>
+          </div>
+
+          <div v-if="userStore.isLoggedIn" class="poi-review-composer">
+            <div class="rating-stars">
+              <span class="rating-label">我的评分：</span>
+              <span
+                v-for="star in 5"
+                :key="star"
+                class="star-btn"
+                :class="{ active: star <= (poiHoverRating || poiUserRating) }"
+                @mouseenter="poiHoverRating = star"
+                @mouseleave="poiHoverRating = 0"
+                @click="poiUserRating = star"
+              >&#9733;</span>
+              <span class="rating-text">{{ poiUserRating > 0 ? poiUserRating + ' 星' : '点击评分' }}</span>
+            </div>
+            <el-input
+              v-model="poiReviewContent"
+              type="textarea"
+              :rows="2"
+              maxlength="200"
+              show-word-limit
+              resize="none"
+              placeholder="写下你的评价（可选）"
+            />
+            <div class="review-composer-actions">
+              <span></span>
+              <el-button
+                type="primary"
+                :disabled="poiUserRating === 0"
+                :loading="poiReviewSubmitting"
+                @click="submitReview"
+              >
+                提交评价
+              </el-button>
+            </div>
+          </div>
+
+          <div v-else class="poi-review-login-tip">
+            <span>登录后即可评分和评价</span>
+            <el-button type="primary" size="small" @click="router.push({ name: 'Login' })">去登录</el-button>
+          </div>
+
+          <div v-if="poiReviewList.length" class="poi-review-list">
+            <div v-for="review in poiReviewList" :key="review.id" class="poi-review-item">
+              <div class="review-item-head">
+                <el-avatar :size="32" :src="review.authorAvatarUrl || undefined" class="review-avatar">
+                  {{ (review.authorDisplayName || 'U').slice(0, 1).toUpperCase() }}
+                </el-avatar>
+                <div class="review-item-meta">
+                  <div class="review-item-author">
+                    <strong>{{ review.authorDisplayName }}</strong>
+                    <span class="review-stars">
+                      <span v-for="s in 5" :key="s" :class="{ filled: s <= review.rating }">&#9733;</span>
+                    </span>
+                  </div>
+                  <time>{{ formatReviewTime(review.createdAt) }}</time>
+                </div>
+                <el-button
+                  v-if="review.canDelete"
+                  text
+                  type="danger"
+                  size="small"
+                  @click="removeReview(review)"
+                >
+                  删除
+                </el-button>
+              </div>
+              <p v-if="review.content" class="review-item-content">{{ review.content }}</p>
+            </div>
+
+            <div v-if="poiReviewHasMore" class="review-more">
+              <el-button text :loading="poiReviewLoading" @click="loadMoreReviews">加载更多评价</el-button>
+            </div>
+          </div>
+        </div>
+
         <PoiSharePanel v-if="showDetailDialog" :poi="selectedPOI" />
+
+        <div v-if="showDetailDialog" class="poi-gallery-section">
+          <div class="gallery-head">
+            <h3>图片墙</h3>
+            <span class="gallery-count">{{ galleryTotal }} 张图片</span>
+          </div>
+          <el-skeleton v-if="galleryLoading && !galleryImages.length" :rows="2" animated />
+          <div v-else-if="galleryImages.length" class="gallery-grid">
+            <el-image
+              v-for="img in galleryImages"
+              :key="img.imageId"
+              :src="resolveMediaUrl(img.imageUrl)"
+              :preview-src-list="galleryPreviewUrls"
+              :initial-index="galleryImages.indexOf(img)"
+              fit="cover"
+              preview-teleported
+              class="gallery-thumb"
+            >
+              <template #error>
+                <div class="gallery-error">
+                  <span>加载失败</span>
+                </div>
+              </template>
+            </el-image>
+          </div>
+          <el-empty v-else description="暂无图片" :image-size="60" />
+          <div v-if="galleryHasMore" class="gallery-more">
+            <el-button size="small" :loading="galleryLoadingMore" @click="loadMoreGallery">加载更多</el-button>
+          </div>
+        </div>
       </div>
 
       <template #footer>
@@ -90,38 +242,75 @@
         </div>
       </template>
     </el-dialog>
+
+    <POIApplicationDialog
+      v-if="showPOIApplyDialog"
+      @close="showPOIApplyDialog = false"
+    />
   </section>
 </template>
 
 <script setup>
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import RoutePolyline from '@/components/map/RoutePolyline.vue'
 import { useUserStore } from '@/stores/user'
 import { usePOIStore } from '@/stores/poi'
 import { useMapStore } from '@/stores/map'
 import { cancelCheckInPOI, checkInPOI, getPOICheckInStatus } from '@/api/poiCheckIn'
+import { addFavorite, getFavoriteStatus, removeFavorite } from '@/api/poiFavorite'
+import { createOrUpdateReview, deleteReview, getPoiReviews, getRatingSummary } from '@/api/poiReview'
+import { getPoiGallery } from '@/api/poiGallery'
 import {
   fromAmapCoordinate,
   loadAmapSdk,
   normalizePoiForAmap,
   toAmapCoordinate
 } from '@/utils/amap'
+import { API_ORIGIN } from '@/utils/request'
 
 const PoiSharePanel = defineAsyncComponent(() => import('@/components/map/PoiSharePanel.vue'))
+const POIApplicationDialog = defineAsyncComponent(() => import('@/components/map/POIApplicationDialog.vue'))
 
+const API_ORIGIN_RESOLVED = API_ORIGIN
+
+const resolveMediaUrl = (value) => {
+  if (!value) return ''
+  if (/^https?:\/\//i.test(value)) return value
+  return `${API_ORIGIN_RESOLVED}${value.startsWith('/') ? value : `/${value}`}`
+}
+
+const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 const poiStore = usePOIStore()
 const mapStore = useMapStore()
 
 const mapRoot = ref(null)
 const showDetailDialog = ref(false)
+const showPOIApplyDialog = ref(false)
 const selectedPOI = ref(null)
 const poiCheckInLoading = ref(false)
 const poiCheckInStatus = ref({
   checkedIn: false,
   checkInCount: 0
 })
+const poiFavoriteLoading = ref(false)
+const poiFavoriteStatus = ref({
+  favorited: false,
+  favoriteCount: 0
+})
+const poiRatingSummary = ref({ avgRating: 0, reviewCount: 0 })
+const poiReviewList = ref([])
+const poiReviewTotal = ref(0)
+const poiReviewHasMore = ref(false)
+const poiReviewPage = ref(0)
+const poiReviewLoading = ref(false)
+const poiReviewSubmitting = ref(false)
+const poiUserRating = ref(0)
+const poiReviewContent = ref('')
+const poiHoverRating = ref(0)
 const sdkError = ref('')
 const isMobileViewport = ref(false)
 const isMobileRoutePanelExpanded = ref(false)
@@ -220,8 +409,8 @@ const createPoiMarkerContent = () => {
       height: 18px;
       border-radius: 999px;
       border: 3px solid #ffffff;
-      background: linear-gradient(135deg, #0f766e, #0ea5e9);
-      box-shadow: 0 10px 20px rgba(14, 165, 233, 0.32);
+      background: linear-gradient(135deg, #1f8c69, #2d9e7a);
+      box-shadow: 0 10px 20px rgba(31, 140, 105, 0.32);
       user-select: none;
       -webkit-user-select: none;
       caret-color: transparent;
@@ -896,7 +1085,7 @@ const drawRouteEndpoints = () => {
       ? ['#15803d', '#22c55e']
       : isEnd
         ? ['#b91c1c', '#ef4444']
-        : ['#0f766e', '#0ea5e9']
+        : ['#1f8c69', '#2d9e7a']
 
     const size = isStart || isEnd ? 36 : 32
     const offset = isStart || isEnd ? -18 : -16
@@ -928,7 +1117,7 @@ const drawRoute = () => {
 
   routePolyline = new AMapRef.Polyline({
     path: points.map((point) => [Number(point.lng), Number(point.lat)]),
-    strokeColor: '#0ea5e9',
+    strokeColor: '#1f8c69',
     strokeOpacity: 0.92,
     strokeWeight: 7,
     strokeStyle: 'solid',
@@ -979,6 +1168,38 @@ const resetPOICheckInState = () => {
   }
 }
 
+const galleryImages = ref([])
+const galleryLoading = ref(false)
+const galleryLoadingMore = ref(false)
+const galleryPage = ref(0)
+const galleryHasMore = ref(false)
+const galleryTotal = ref(0)
+
+const galleryPreviewUrls = computed(() => galleryImages.value.map(img => resolveMediaUrl(img.imageUrl)))
+
+const loadGallery = async (poiId, reset = false) => {
+  if (!poiId) return
+  const nextPage = reset ? 0 : galleryPage.value + 1
+  const loadingRef = reset ? galleryLoading : galleryLoadingMore
+  loadingRef.value = true
+  try {
+    const data = await getPoiGallery(poiId, { page: nextPage, size: 20 })
+    const records = data?.records || []
+    galleryImages.value = reset ? records : [...galleryImages.value, ...records]
+    galleryPage.value = data?.page || nextPage
+    galleryHasMore.value = Boolean(data?.hasNext)
+    galleryTotal.value = data?.total || 0
+  } catch {
+    // 静默
+  } finally {
+    loadingRef.value = false
+  }
+}
+
+const loadMoreGallery = () => {
+  if (selectedPOI.value?.id) loadGallery(selectedPOI.value.id, false)
+}
+
 const loadPOICheckInStatus = async (poiId) => {
   if (!poiId) {
     resetPOICheckInState()
@@ -1020,8 +1241,147 @@ const togglePOICheckIn = async () => {
 
 const handleDialogClosed = () => {
   resetPOICheckInState()
+  resetPOIFavoriteState()
+  resetReviewState()
   selectedPOI.value = null
   mapStore.clearSelectedPOI()
+}
+
+const resetPOIFavoriteState = () => {
+  poiFavoriteLoading.value = false
+  poiFavoriteStatus.value = {
+    favorited: false,
+    favoriteCount: 0
+  }
+}
+
+const REVIEW_PAGE_SIZE = 5
+
+const resetReviewState = () => {
+  poiRatingSummary.value = { avgRating: 0, reviewCount: 0 }
+  poiReviewList.value = []
+  poiReviewTotal.value = 0
+  poiReviewHasMore.value = false
+  poiReviewPage.value = 0
+  poiReviewLoading.value = false
+  poiReviewSubmitting.value = false
+  poiUserRating.value = 0
+  poiReviewContent.value = ''
+  poiHoverRating.value = 0
+}
+
+const reviewTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+})
+
+const formatReviewTime = (value) => value ? reviewTimeFormatter.format(new Date(value)) : ''
+
+const loadRatingSummary = async (poiId) => {
+  if (!poiId) return
+  try {
+    poiRatingSummary.value = await getRatingSummary(poiId)
+  } catch {
+    // 静默
+  }
+}
+
+const loadReviews = async (poiId, reset = false) => {
+  if (!poiId) return
+  const nextPage = reset ? 0 : poiReviewPage.value + 1
+  poiReviewLoading.value = true
+  try {
+    const data = await getPoiReviews(poiId, { page: nextPage, size: REVIEW_PAGE_SIZE })
+    const records = data?.records || []
+    poiReviewList.value = reset ? records : [...poiReviewList.value, ...records]
+    poiReviewTotal.value = data?.total || 0
+    poiReviewPage.value = data?.page || nextPage
+    poiReviewHasMore.value = Boolean(data?.hasNext)
+  } catch {
+    // 静默
+  } finally {
+    poiReviewLoading.value = false
+  }
+}
+
+const loadMoreReviews = async () => {
+  if (!selectedPOI.value?.id) return
+  await loadReviews(selectedPOI.value.id, false)
+}
+
+const submitReview = async () => {
+  if (!selectedPOI.value?.id || poiUserRating.value === 0) return
+
+  poiReviewSubmitting.value = true
+  try {
+    await createOrUpdateReview(selectedPOI.value.id, {
+      rating: poiUserRating.value,
+      content: poiReviewContent.value.trim() || undefined
+    })
+    ElMessage.success('评价提交成功')
+    poiReviewContent.value = ''
+    await loadRatingSummary(selectedPOI.value.id)
+    await loadReviews(selectedPOI.value.id, true)
+  } catch (error) {
+    ElMessage.error(error.message || '评价提交失败')
+  } finally {
+    poiReviewSubmitting.value = false
+  }
+}
+
+const removeReview = async (review) => {
+  try {
+    await ElMessageBox.confirm('删除后无法恢复，是否继续？', '删除评价', {
+      type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消'
+    })
+  } catch {
+    return
+  }
+
+  try {
+    await deleteReview(review.id)
+    ElMessage.success('评价已删除')
+    await loadRatingSummary(selectedPOI.value.id)
+    await loadReviews(selectedPOI.value.id, true)
+  } catch (error) {
+    ElMessage.error(error.message || '删除评价失败')
+  }
+}
+
+const loadPOIFavoriteStatus = async (poiId) => {
+  if (!poiId) {
+    resetPOIFavoriteState()
+    return
+  }
+
+  try {
+    poiFavoriteStatus.value = await getFavoriteStatus(poiId)
+  } catch {
+    resetPOIFavoriteState()
+  }
+}
+
+const togglePOIFavorite = async () => {
+  if (!selectedPOI.value?.id) {
+    return
+  }
+
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录后再收藏')
+    return
+  }
+
+  poiFavoriteLoading.value = true
+  try {
+    poiFavoriteStatus.value = poiFavoriteStatus.value.favorited
+      ? await removeFavorite(selectedPOI.value.id)
+      : await addFavorite(selectedPOI.value.id)
+
+    ElMessage.success(poiFavoriteStatus.value.favorited ? '收藏成功' : '已取消收藏')
+  } catch (error) {
+    ElMessage.error(error.message || '收藏操作失败')
+  } finally {
+    poiFavoriteLoading.value = false
+  }
 }
 
 const handleMapBoundsChange = () => {
@@ -1054,6 +1414,18 @@ onMounted(async () => {
     window.addEventListener('poi:fit-search-results', handleFitSearchResults)
     await loadInitialMapData()
     drawRoute()
+
+    const targetPoiId = Number(route.query.poiId)
+    if (targetPoiId) {
+      try {
+        const poi = await poiStore.fetchPOIById(targetPoiId)
+        if (poi) {
+          mapStore.selectPOI(poi)
+        }
+      } catch {
+        // 静默，不影响主流程
+      }
+    }
   } catch (error) {
     sdkError.value = error.message || '高德地图初始化失败'
     ElMessage.error(sdkError.value)
@@ -1135,11 +1507,17 @@ watch(
   (poiId) => {
     if (showDetailDialog.value && poiId) {
       loadPOICheckInStatus(poiId)
+      loadPOIFavoriteStatus(poiId)
+      loadRatingSummary(poiId)
+      loadReviews(poiId, true)
+      loadGallery(poiId, true)
       return
     }
 
     if (!poiId) {
       resetPOICheckInState()
+      resetPOIFavoriteState()
+      resetReviewState()
     }
   },
   { immediate: true }
@@ -1150,6 +1528,9 @@ watch(
   (visible) => {
     if (visible && selectedPOI.value?.id) {
       loadPOICheckInStatus(selectedPOI.value.id)
+      loadPOIFavoriteStatus(selectedPOI.value.id)
+      loadRatingSummary(selectedPOI.value.id)
+      loadReviews(selectedPOI.value.id, true)
     }
   }
 )
@@ -1159,6 +1540,7 @@ watch(
   () => {
     if (showDetailDialog.value && selectedPOI.value?.id) {
       loadPOICheckInStatus(selectedPOI.value.id)
+      loadPOIFavoriteStatus(selectedPOI.value.id)
     }
   }
 )
@@ -1179,8 +1561,8 @@ watch(
   overflow: hidden;
   overscroll-behavior: contain;
   background:
-    radial-gradient(circle at top right, rgba(23, 135, 166, 0.12), transparent 28%),
-    linear-gradient(180deg, #f9fcfd, #e7f0f3);
+    radial-gradient(circle at top right, rgba(31, 140, 105, 0.1), transparent 28%),
+    linear-gradient(180deg, #f7faf7, #e8f2ed);
 }
 
 .map-view {
@@ -1188,8 +1570,8 @@ watch(
   height: calc(100vh - 96px);
   touch-action: pan-x pan-y pinch-zoom;
   background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.15), transparent 28%),
-    linear-gradient(180deg, #f8fafc, #e2e8f0);
+    radial-gradient(circle at top right, rgba(31, 140, 105, 0.12), transparent 28%),
+    linear-gradient(180deg, #f7faf7, #e8f2ed);
 }
 
 @supports (height: 100svh) {
@@ -1223,10 +1605,10 @@ watch(
   z-index: 1100;
   padding: 11px 14px;
   border-radius: 14px;
-  background: rgba(23, 50, 60, 0.88);
-  color: #eff8fa;
+  background: rgba(13, 42, 35, 0.88);
+  color: var(--forest-100);
   font-size: 13px;
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 18px 36px rgba(13, 42, 35, 0.18);
 }
 
 .map-toolbar {
@@ -1241,10 +1623,10 @@ watch(
 
 .map-toolbar-button {
   border-radius: 999px;
-  border-color: rgba(15, 23, 42, 0.12);
+  border-color: var(--front-border);
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 12px 28px rgba(31, 140, 105, 0.1);
 }
 
 .map-toolbar-button:hover {
@@ -1259,9 +1641,9 @@ watch(
   max-width: 360px;
   padding: 16px 18px;
   border-radius: 18px;
-  background: rgba(23, 50, 60, 0.92);
-  color: #eff8fa;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+  background: rgba(13, 42, 35, 0.92);
+  color: var(--forest-100);
+  box-shadow: 0 20px 40px rgba(13, 42, 35, 0.18);
   backdrop-filter: blur(10px);
 }
 
@@ -1305,7 +1687,7 @@ watch(
 .poi-overview {
   padding: 24px;
   border-radius: 28px;
-  background: linear-gradient(135deg, rgba(216, 238, 244, 0.92), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(135deg, rgba(209, 237, 224, 0.92), rgba(247, 250, 247, 0.96));
 }
 
 .poi-overview-card h3 {
@@ -1401,6 +1783,221 @@ watch(
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+.poi-review-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.poi-gallery-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--front-border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gallery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gallery-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-family: var(--font-serif);
+  color: var(--ink-900);
+}
+
+.gallery-count {
+  color: var(--ink-400);
+  font-size: 13px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gallery-thumb {
+  width: 100%;
+  height: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.gallery-error {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-100);
+  color: var(--ink-400);
+  font-size: 12px;
+}
+
+.gallery-more {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .gallery-thumb {
+    height: 80px;
+  }
+}
+
+.poi-review-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--front-text);
+}
+
+.poi-review-header p {
+  margin: 6px 0 0;
+  color: var(--front-text-muted);
+  font-size: 13px;
+}
+
+.poi-review-composer {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--front-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rating-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rating-label {
+  color: var(--front-text-soft);
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+.star-btn {
+  font-size: 24px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: color 0.15s;
+  user-select: none;
+}
+
+.star-btn.active {
+  color: #f59e0b;
+}
+
+.rating-text {
+  margin-left: 8px;
+  color: var(--front-text-muted);
+  font-size: 13px;
+}
+
+.review-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.poi-review-login-tip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 1);
+  border: 1px solid var(--front-border);
+}
+
+.poi-review-login-tip span {
+  color: var(--front-text-muted);
+  font-size: 13px;
+}
+
+.poi-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.poi-review-item {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--paper-50);
+}
+
+.review-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-avatar {
+  background: linear-gradient(135deg, var(--forest-500), var(--forest-700));
+  color: #fff;
+  font-weight: 700;
+}
+
+.review-item-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.review-item-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-item-author strong {
+  color: var(--front-text);
+  font-size: 14px;
+}
+
+.review-stars span {
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.review-stars span.filled {
+  color: #f59e0b;
+}
+
+.review-item-meta time {
+  display: block;
+  margin-top: 2px;
+  color: var(--front-text-muted);
+  font-size: 12px;
+}
+
+.review-item-content {
+  margin: 10px 0 0;
+  color: var(--front-text-soft);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.review-more {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
 }
 
 :deep(.poi-dialog .el-dialog) {

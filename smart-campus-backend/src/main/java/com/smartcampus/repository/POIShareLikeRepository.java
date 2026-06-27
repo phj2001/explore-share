@@ -31,4 +31,13 @@ public interface POIShareLikeRepository extends JpaRepository<POIShareLike, Long
     long countByCreatedAtGreaterThanEqual(LocalDateTime createdAt);
 
     long countByUserId(Long userId);
+
+    @Query("SELECT l.share.user.id, COUNT(l.id) FROM POIShareLike l GROUP BY l.share.user.id ORDER BY COUNT(l.id) DESC")
+    List<Object[]> countReceivedLikesGroupedByUserIdDesc();
+
+    @Query("SELECT l.share.user.id, COUNT(l.id) FROM POIShareLike l WHERE l.createdAt >= :start GROUP BY l.share.user.id ORDER BY COUNT(l.id) DESC")
+    List<Object[]> countReceivedLikesGroupedByUserIdSinceDesc(@Param("start") java.time.LocalDateTime start);
+
+    @Query("SELECT COUNT(l.id) FROM POIShareLike l WHERE l.share.user.id = :userId")
+    long countReceivedLikesByUserId(@Param("userId") Long userId);
 }

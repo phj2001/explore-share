@@ -1,5 +1,6 @@
 package com.smartcampus.service.impl;
 
+import com.smartcampus.annotation.OperationLog;
 import com.smartcampus.dto.common.PageResponse;
 import com.smartcampus.dto.response.POIShareLikeResponse;
 import com.smartcampus.dto.response.POIShareReplyResponse;
@@ -18,6 +19,8 @@ import com.smartcampus.repository.POIShareRepository;
 import com.smartcampus.repository.RecommendedShareRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.security.UserRole;
+import com.smartcampus.service.AchievementService;
+import com.smartcampus.service.NotificationService;
 import com.smartcampus.service.POIShareService;
 import com.smartcampus.util.ImageThumbnailUtils;
 import com.smartcampus.util.RedisUtils;
@@ -75,6 +78,8 @@ public class POIShareServiceImpl implements POIShareService {
     private final UserRepository userRepository;
     private final RecommendedShareRepository recommendedShareRepository;
     private final RedisUtils redisUtils;
+    private final AchievementService achievementService;
+    private final NotificationService notificationService;
 
     @Value("${app.upload.poi-share-dir:uploads/poi-shares}")
     private String poiShareUploadDir;
@@ -140,6 +145,7 @@ public class POIShareServiceImpl implements POIShareService {
 
     @Override
     @Transactional
+    @OperationLog(module = "内容互动", action = "发布分享", targetType = "地点", targetIdSpel = "#poiId")
     public POIShareResponse createShare(Long poiId, Long userId, String content, List<MultipartFile> images) {
         POI poi = poiRepository.findById(poiId)
                 .orElseThrow(() -> new BusinessException(404, "POI不存在"));
@@ -173,6 +179,8 @@ public class POIShareServiceImpl implements POIShareService {
         } catch (RuntimeException ex) {
             savedImageUrls.forEach(this::deleteImageQuietly);
             throw ex;
+        } finally {
+            try { achievementService.checkAndUnlock(userId); } catch (Exception ignored) {}
         }
     }
 
@@ -210,10 +218,18 @@ public class POIShareServiceImpl implements POIShareService {
             like.setShare(share);
             like.setUser(user);
             poiShareLikeRepository.save(like);
+
+            Long authorId = share.getUser().getId();
+            if (!authorId.equals(userId)) {
+                String actorName = user.getDisplayName() != null ? user.getDisplayName() : user.getUsername();
+                notificationService.sendNotification(authorId, userId, "LIKE",
+                        actorName + " 赞了你的分享", null, "SHARE", shareId);
+            }
         }
 
         long likeCount = poiShareLikeRepository.countByShareId(shareId);
         redisUtils.set(LIKE_COUNT_PREFIX + shareId, String.valueOf(likeCount), COUNT_CACHE_TTL, java.util.concurrent.TimeUnit.SECONDS);
+        try { achievementService.checkAndUnlock(share.getUser().getId()); } catch (Exception ignored) {}
         return new POIShareLikeResponse(shareId, likeCount, true);
     }
 
@@ -257,6 +273,7 @@ public class POIShareServiceImpl implements POIShareService {
 
     @Override
     @Transactional
+    @OperationLog(module = "内容互动", action = "发布回复", targetType = "分享", targetIdSpel = "#shareId")
     public POIShareReplyResponse createReply(Long shareId, Long userId, String content) {
         POIShare share = poiShareRepository.findById(shareId)
                 .orElseThrow(() -> new BusinessException(404, "分享不存在"));
@@ -271,6 +288,14 @@ public class POIShareServiceImpl implements POIShareService {
         reply.setContent(normalizedContent);
 
         POIShareReply savedReply = poiShareReplyRepository.save(reply);
+
+        Long authorId = share.getUser().getId();
+        if (!authorId.equals(userId)) {
+            String actorName = user.getDisplayName() != null ? user.getDisplayName() : user.getUsername();
+            notificationService.sendNotification(authorId, userId, "REPLY",
+                    actorName + " 回复了你的分享", normalizedContent, "SHARE", shareId);
+        }
+
         return POIShareReplyResponse.fromEntity(savedReply, user.getId(), user.getRole());
     }
 

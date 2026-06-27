@@ -45,13 +45,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
 
             // P0：JWT 黑名单检查（revoke_before 方案）
-            // 逻辑：登出或改密时设置 jwt:revoke_before:{userId} = 当前时间戳
-            // 若 token 签发时间 <= revoke_before，则该 token 已被吊销
+            // 逻辑：登出或改密时设置 jwt:revoke_before:{userId} = 当前时间戳(毫秒)
+            // 若 token 签发时间 < revoke_before - 1s，则该 token 已被吊销。
+            // ⚠️ 这里减 1000ms 是必要的宽限：JWT 的 iat 精度只到“秒”(getIssuedAt().getTime() 已被截断到整秒)，
+            //    而 revoke_before 是完整毫秒；若用 <=，会把“登出后同一秒内立刻重新登录”签发的新 token
+            //    （其秒级 iat 恰好 ≤ 登出毫秒值）误判为已吊销，导致用户重登后仍被 401。1 秒宽限消除此误杀。
             String revokeKey = "jwt:revoke_before:" + userId;
             String revokeBeforeStr = redisUtils.get(revokeKey);
             if (revokeBeforeStr != null) {
                 long issuedAt = jwtTokenProvider.getIssuedAtFromToken(token);
-                if (issuedAt <= Long.parseLong(revokeBeforeStr)) {
+                if (issuedAt < Long.parseLong(revokeBeforeStr) - 1000) {
                     // token 已被吊销，视为未登录（不报错，让后续鉴权逻辑处理）
                     filterChain.doFilter(request, response);
                     return;

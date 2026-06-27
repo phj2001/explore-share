@@ -22,3 +22,15 @@ export const uploadMyAvatar = (file) => {
     }
   })
 }
+
+export const getUserPublicProfile = (userId) => {
+  return request.get(`/users/${userId}/profile`)
+}
+
+export const getUserPublicShares = (userId, params = {}) => {
+  return request.get(`/users/${userId}/shares`, { params })
+}
+
+export const getUserCheckIns = (userId, params = {}) => {
+  return request.get(`/users/${userId}/checkins`, { params })
+}

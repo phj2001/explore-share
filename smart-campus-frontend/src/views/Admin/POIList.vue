@@ -606,7 +606,7 @@ onMounted(async () => {
 }
 
 .filter-label {
-  color: #5f7882;
+  color: var(--admin-text-muted);
   font-size: 12px;
 }
 
@@ -615,8 +615,8 @@ onMounted(async () => {
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(23, 135, 166, 0.08);
-  color: #0d6b85;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent-strong);
   font-size: 12px;
 }
 
@@ -643,20 +643,20 @@ onMounted(async () => {
 }
 
 .poi-main strong {
-  color: #18333d;
+  color: var(--admin-text);
   font-size: 14px;
 }
 
 .poi-main span,
 .coordinate-cell,
 .total-text {
-  color: #5f7882;
+  color: var(--admin-text-muted);
   font-size: 12px;
 }
 
 .poi-main p {
   margin: 0;
-  color: #45616c;
+  color: var(--ink-600);
   font-size: 13px;
   line-height: 1.65;
 }
@@ -693,7 +693,7 @@ onMounted(async () => {
 }
 
 .upload-tip {
-  color: #6b7f88;
+  color: var(--admin-text-muted);
   font-size: 12px;
 }
 
@@ -707,8 +707,8 @@ onMounted(async () => {
   gap: 14px;
   padding: 18px;
   border-radius: 14px;
-  background: #f7fbfc;
-  border: 1px solid rgba(18, 98, 120, 0.12);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .import-result-head {
@@ -719,11 +719,11 @@ onMounted(async () => {
 }
 
 .import-result-head strong {
-  color: #173b46;
+  color: var(--admin-text);
 }
 
 .import-result-head span {
-  color: #5f7882;
+  color: var(--admin-text-muted);
   font-size: 12px;
 }
 

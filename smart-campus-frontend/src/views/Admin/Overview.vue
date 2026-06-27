@@ -284,12 +284,12 @@ onMounted(async () => {
 
 <style scoped>
 .overview-page {
-  --panel-bg: rgba(255, 255, 255, 0.84);
-  --panel-border: rgba(148, 163, 184, 0.22);
-  --text-main: #0f172a;
-  --text-sub: #64748b;
-  --accent: #0ea5e9;
-  --accent-strong: #2563eb;
+  --panel-bg: var(--admin-panel);
+  --panel-border: var(--admin-border);
+  --text-main: var(--admin-text);
+  --text-sub: var(--admin-text-muted);
+  --accent: var(--forest-500);
+  --accent-strong: var(--forest-700);
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -312,8 +312,8 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 20px;
   background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 28%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(243, 248, 255, 0.84));
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.18), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(240, 253, 244, 0.84));
 }
 
 .eyebrow,
@@ -327,7 +327,7 @@ onMounted(async () => {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-strong);
-  background: rgba(37, 99, 235, 0.08);
+  background: var(--admin-accent-soft);
 }
 
 .hero-copy {
@@ -337,6 +337,7 @@ onMounted(async () => {
 .hero-copy h1 {
   margin: 14px 0 10px;
   color: var(--text-main);
+  font-family: var(--font-serif);
   font-size: clamp(28px, 4vw, 42px);
   line-height: 1.1;
 }
@@ -359,7 +360,7 @@ onMounted(async () => {
   border-radius: 999px;
   padding: 12px 18px;
   font-size: 14px;
-  color: #475569;
+  color: var(--ink-600);
   background: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -368,7 +369,7 @@ onMounted(async () => {
 .range-chip.active {
   color: #fff;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 14px 28px rgba(21, 128, 61, 0.22);
 }
 
 .metric-grid {
@@ -393,7 +394,7 @@ onMounted(async () => {
 
 .metric-card.clickable:hover {
   transform: translateY(-3px);
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+  box-shadow: var(--front-shadow-md);
 }
 
 .metric-label {
@@ -422,7 +423,7 @@ onMounted(async () => {
 }
 
 .metric-link.muted {
-  color: #94a3b8;
+  color: var(--ink-400);
 }
 
 .content-grid {
@@ -447,11 +448,12 @@ onMounted(async () => {
 .panel-head h2 {
   margin: 12px 0 0;
   color: var(--text-main);
+  font-family: var(--font-serif);
   font-size: 22px;
 }
 
 .panel-note {
-  color: #94a3b8;
+  color: var(--ink-400);
   font-size: 13px;
 }
 
@@ -467,13 +469,13 @@ onMounted(async () => {
 }
 
 .grid-line {
-  stroke: rgba(148, 163, 184, 0.22);
+  stroke: rgba(134, 239, 172, 0.22);
   stroke-width: 1;
 }
 
 .trend-line {
   fill: none;
-  stroke: #0ea5e9;
+  stroke: var(--forest-500);
   stroke-width: 4;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -481,7 +483,7 @@ onMounted(async () => {
 
 .trend-area-shadow {
   fill: none;
-  stroke: rgba(14, 165, 233, 0.18);
+  stroke: rgba(74, 222, 128, 0.18);
   stroke-width: 10;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -489,7 +491,7 @@ onMounted(async () => {
 
 .trend-dot {
   fill: #fff;
-  stroke: #2563eb;
+  stroke: var(--forest-700);
   stroke-width: 3;
 }
 
@@ -524,7 +526,7 @@ onMounted(async () => {
   align-items: center;
   gap: 14px;
   padding: 14px 0;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  border-bottom: 1px solid var(--admin-border);
 }
 
 .hot-row:last-child {
@@ -538,7 +540,7 @@ onMounted(async () => {
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(37, 99, 235, 0.12));
+  background: var(--admin-accent-soft);
   color: var(--accent-strong);
   font-weight: 800;
 }
@@ -568,7 +570,7 @@ onMounted(async () => {
 .hot-bar {
   height: 10px;
   border-radius: 999px;
-  background: rgba(226, 232, 240, 0.86);
+  background: rgba(187, 247, 208, 0.5);
   overflow: hidden;
 }
 
@@ -576,7 +578,7 @@ onMounted(async () => {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #38bdf8, #2563eb);
+  background: linear-gradient(90deg, var(--forest-400), var(--forest-600));
 }
 
 .hot-stats {
@@ -595,8 +597,8 @@ onMounted(async () => {
 .recent-card {
   border-radius: 22px;
   padding: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 255, 0.92));
-  border: 1px solid rgba(226, 232, 240, 0.88);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .recent-top {
@@ -610,7 +612,7 @@ onMounted(async () => {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.1);
+  background: var(--admin-accent-soft);
   color: var(--accent-strong);
   font-size: 12px;
   font-weight: 700;
@@ -623,13 +625,13 @@ onMounted(async () => {
 }
 
 .recent-time {
-  color: #94a3b8;
+  color: var(--ink-400);
   font-size: 12px;
 }
 
 .recent-preview {
   margin: 16px 0;
-  color: #334155;
+  color: var(--ink-700);
   line-height: 1.7;
   min-height: 72px;
 }

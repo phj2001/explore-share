@@ -19,6 +19,7 @@ public class AdminUserDetailResponse {
     private String bio;
     private Short role;
     private Short status;
+    private Boolean canResetPassword;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long shareCount;
@@ -34,6 +35,7 @@ public class AdminUserDetailResponse {
                 user.getBio(),
                 user.getRole(),
                 user.getStatus(),
+                Boolean.TRUE.equals(user.getCanResetPassword()),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 shareCount,

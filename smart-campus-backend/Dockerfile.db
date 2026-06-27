@@ -1,0 +1,12 @@
+# 数据库镜像：postgis/postgis 基础上加装 pgvector
+# ----------------------------------------------------------------------------
+# 解决已知坑（任务规则 4）：官方 postgis/postgis:15-3.4 只含 PostGIS，不含 pgvector，
+# 直接 CREATE EXTENSION vector 会失败。此处用 apt.postgresql.org 的 pgvector 预编译包
+# （postgres 官方镜像已配置该源），比 git clone + make 更轻、更快、依赖更少。
+# 分步 RUN：构建失败时可精确定位是 update、install 还是清理步骤。
+# ----------------------------------------------------------------------------
+FROM postgis/postgis:15-3.4
+
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends postgresql-15-pgvector
+RUN rm -rf /var/lib/apt/lists/*

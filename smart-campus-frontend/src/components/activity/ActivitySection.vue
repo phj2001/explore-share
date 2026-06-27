@@ -1,15 +1,21 @@
 <template>
-  <section class="front-shell activity-section">
+  <section v-if="!dataLoaded || activities.length > 0" class="front-shell activity-section">
     <div class="section-head">
-      <div>
+      <div class="head-left">
         <span class="section-kicker">近期活动</span>
         <h2>值得关注的线下活动</h2>
-        <p>查看即将开始或正在进行的活动安排，感兴趣时还能直接联动到对应地点。</p>
       </div>
-      <el-button text :loading="loading" @click="loadActivities">刷新活动</el-button>
+      <button class="refresh-btn" :disabled="loading" title="刷新活动" @click="loadActivities(true)">
+        <svg class="refresh-icon" :class="{ spinning: loading }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+      </button>
     </div>
 
-    <div v-if="activities.length" class="activity-grid">
+    <el-skeleton v-if="loading && !activities.length" :rows="4" animated />
+
+    <div v-else-if="activities.length" class="activity-grid">
       <article
         v-for="item in activities"
         :key="item.id"
@@ -29,7 +35,7 @@
 
         <div class="card-body">
           <div class="card-meta">
-            <el-tag :type="getStatusType(item)" effect="plain">{{ getStatusLabel(item) }}</el-tag>
+            <el-tag :type="getStatusType(item)" effect="plain" size="small">{{ getStatusLabel(item) }}</el-tag>
             <span>{{ formatDateRange(item.startTime, item.endTime) }}</span>
           </div>
 
@@ -43,8 +49,6 @@
         </div>
       </article>
     </div>
-
-    <el-empty v-else v-loading="loading" description="当前还没有已发布活动" />
 
     <el-dialog
       v-model="detailVisible"
@@ -112,6 +116,7 @@ import { API_ORIGIN } from '@/utils/request'
 
 const activities = ref([])
 const loading = ref(false)
+const dataLoaded = ref(false)
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const selectedActivity = ref(null)
@@ -119,8 +124,7 @@ const selectedActivity = ref(null)
 const poiStore = usePOIStore()
 const mapStore = useMapStore()
 
-const loadActivities = async (forceRefreshOrEvent = false) => {
-  const forceRefresh = forceRefreshOrEvent === true || typeof forceRefreshOrEvent === 'object'
+const loadActivities = async (forceRefresh = false) => {
   loading.value = true
   try {
     activities.value = await getActivityList({ limit: 4 }, { forceRefresh })
@@ -128,6 +132,7 @@ const loadActivities = async (forceRefreshOrEvent = false) => {
     ElMessage.error(error.message || '加载活动失败')
   } finally {
     loading.value = false
+    dataLoaded.value = true
   }
 }
 
@@ -148,10 +153,7 @@ const openDetail = async (activityId) => {
 const focusPoi = async (activity) => {
   try {
     let poi = poiStore.getCachedPOIById(activity.poiId)
-    if (!poi) {
-      poi = await poiStore.fetchPOIById(activity.poiId)
-    }
-
+    if (!poi) poi = await poiStore.fetchPOIById(activity.poiId)
     mapStore.selectPOI(poi)
     detailVisible.value = false
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -161,14 +163,8 @@ const focusPoi = async (activity) => {
 }
 
 const resolveAssetUrl = (value) => {
-  if (!value) {
-    return ''
-  }
-
-  if (/^https?:\/\//i.test(value)) {
-    return value
-  }
-
+  if (!value) return ''
+  if (/^https?:\/\//i.test(value)) return value
   return `${API_ORIGIN}${value.startsWith('/') ? value : `/${value}`}`
 }
 
@@ -178,180 +174,220 @@ const getStatusLabel = (item) => {
   const now = Date.now()
   const start = toDate(item.startTime)?.getTime()
   const end = toDate(item.endTime)?.getTime()
-
-  if (start == null || end == null) {
-    return '时间待定'
-  }
-  if (now < start) {
-    return '即将开始'
-  }
-  if (now <= end) {
-    return '进行中'
-  }
+  if (start == null || end == null) return '时间待定'
+  if (now < start) return '即将开始'
+  if (now <= end) return '进行中'
   return '已结束'
 }
 
 const getStatusType = (item) => {
   const label = getStatusLabel(item)
-  if (label === '进行中') {
-    return 'success'
-  }
-  if (label === '即将开始') {
-    return 'warning'
-  }
+  if (label === '进行中') return 'success'
+  if (label === '即将开始') return 'warning'
   return 'info'
 }
 
 const formatDateRange = (startTime, endTime) => {
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  const formatter = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
   const start = toDate(startTime)
   const end = toDate(endTime)
-  if (!start || !end) {
-    return '时间待定'
-  }
+  if (!start || !end) return '时间待定'
   return `${formatter.format(start)} - ${formatter.format(end)}`
 }
 
 const formatDateTime = (value) => {
   const date = toDate(value)
-  if (!date) {
-    return '未发布'
-  }
-  return new Intl.DateTimeFormat('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
+  if (!date) return '未发布'
+  return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(date)
 }
 
-onMounted(async () => {
-  await loadActivities()
-})
+onMounted(() => loadActivities(false))
 </script>
 
 <style scoped>
+/* ── ActivitySection 新设计系统 ── */
 .activity-section {
-  padding: 8px 0 0;
+  padding: 48px 0;
 }
 
 .section-head {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--front-border);
+  margin-bottom: 28px;
+}
+
+.head-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .section-kicker {
   display: inline-flex;
-  padding: 6px 12px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.12);
-  color: #b45309;
+  background: rgba(31, 140, 105, 0.10);
+  color: var(--forest-700);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  width: fit-content;
 }
 
 .section-head h2 {
-  margin: 14px 0 10px;
-  color: var(--front-text);
-  font-size: clamp(24px, 3vw, 32px);
-}
-
-.section-head p {
   margin: 0;
-  max-width: 720px;
-  color: var(--front-text-soft);
-  line-height: 1.8;
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
+/* 刷新按钮 */
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--front-border);
+  background: transparent;
+  color: var(--ink-500);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: var(--forest-50);
+  color: var(--forest-700);
+  border-color: var(--forest-700);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.refresh-icon {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+/* 活动网格 */
 .activity-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px;
 }
 
+/* 活动卡片 */
 .activity-card {
   overflow: hidden;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.96);
+  border-radius: 14px;
+  background: #fff;
   border: 1px solid var(--front-border);
-  box-shadow: var(--front-shadow-soft);
+  box-shadow: var(--front-shadow);
   cursor: pointer;
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .activity-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--front-shadow);
+  border-color: var(--forest-500);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(20, 80, 55, 0.12);
 }
 
+/* 封面 */
 .card-cover {
   width: 100%;
-  height: 220px;
+  height: 200px;
   display: block;
+  object-fit: cover;
 }
 
 .card-cover-placeholder {
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(251, 191, 36, 0.14));
-  color: #7c2d12;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.card-body {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.card-meta,
-.card-footer,
-.detail-tags,
-.dialog-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  justify-content: center;
+  background: var(--paper-100);
+  color: var(--ink-500);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  height: 200px;
+}
+
+/* 卡片正文 */
+.card-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .card-meta,
 .card-footer {
-  color: var(--front-text-muted);
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-400);
 }
 
 .card-body h3 {
   margin: 0;
-  color: var(--front-text);
-  font-size: 18px;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-900);
   line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 .summary {
   margin: 0;
-  color: var(--front-text-soft);
-  line-height: 1.75;
-  min-height: 76px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink-600);
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  padding-top: 8px;
+  border-top: 1px dashed var(--front-border);
 }
 
 .card-action {
-  color: var(--front-accent-strong);
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--forest-700);
+  font-weight: 500;
+  cursor: pointer;
 }
 
+/* 详情弹窗 */
 .detail-shell {
   display: flex;
   flex-direction: column;
@@ -361,18 +397,25 @@ onMounted(async () => {
 .detail-cover {
   width: 100%;
   height: 260px;
-  border-radius: 24px;
+  border-radius: 14px;
   overflow: hidden;
 }
 
 .detail-tags {
-  color: #64748b;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-500);
 }
 
 .detail-summary {
   margin: 0;
-  color: var(--front-text-soft);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink-600);
   line-height: 1.8;
 }
 
@@ -383,33 +426,45 @@ onMounted(async () => {
 }
 
 .info-card {
-  padding: 16px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 250, 240, 0.94), rgba(255, 255, 255, 0.96));
-  border: 1px solid rgba(245, 158, 11, 0.14);
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--paper-100);
+  border: 1px solid var(--front-border);
 }
 
 .info-card span {
   display: block;
-  color: #64748b;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-500);
 }
 
 .info-card strong {
   display: block;
-  margin-top: 10px;
-  color: #0f172a;
+  margin-top: 6px;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  color: var(--ink-900);
 }
 
 .detail-content {
-  padding: 18px;
-  border-radius: 20px;
-  background: rgba(248, 250, 252, 0.96);
-  color: var(--front-text-soft);
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--paper-50);
+  border: 1px solid var(--front-border);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  color: var(--ink-600);
   line-height: 1.85;
   white-space: pre-wrap;
 }
 
+.dialog-footer {
+  display: flex;
+  gap: 10px;
+}
+
+/* 响应式 */
 @media (max-width: 1200px) {
   .activity-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -418,13 +473,7 @@ onMounted(async () => {
 
 @media (max-width: 760px) {
   .activity-section {
-    padding-top: 0;
-  }
-
-  .section-head,
-  .dialog-footer {
-    flex-direction: column;
-    align-items: stretch;
+    padding: 32px 0;
   }
 
   .activity-grid,
@@ -435,68 +484,34 @@ onMounted(async () => {
 
 @media (max-width: 560px) {
   .section-head {
-    gap: 10px;
-    margin-bottom: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
   }
 
   .section-head h2 {
-    margin: 8px 0 6px;
     font-size: 20px;
-  }
-
-  .section-head p {
-    font-size: 12px;
-    line-height: 1.55;
   }
 
   .activity-grid {
     gap: 12px;
   }
 
-  .activity-card {
-    border-radius: 18px;
-  }
-
-  .card-cover {
-    height: 156px;
+  .card-cover,
+  .card-cover-placeholder {
+    height: 160px;
   }
 
   .card-body {
-    padding: 12px;
-    gap: 10px;
-  }
-
-  .card-meta,
-  .card-footer {
+    padding: 12px 14px;
     gap: 8px;
-    font-size: 12px;
-  }
-
-  .card-body h3 {
-    font-size: 16px;
-  }
-
-  .summary {
-    min-height: auto;
-    font-size: 12px;
-    line-height: 1.6;
   }
 
   .detail-cover {
     height: 200px;
-    border-radius: 18px;
-  }
-
-  .detail-content {
-    padding: 14px;
-    border-radius: 16px;
-    font-size: 13px;
-    line-height: 1.75;
-  }
-
-  .dialog-footer :deep(.el-button) {
-    width: 100%;
-    min-height: 42px;
+    border-radius: 10px;
   }
 }
 </style>

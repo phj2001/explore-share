@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -35,7 +36,25 @@ public class AdminOperationLogServiceImpl implements AdminOperationLogService {
     @Override
     @Transactional
     public void record(Long operatorUserId, String moduleName, String actionName, String targetType, Long targetId, String summary) {
+        // 旧入口：保持 REQUIRED 事务语义，扩展字段留空（向后兼容现有 26 处手动调用点）
+        doRecord(operatorUserId, moduleName, actionName, targetType, targetId, summary,
+                null, null, null, null, null, null);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void record(Long operatorUserId, String moduleName, String actionName, String targetType, Long targetId, String summary,
+                       String requestMethod, String requestUri, String ipAddress, Integer operationStatus, String traceId, Long durationMs) {
+        // 新入口（升级项②）：AOP 切面调用，REQUIRES_NEW 独立事务，
+        // 确保异常分支的失败记录不受主业务事务回滚影响
+        doRecord(operatorUserId, moduleName, actionName, targetType, targetId, summary,
+                requestMethod, requestUri, ipAddress, operationStatus, traceId, durationMs);
+    }
+
+    private void doRecord(Long operatorUserId, String moduleName, String actionName, String targetType, Long targetId, String summary,
+                          String requestMethod, String requestUri, String ipAddress, Integer operationStatus, String traceId, Long durationMs) {
         if (operatorUserId == null) {
+            // SecurityContext 为空（非 HTTP 请求链路）时跳过，保护注解误用场景
             return;
         }
 
@@ -51,6 +70,13 @@ public class AdminOperationLogServiceImpl implements AdminOperationLogService {
         log.setTargetType(trimToLength(targetType, 50));
         log.setTargetId(targetId);
         log.setSummary(trimToLength(summary, 300));
+        // 扩展字段：null 则保留实体默认 null（向后兼容），非 null 才写入
+        if (requestMethod != null) log.setRequestMethod(trimToLength(requestMethod, 10));
+        if (requestUri != null) log.setRequestUri(trimToLength(requestUri, 200));
+        if (ipAddress != null) log.setIpAddress(trimToLength(ipAddress, 50));
+        if (operationStatus != null) log.setOperationStatus(operationStatus);
+        if (traceId != null) log.setTraceId(trimToLength(traceId, 40));
+        if (durationMs != null) log.setDurationMs(durationMs);
         adminOperationLogRepository.save(log);
     }
 

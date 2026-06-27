@@ -1,5 +1,6 @@
 package com.smartcampus.service.impl;
 
+import com.smartcampus.annotation.OperationLog;
 import com.smartcampus.dto.common.PageResponse;
 import com.smartcampus.dto.response.AdminReplyListItemResponse;
 import com.smartcampus.dto.response.AdminShareDetailResponse;
@@ -13,7 +14,6 @@ import com.smartcampus.repository.POIShareLikeRepository;
 import com.smartcampus.repository.POIShareReplyRepository;
 import com.smartcampus.repository.POIShareRepository;
 import com.smartcampus.security.UserRole;
-import com.smartcampus.service.AdminOperationLogService;
 import com.smartcampus.service.AdminContentService;
 import com.smartcampus.service.POIShareService;
 import jakarta.persistence.criteria.Join;
@@ -47,7 +47,6 @@ public class AdminContentServiceImpl implements AdminContentService {
     private final POIShareLikeRepository poiShareLikeRepository;
     private final POIRepository poiRepository;
     private final POIShareService poiShareService;
-    private final AdminOperationLogService adminOperationLogService;
 
     @Override
     @Transactional(readOnly = true)
@@ -112,12 +111,10 @@ public class AdminContentServiceImpl implements AdminContentService {
 
     @Override
     @Transactional
+    @OperationLog(module = "内容管理", action = "删除分享", targetType = "分享",
+            targetIdSpel = "#shareId", summarySpel = "'删除分享 #' + #shareId")
     public void deleteShare(Long shareId, Long operatorUserId) {
-        String summary = poiShareRepository.findById(shareId)
-                .map(share -> "删除分享 #" + share.getId() + "：" + buildPreview(share.getContent()))
-                .orElse("删除分享 #" + shareId);
         poiShareService.deleteShare(shareId, operatorUserId);
-        adminOperationLogService.record(operatorUserId, "内容管理", "删除分享", "分享", shareId, summary);
     }
 
     @Override
@@ -153,12 +150,10 @@ public class AdminContentServiceImpl implements AdminContentService {
 
     @Override
     @Transactional
+    @OperationLog(module = "内容管理", action = "删除回复", targetType = "回复",
+            targetIdSpel = "#replyId", summarySpel = "'删除回复 #' + #replyId")
     public void deleteReply(Long replyId, Long operatorUserId) {
-        String summary = poiShareReplyRepository.findById(replyId)
-                .map(reply -> "删除回复 #" + reply.getId() + "：" + buildPreview(reply.getContent()))
-                .orElse("删除回复 #" + replyId);
         poiShareService.deleteReply(replyId, operatorUserId);
-        adminOperationLogService.record(operatorUserId, "内容管理", "删除回复", "回复", replyId, summary);
     }
 
     private Specification<POIShare> buildShareSpecification(
@@ -262,16 +257,5 @@ public class AdminContentServiceImpl implements AdminContentService {
             result.put((Long) row[0], (Long) row[1]);
         }
         return result;
-    }
-
-    private String buildPreview(String content) {
-        if (!StringUtils.hasText(content)) {
-            return "无文本内容";
-        }
-        String normalized = content.trim().replaceAll("\\s+", " ");
-        if (normalized.length() <= 36) {
-            return normalized;
-        }
-        return normalized.substring(0, 36) + "...";
     }
 }

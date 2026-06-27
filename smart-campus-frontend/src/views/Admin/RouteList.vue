@@ -691,9 +691,9 @@ onMounted(async () => {
 .table-wrap {
   padding: 18px;
   border-radius: 24px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-panel);
+  box-shadow: var(--front-shadow-soft);
 }
 
 .page-hero {
@@ -730,20 +730,20 @@ onMounted(async () => {
 .hero-stat {
   padding: 18px;
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(239, 246, 255, 0.92));
+  background: var(--admin-panel);
 }
 
 .hero-stat span,
 .hero-stat em {
   display: block;
-  color: #64748b;
+  color: var(--admin-text-muted);
   font-style: normal;
 }
 
 .hero-stat strong {
   display: block;
   margin: 10px 0 8px;
-  color: #0f172a;
+  color: var(--admin-text);
   font-size: 28px;
 }
 
@@ -756,7 +756,7 @@ onMounted(async () => {
 }
 
 .filter-label {
-  color: #64748b;
+  color: var(--admin-text-muted);
   font-size: 12px;
 }
 
@@ -765,8 +765,8 @@ onMounted(async () => {
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(23, 135, 166, 0.1);
-  color: #0d6b85;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent-strong);
   font-size: 12px;
 }
 
@@ -775,7 +775,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 .route-main,
@@ -810,7 +810,7 @@ onMounted(async () => {
 .detail-head h2,
 .poi-row strong,
 .poi-edit-row strong {
-  color: #0f172a;
+  color: var(--admin-text);
 }
 
 .route-meta p,
@@ -821,7 +821,7 @@ onMounted(async () => {
 .poi-edit-row p,
 .text-card p {
   margin: 0;
-  color: #64748b;
+  color: var(--admin-text-muted);
   line-height: 1.6;
 }
 
@@ -844,24 +844,26 @@ onMounted(async () => {
 .text-card {
   padding: 16px;
   border-radius: 18px;
-  background: rgba(248, 250, 252, 0.92);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .info-card span {
   display: block;
-  color: #64748b;
+  color: var(--admin-text-muted);
   font-size: 13px;
 }
 
 .info-card strong {
   display: block;
   margin-top: 10px;
-  color: #0f172a;
+  color: var(--admin-text);
 }
 
 .text-card h3 {
   margin: 0 0 10px;
-  color: #0f172a;
+  color: var(--admin-text);
+  font-family: var(--font-serif);
 }
 
 .poi-row,
@@ -871,15 +873,16 @@ onMounted(async () => {
   gap: 14px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(248, 250, 252, 0.92);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
 }
 
 .idx {
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.14);
-  color: #0369a1;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent-strong);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -893,7 +896,7 @@ onMounted(async () => {
 
 .cover-meta {
   justify-content: space-between;
-  color: #64748b;
+  color: var(--admin-text-muted);
   font-size: 13px;
 }
 

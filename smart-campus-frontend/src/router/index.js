@@ -95,6 +95,24 @@ const routes = [
         meta: { title: '举报审核', requiresAuth: true, requiresSuperAdmin: true }
       },
       {
+        path: 'poi-applications',
+        name: 'AdminPOIApplications',
+        component: () => import('@/views/admin/POIApplicationList.vue'),
+        meta: { title: '地点审核', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'user-route-reviews',
+        name: 'AdminUserRouteReviews',
+        component: () => import('@/views/Admin/UserRouteReviewList.vue'),
+        meta: { title: '路线审核', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
+        path: 'reviews',
+        name: 'AdminReviews',
+        component: () => import('@/views/Admin/ReviewList.vue'),
+        meta: { title: '评价管理', requiresAuth: true, requiresSuperAdmin: true }
+      },
+      {
         path: 'logs',
         name: 'AdminLogs',
         component: () => import('@/views/Admin/OperationLogList.vue'),
@@ -125,6 +143,24 @@ const routes = [
         meta: { title: '编辑地点', requiresAuth: true, requiresSuperAdmin: true }
       }
     ]
+  },
+  {
+    path: '/user/:userId',
+    name: 'UserProfile',
+    component: () => import('@/views/UserProfile.vue'),
+    meta: { title: '用户主页' }
+  },
+  {
+    path: '/route/create',
+    name: 'RouteCreate',
+    component: () => import('@/views/RouteCreate.vue'),
+    meta: { title: '创建路线', requiresAuth: true }
+  },
+  {
+    path: '/route/:id',
+    name: 'UserRouteDetail',
+    component: () => import('@/views/UserRouteDetail.vue'),
+    meta: { title: '路线详情' }
   },
   {
     path: '/:pathMatch(.*)*',
