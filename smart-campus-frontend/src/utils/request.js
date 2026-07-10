@@ -72,7 +72,9 @@ request.interceptors.response.use(
           break
         case 401:
           error.message = data.message || '登录状态已失效，请重新登录'
-          redirectToLogin()
+          if (!error.config?.skipAuthRedirect) {
+            redirectToLogin()
+          }
           break
         case 403:
           error.message = data.message || '当前账号没有访问权限'

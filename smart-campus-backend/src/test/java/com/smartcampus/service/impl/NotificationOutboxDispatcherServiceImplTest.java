@@ -48,6 +48,7 @@ class NotificationOutboxDispatcherServiceImplTest {
         ReflectionTestUtils.setField(service, "dispatcherEnabled", true);
         ReflectionTestUtils.setField(service, "batchSize", 20);
         ReflectionTestUtils.setField(service, "retryDelaySeconds", 120L);
+        ReflectionTestUtils.setField(service, "maxAttempts", 5);
     }
 
     @Test
@@ -118,7 +119,7 @@ class NotificationOutboxDispatcherServiceImplTest {
     void retryFailedEvents_批量重置重试() throws Exception {
         NotificationEventOutbox e1 = buildPendingEvent(1L);
         NotificationEventOutbox e2 = buildPendingEvent(2L);
-        when(outboxRepository.findFailedForRetry(eq(NotificationEventOutbox.STATUS_FAILED), any()))
+        when(outboxRepository.findFailedForRetry(eq(NotificationEventOutbox.STATUS_FAILED), anyInt(), any()))
                 .thenReturn(List.of(e1, e2));
 
         int count = service.retryFailedEvents();
@@ -132,7 +133,7 @@ class NotificationOutboxDispatcherServiceImplTest {
     void retryFailedEvents_开关关闭_返回0() {
         ReflectionTestUtils.setField(service, "dispatcherEnabled", false);
         assertEquals(0, service.retryFailedEvents());
-        verify(outboxRepository, never()).findFailedForRetry(anyInt(), any());
+        verify(outboxRepository, never()).findFailedForRetry(anyInt(), anyInt(), any());
     }
 
     private NotificationEventOutbox buildPendingEvent(Long id) {

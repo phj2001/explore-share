@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
   login as loginApi,
+  logout as logoutApi,
   register as registerApi
 } from '@/api/auth.js'
 import { getMyProfile as getMyProfileApi } from '@/api/user.js'
@@ -130,7 +131,15 @@ export const useUserStore = defineStore('user', () => {
     return applyUserInfo(data, userInfo.value?.username)
   }
 
-  const logout = () => {
+  const logout = async () => {
+    // 先通知后端吊销当前用户的 JWT（revoke_before 方案），失败也不阻塞本地登出
+    if (token.value) {
+      try {
+        await logoutApi()
+      } catch {
+        // 网络异常或 token 已失效时忽略，仍然清理本地状态
+      }
+    }
     token.value = ''
     userInfo.value = null
     clearAuthState()

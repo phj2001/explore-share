@@ -64,8 +64,11 @@ public class ImageThumbnailWarmupInitializer implements ApplicationRunner {
 
             for (Path original : originals) {
                 try {
-                    ImageThumbnailUtils.createThumbnailIfMissing(original, maxWidth, maxHeight);
-                    createdCount++;
+                    // 只统计真实生成的数量：已存在 / 原图小于缩略图尺寸的返回 false，
+                    // 避免每次启动都打"预热完成"造成误导（此前把"扫描过"当"生成了"）
+                    if (ImageThumbnailUtils.createThumbnailIfMissing(original, maxWidth, maxHeight)) {
+                        createdCount++;
+                    }
                 } catch (IOException ex) {
                     log.warn("生成缩略图失败: {}", original, ex);
                 }
@@ -76,7 +79,7 @@ public class ImageThumbnailWarmupInitializer implements ApplicationRunner {
         }
 
         if (createdCount > 0) {
-            log.info("图片缩略图预热完成: dir={}, processed={}", root, createdCount);
+            log.info("图片缩略图预热完成: dir={}, created={}", root, createdCount);
         }
     }
 }

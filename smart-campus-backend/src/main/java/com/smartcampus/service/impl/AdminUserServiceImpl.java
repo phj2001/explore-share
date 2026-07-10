@@ -13,6 +13,8 @@ import com.smartcampus.security.UserRole;
 import com.smartcampus.security.UserStatus;
 import com.smartcampus.service.AdminOperationLogService;
 import com.smartcampus.service.AdminUserService;
+import com.smartcampus.security.JwtTokenProvider;
+import com.smartcampus.util.RedisUtils;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,6 +30,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +44,8 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final POIShareLikeRepository poiShareLikeRepository;
     private final AdminOperationLogService adminOperationLogService;
     private final PasswordEncoder passwordEncoder;
+    private final RedisUtils redisUtils;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     @Transactional(readOnly = true)
@@ -110,6 +115,8 @@ public class AdminUserServiceImpl implements AdminUserService {
                 savedUser.getId(),
                 "将用户 @" + savedUser.getUsername() + " 的角色更新为" + getRoleLabel(savedUser.getRole())
         );
+        // 角色（如管理员降级为普通用户）已变更，立即清除用户信息缓存，避免最长 5 分钟的越权鉴权窗口期
+        invalidateUserInfoCache(savedUser.getId());
         return buildUserDetail(savedUser);
     }
 
@@ -175,6 +182,9 @@ public class AdminUserServiceImpl implements AdminUserService {
                 targetUserId,
                 "重置了用户 @" + targetUser.getUsername() + " 的密码"
         );
+        // 强制该用户下线：吊销所有旧 token + 清除用户信息缓存（与 changePassword/logout 一致的安全闭环），
+        // 防止被重置密码的账号（或窃取其 token 的人）继续使用旧凭据
+        forceInvalidateUserTokens(targetUserId);
     }
 
     @Override
@@ -207,7 +217,29 @@ public class AdminUserServiceImpl implements AdminUserService {
                 savedUser.getId(),
                 "将用户 @" + savedUser.getUsername() + " 的账号状态更新为" + (savedUser.getStatus() == UserStatus.ACTIVE.getCode() ? "正常" : "禁用")
         );
+        // 账号状态（如禁用）已变更，立即清除用户信息缓存；若被禁用，额外吊销所有旧 token 以强制立即下线
+        invalidateUserInfoCache(savedUser.getId());
+        if (UserStatus.fromCode(savedUser.getStatus()) == UserStatus.DISABLED) {
+            forceInvalidateUserTokens(savedUser.getId());
+        }
         return buildUserDetail(savedUser);
+    }
+
+    /** 清除用户信息缓存（user:info:{userId}），使下一次鉴权重新从数据库读取最新的 status/role。 */
+    private void invalidateUserInfoCache(Long userId) {
+        redisUtils.delete("user:info:" + userId);
+    }
+
+    /** 吊销该用户所有旧 token 并清除用户信息缓存，强制重新登录（复用 changePassword/logout 的安全闭环）。 */
+    private void forceInvalidateUserTokens(Long userId) {
+        long ttlSeconds = jwtTokenProvider.getExpirationMs() / 1000 + 60;
+        redisUtils.set(
+                "jwt:revoke_before:" + userId,
+                String.valueOf(System.currentTimeMillis()),
+                ttlSeconds,
+                TimeUnit.SECONDS
+        );
+        redisUtils.delete("user:info:" + userId);
     }
 
     private String getRoleLabel(short role) {

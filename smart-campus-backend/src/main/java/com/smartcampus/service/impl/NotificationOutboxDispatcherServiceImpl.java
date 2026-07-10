@@ -89,6 +89,7 @@ public class NotificationOutboxDispatcherServiceImpl implements NotificationOutb
         }
         List<NotificationEventOutbox> failed = outboxRepository.findFailedForRetry(
                 NotificationEventOutbox.STATUS_FAILED,
+                maxAttempts,
                 PageRequest.of(0, Math.max(batchSize, 1)));
         return redispatch(failed);
     }

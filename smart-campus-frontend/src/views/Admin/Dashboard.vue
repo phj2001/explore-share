@@ -139,8 +139,8 @@ const handleBackHome = () => {
   router.push('/')
 }
 
-const handleLogout = () => {
-  userStore.logout()
+const handleLogout = async () => {
+  await userStore.logout()
   router.push('/login')
 }
 

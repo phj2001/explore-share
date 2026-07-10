@@ -30,11 +30,15 @@ public interface NotificationEventOutboxRepository extends JpaRepository<Notific
                                                          Pageable pageable);
 
     /**
-     * 取失败事件（按 updatedAt asc, id asc），用于批量重试。
+     * 取失败事件（按 updatedAt asc, id asc），用于批量重试；排除已超 maxAttempts 的死信，
+     * 避免管理接口把死信事件反复拉回重试（与定时任务 findRetryableFailed 保持一致的死信策略）。
      */
     @Query("select e from NotificationEventOutbox e where e.deliveryStatus = :status " +
+           "and e.attemptCount < :maxAttempts " +
            "order by e.updatedAt asc, e.id asc")
-    List<NotificationEventOutbox> findFailedForRetry(@Param("status") int status, Pageable pageable);
+    List<NotificationEventOutbox> findFailedForRetry(@Param("status") int status,
+                                                     @Param("maxAttempts") int maxAttempts,
+                                                     Pageable pageable);
 
     /**
      * 取「可自动重试」的失败事件（修复 #6）：FAILED、未超最大尝试次数、且已到下次重试时间。

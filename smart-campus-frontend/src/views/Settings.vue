@@ -444,7 +444,7 @@ const submitPassword = async () => {
   try {
     await changeMyPassword({ ...passwordForm })
     ElMessage.success('密码修改成功，请重新登录')
-    userStore.logout()
+    await userStore.logout()
     router.push('/login')
   } catch (error) {
     ElMessage.error(error.message || '密码修改失败')

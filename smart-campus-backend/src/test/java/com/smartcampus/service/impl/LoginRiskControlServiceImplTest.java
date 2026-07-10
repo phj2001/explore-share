@@ -35,11 +35,11 @@ class LoginRiskControlServiceImplTest {
     private LoginRiskControlServiceImpl service;
 
     @BeforeEach
+    @SuppressWarnings("unchecked") // mock 泛型类（ValueOperations/ObjectProvider）因类型擦除必然产生 unchecked 警告，此处安全
     void setUp() {
         redisTemplate = mock(StringRedisTemplate.class);
         valueOps = mock(ValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
-        @SuppressWarnings("unchecked")
         ObjectProvider<StringRedisTemplate> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(redisTemplate);
         service = new LoginRiskControlServiceImpl(provider);

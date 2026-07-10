@@ -137,14 +137,14 @@ public class UserRouteServiceImpl implements UserRouteService {
 
         if (userRouteLikeRepository.existsByRouteIdAndUserId(routeId, userId)) {
             userRouteLikeRepository.deleteByRouteIdAndUserId(routeId, userId);
-            route.setLikeCount(Math.max(0, route.getLikeCount() - 1));
+            userRouteRepository.adjustLikeCount(routeId, -1);  // 原子更新，避免并发下读-改-写丢失计数
             return false;
         } else {
             UserRouteLike like = new UserRouteLike();
             like.setRoute(route);
             like.setUser(getRequiredUser(userId));
             userRouteLikeRepository.save(like);
-            route.setLikeCount(route.getLikeCount() + 1);
+            userRouteRepository.adjustLikeCount(routeId, 1);   // 原子更新，避免并发下读-改-写丢失计数
             return true;
         }
     }
@@ -158,14 +158,14 @@ public class UserRouteServiceImpl implements UserRouteService {
 
         if (userRouteFavoriteRepository.existsByRouteIdAndUserId(routeId, userId)) {
             userRouteFavoriteRepository.deleteByRouteIdAndUserId(routeId, userId);
-            route.setFavoriteCount(Math.max(0, route.getFavoriteCount() - 1));
+            userRouteRepository.adjustFavoriteCount(routeId, -1);  // 原子更新，避免并发下读-改-写丢失计数
             return false;
         } else {
             UserRouteFavorite fav = new UserRouteFavorite();
             fav.setRoute(route);
             fav.setUser(getRequiredUser(userId));
             userRouteFavoriteRepository.save(fav);
-            route.setFavoriteCount(route.getFavoriteCount() + 1);
+            userRouteRepository.adjustFavoriteCount(routeId, 1);   // 原子更新，避免并发下读-改-写丢失计数
             return true;
         }
     }

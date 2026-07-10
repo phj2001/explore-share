@@ -70,6 +70,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/pois/*/rating").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/pois/*/reviews").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/pois/*/reviews").authenticated()
+                        // 用户删除自己的评价：路径 DELETE /api/pois/reviews/{reviewId} 不匹配上面的 check-in/favorite 精确规则，
+                        // 必须在通用 DELETE /api/pois/**（仅管理员）之前显式放行，否则普通用户永远无法删除自己的评价（403）
+                        .requestMatchers(HttpMethod.DELETE, "/api/pois/reviews/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/*/profile").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/*/shares").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/*/checkins").permitAll()

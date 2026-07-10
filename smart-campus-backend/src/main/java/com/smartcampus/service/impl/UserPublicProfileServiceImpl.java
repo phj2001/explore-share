@@ -56,7 +56,7 @@ public class UserPublicProfileServiceImpl implements UserPublicProfileService {
         long reviewCount = poiReviewRepository.countByUserId(userId);
 
         String avatarUrl = user.getAvatarUrl();
-        if (avatarUrl != null && !avatarUrl.startsWith("http")) {
+        if (avatarUrl != null && !avatarUrl.startsWith("http") && !avatarUrl.startsWith("/")) {
             avatarUrl = "/" + avatarUrl;
         }
 

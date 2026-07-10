@@ -170,7 +170,7 @@ public class POIReviewServiceImpl implements POIReviewService {
         User author = review.getUser();
         POI poi = review.getPoi();
         String avatarUrl = author.getAvatarUrl();
-        if (avatarUrl != null && !avatarUrl.startsWith("http")) {
+        if (avatarUrl != null && !avatarUrl.startsWith("http") && !avatarUrl.startsWith("/")) {
             avatarUrl = "/" + avatarUrl;
         }
 

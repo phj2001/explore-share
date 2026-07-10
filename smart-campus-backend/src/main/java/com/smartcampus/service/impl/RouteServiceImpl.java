@@ -23,6 +23,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +35,9 @@ public class RouteServiceImpl implements RouteService {
 
     private final POIRepository poiRepository;
     private final AmapWebProperties amapWebProperties;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .build();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -47,7 +50,7 @@ public class RouteServiceImpl implements RouteService {
         ensureAmapKeyConfigured();
 
         URI uri = buildRouteRequestUri(startLat, startLng, endLat, endLng, mode);
-        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+        HttpRequest request = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(10)).GET().build();
 
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -200,9 +203,13 @@ public class RouteServiceImpl implements RouteService {
                 continue;
             }
 
-            double lng = Double.parseDouble(values[0]);
-            double lat = Double.parseDouble(values[1]);
-            points.add(new RoutePointResponse(lat, lng));
+            try {
+                double lng = Double.parseDouble(values[0].trim());
+                double lat = Double.parseDouble(values[1].trim());
+                points.add(new RoutePointResponse(lat, lng));
+            } catch (NumberFormatException ignored) {
+                // 高德 polyline 偶现异常段（空白/缺值/被截断），跳过该点，避免整条路线解析失败
+            }
         }
         return points;
     }
