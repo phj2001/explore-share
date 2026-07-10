@@ -2,34 +2,42 @@ package com.smartcampus.assistant.tool;
 
 import com.smartcampus.assistant.dto.response.RetrievalResult;
 import com.smartcampus.assistant.service.AssistantRetrievalService;
+import com.smartcampus.assistant.service.AssistantUserPreferenceService;
 import com.smartcampus.dto.response.RoutePlanResponse;
 import com.smartcampus.entity.POI;
 import com.smartcampus.enums.RouteMode;
 import com.smartcampus.service.POIService;
 import com.smartcampus.service.RouteService;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * AI 探索助手的工具集（M3，方案 §7）。
+ * AI 探索助手的工具集（M3 + M7，方案 §7；getUserPreferences 为升级方案 P2 新增）。
  *
  * <p>用 Spring AI {@code @Tool} 把平台已有能力暴露给 ChatClient（Function Calling / Tool Use），
- * 全部<b>复用现有 Service</b>，不新建业务逻辑：
+ * 全部<b>复用现有 Service/Repository</b>，不新建业务逻辑：
  * <ul>
  *   <li>{@link #recommendNearbyPlaces} —— 核心：空间约束 + 语义检索（复用 {@link AssistantRetrievalService}）。</li>
  *   <li>{@link #searchPlaces} —— 按名称/类别查地点（复用 {@link POIService}）。</li>
  *   <li>{@link #planRoute} —— 路线规划（复用 {@link RouteService}，高德）。</li>
  *   <li>{@link #listCategories} —— 列出可用地点类别，帮助模型澄清意图。</li>
+ *   <li>{@link #getUserPreferences} —— 汇总当前用户收藏/签到的类别偏好（复用
+ *       {@link AssistantUserPreferenceService}），userId 经 {@link ToolContext} 由服务端注入，
+ *       不作为可由模型填写的参数（防止越权读取他人数据）。</li>
  * </ul>
  *
- * <p>每个工具捕获异常并返回<b>自然语言错误串</b>（不抛出），让模型能优雅兜底而非中断对话。
- * 仅当 {@code app.assistant.enabled=true} 时装配。
+ * <p>每个工具捕获异常并返回<b>自然语言错误串</b>（不抛出），让模型能优雅兜底而非中断对话；
+ * 同时向 {@link MeterRegistry} 上报失败计数（M7/P4），便于观测高德路线 API、POI 检索等
+ * 依赖的隐性故障率。仅当 {@code app.assistant.enabled=true} 时装配。
  */
 @Slf4j
 @Component
@@ -38,10 +46,15 @@ import java.util.List;
 public class ExplorerTools {
 
     private static final int MAX_LIST = 10;
+    /** 单次工具返回文本的硬上限（字符）：MAX_LIST 已限制条数，这里是防御性兜底，
+     *  防止未来放宽 MAX_LIST 或某条 description 异常长时把 prompt 撑得过大。 */
+    private static final int MAX_RESULT_CHARS = 4000;
 
     private final AssistantRetrievalService retrievalService;
     private final POIService poiService;
     private final RouteService routeService;
+    private final AssistantUserPreferenceService userPreferenceService;
+    private final MeterRegistry meterRegistry;
 
     @Tool(description = "根据用户当前位置和自然语言需求，推荐附近的地点。先按半径做地理围栏，再在范围内做语义相关排序。需要地点推荐时优先用本工具。")
     public String recommendNearbyPlaces(
@@ -67,9 +80,10 @@ public class ExplorerTools {
                 }
                 sb.append("\n");
             }
-            return sb.toString();
+            return capResult(sb.toString());
         } catch (Exception e) {
             log.warn("recommendNearbyPlaces 失败：{}", e.getMessage());
+            recordToolError("recommendNearbyPlaces");
             return "推荐地点时出错了，请稍后再试。";
         }
     }
@@ -107,9 +121,10 @@ public class ExplorerTools {
             if (pois.size() > MAX_LIST) {
                 sb.append("……仅显示前 ").append(MAX_LIST).append(" 个。\n");
             }
-            return sb.toString();
+            return capResult(sb.toString());
         } catch (Exception e) {
             log.warn("searchPlaces 失败：{}", e.getMessage());
+            recordToolError("searchPlaces");
             return "查找地点时出错了，请稍后再试。";
         }
     }
@@ -135,6 +150,7 @@ public class ExplorerTools {
                     r.getDurationText() != null ? r.getDurationText() : (r.getDurationSeconds() + " 秒"));
         } catch (Exception e) {
             log.warn("planRoute 失败：{}", e.getMessage());
+            recordToolError("planRoute");
             return "规划路线时出错了，请确认起终点坐标是否正确。";
         }
     }
@@ -149,7 +165,60 @@ public class ExplorerTools {
             return "可用地点类别：" + String.join("、", categories);
         } catch (Exception e) {
             log.warn("listCategories 失败：{}", e.getMessage());
+            recordToolError("listCategories");
             return "获取类别时出错了。";
+        }
+    }
+
+    @Tool(description = "了解当前用户历史上常收藏/常打卡的地点类别偏好，仅在用户需求宽泛、未说明具体偏好时调用，用于让推荐更贴合其习惯。")
+    public String getUserPreferences(ToolContext toolContext) {
+        try {
+            Long userId = extractUserId(toolContext);
+            if (userId == null) {
+                return "无法获取用户身份信息，本次按通用偏好推荐即可。";
+            }
+            Map<String, Long> favoriteCounts = userPreferenceService.summarizeFavoriteCategories(userId);
+            List<String> checkedInCategories = userPreferenceService.checkedInCategories(userId);
+            if (favoriteCounts.isEmpty() && checkedInCategories.isEmpty()) {
+                return "该用户暂无收藏/签到记录，没有可参考的偏好数据，按通用推荐即可。";
+            }
+            StringBuilder sb = new StringBuilder("该用户的历史偏好（仅供参考，不代表本次一定要推荐同类）：\n");
+            if (!favoriteCounts.isEmpty()) {
+                sb.append("常收藏类别：");
+                sb.append(String.join("、", favoriteCounts.entrySet().stream()
+                        .map(e -> e.getKey() + " x" + e.getValue())
+                        .toList()));
+                sb.append("\n");
+            }
+            if (!checkedInCategories.isEmpty()) {
+                sb.append("签到过的类别：").append(String.join("、", checkedInCategories)).append("\n");
+            }
+            return capResult(sb.toString());
+        } catch (Exception e) {
+            log.warn("getUserPreferences 失败：{}", e.getMessage());
+            recordToolError("getUserPreferences");
+            return "获取用户偏好时出错了，按通用推荐即可。";
+        }
+    }
+
+    /**
+     * 从 {@link ToolContext} 取出服务端注入的 userId（见 {@code AssistantChatService#toolContext}）。
+     * ToolContext 不出现在暴露给模型的工具 JSON Schema 里，模型无法读取或伪造其内容，
+     * 是把"当前操作者是谁"这类敏感上下文安全传给工具的标准做法。
+     */
+    private static Long extractUserId(ToolContext toolContext) {
+        if (toolContext == null) {
+            return null;
+        }
+        Object v = toolContext.getContext().get("userId");
+        return v instanceof Long l ? l : null;
+    }
+
+    private void recordToolError(String toolName) {
+        try {
+            meterRegistry.counter("assistant.tool.errors", "tool", toolName).increment();
+        } catch (Exception ignored) {
+            // 指标上报失败不应影响工具本身的降级返回
         }
     }
 
@@ -158,5 +227,12 @@ public class ExplorerTools {
             return "";
         }
         return s.length() <= max ? s : s.substring(0, max) + "…";
+    }
+
+    private static String capResult(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.length() <= MAX_RESULT_CHARS ? s : s.substring(0, MAX_RESULT_CHARS) + "\n……（内容过长，已截断）";
     }
 }

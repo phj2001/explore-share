@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- 设计要点（方案 §6.1）：
 --   * 不交给 JPA 管理 —— vector 列 Hibernate 不识别，由独立 SQL + JdbcTemplate 维护；
 --   * poi_id 唯一约束，支撑「POI 新增/更新时 upsert 刷新向量」的增量管道；
---   * embedding 维度 1024，对齐 DashScope text-embedding-v3。
+--   * embedding 维度 1024，对齐 DashScope text-embedding-v4（更换模型须保证维度仍为 1024，否则需同步修改本表 vector(N)）。
 CREATE TABLE IF NOT EXISTS poi_embedding (
     id        BIGSERIAL PRIMARY KEY,
     poi_id    BIGINT      NOT NULL UNIQUE,

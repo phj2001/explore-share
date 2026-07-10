@@ -16,26 +16,25 @@ import com.smartcampus.exception.BusinessException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.Disposable;
 
 import java.io.IOException;
 
 /**
- * AI 探索助手接口（M0 最小验证 + M1 嵌入入口 + M2 空间约束检索）。
+ * AI 探索助手接口（M1 嵌入入口 + M2 空间约束检索 + M3 对话）。
  *
- * <p>M0：{@code GET /dev/ping} 仅供 Spring AI ChatClient 兼容性验证，M3 落地正式
- * {@code POST /api/assistant/chat}（SSE 流式）后移除。
+ * <p>M0 的 {@code GET /dev/ping} 验证接口已随 M3 正式 {@code POST /chat} 上线移除
+ * （遗留时任何登录用户可绕过护栏/限流直连 LLM，存在成本滥用风险）。
  *
  * <p>M1：{@code POST /admin/embed-all} 全量 POI 嵌入入库，限管理员，用于重建/刷新语义索引。
  *
@@ -51,7 +50,6 @@ import java.io.IOException;
 @ConditionalOnProperty(prefix = "app.assistant", name = "enabled", havingValue = "true")
 public class AssistantController {
 
-    private final ChatClient chatClient;
     private final AssistantProperties properties;
     private final EmbeddingService embeddingService;
     private final AssistantRetrievalService retrievalService;
@@ -59,19 +57,6 @@ public class AssistantController {
     private final AssistantRateLimiter rateLimiter;
     private final AssistantGuard guard;
     private final AssistantEvaluationService evaluationService;
-
-    /**
-     * 最小验证接口：同步调用一次模型（Key 填入后用于 M0 验收）。
-     * 路径用 {@code /dev/ping} 避免与 M3 正式 {@code /chat} 冲突；M3 后移除。
-     */
-    @GetMapping("/dev/ping")
-    public Result<String> ping(@RequestParam(defaultValue = "用一句话介绍你自己。") String message) {
-        String reply = chatClient.prompt()
-                .user(message)
-                .call()
-                .content();
-        return Result.success(reply);
-    }
 
     /**
      * 全量 POI 嵌入入库（M1）。限管理员：遍历所有 POI 生成向量 upsert，返回成功/失败统计。
@@ -99,7 +84,13 @@ public class AssistantController {
      * 正式对话接口 {@code POST /chat}（SSE 流）在 M3 落地。
      */
     @PostMapping("/retrieve")
-    public Result<RetrievalResult> retrieve(@Valid @RequestBody RetrievalRequest request) {
+    public Result<RetrievalResult> retrieve(@Valid @RequestBody RetrievalRequest request,
+                                            Authentication authentication) {
+        // 与 /chat 共用每用户限流：每次检索都产生一次 embedding 计费调用，不能无限制开放
+        Long userId = (authentication != null && authentication.getPrincipal() instanceof Long id) ? id : null;
+        if (!rateLimiter.allow(userId)) {
+            throw new BusinessException(429, "请求过于频繁，请稍后再试");
+        }
         return Result.success(retrievalService.search(
                 request.getQuery(), request.getLat(), request.getLng(), request.getRadius()));
     }
@@ -118,7 +109,10 @@ public class AssistantController {
         String safeMessage = guard.check(request.getMessage()); // 注入/超长 → BusinessException(400)
 
         SseEmitter emitter = new SseEmitter(120_000L); // 2 分钟超时
-        chatService.stream(safeMessage, request.getLat(), request.getLng(), request.getRadius())
+        // conversationId 用于多轮记忆（M7/P1），userId 用于工具内个性化查询（M7/P2，经 ToolContext
+        // 透传，不暴露给模型，避免 LLM 臆造/篡改 userId 读到别的用户的数据）
+        Disposable subscription = chatService.stream(safeMessage, request.getLat(), request.getLng(),
+                        request.getRadius(), request.getConversationId(), userId)
                 .subscribe(
                         chunk -> {
                             try {
@@ -137,6 +131,14 @@ public class AssistantController {
                             emitter.complete();
                         },
                         emitter::complete);
+        // 连接终止时取消上游订阅：否则 emitter 超时/客户端断开后，boundedElastic 上的
+        // LLM 阻塞调用仍会跑完（白烧 token 且占用线程）。正常完成时 dispose 为幂等 no-op。
+        emitter.onTimeout(() -> {
+            subscription.dispose();
+            emitter.complete();
+        });
+        emitter.onError(t -> subscription.dispose());
+        emitter.onCompletion(subscription::dispose);
         return emitter;
     }
 }

@@ -6,10 +6,11 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * AI 探索助手对话请求（M3，方案 §9）。
+ * AI 探索助手对话请求（M3，方案 §9；conversationId 为 M7/升级方案 P1 新增）。
  *
  * <p>携带用户当前位置，助手据此调用工具做"地理围栏内的语义推荐 + 路线规划"。
  * 响应为 SSE 流（{@code POST /api/assistant/chat}）。
@@ -37,4 +38,11 @@ public class ChatRequest {
     @Min(value = 1, message = "半径必须大于 0")
     @Max(value = 100000, message = "半径不能超过 100km")
     private Integer radius;
+
+    /**
+     * 可选会话 ID（前端在打开对话面板时用 UUID 生成，同一面板会话内复用）。
+     * 不传时视为无历史的单轮请求，行为与升级前一致。长度限制防止异常输入被当成 Redis key 滥用。
+     */
+    @Size(max = 64, message = "会话 ID 不合法")
+    private String conversationId;
 }

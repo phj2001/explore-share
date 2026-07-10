@@ -15,7 +15,7 @@ import java.util.List;
  * POI 嵌入管道（M1）。
  *
  * <p>语料 = name + category + description（方案 §6.1，以 POI 主体文本为主）。
- * 嵌入由 Spring AI {@link OpenAiEmbeddingModel}（DashScope text-embedding-v3，1024 维）生成，
+ * 嵌入由 Spring AI {@link OpenAiEmbeddingModel}（DashScope text-embedding-v4，1024 维）生成，
  * 经 {@link PoiEmbeddingRepository#upsert} 入 poi_embedding。
  *
  * <p>全量 {@link #embedAll()}：遍历所有 POI 逐条嵌入 upsert（M1 先逐条，批量优化留后续）。
@@ -36,7 +36,7 @@ public class EmbeddingService {
      */
     public EmbedStats embedAll() {
         List<POI> pois = poiRepository.findAll();
-        final int batchSize = 9; // DashScope text-embedding-v3 单次 embedding 请求上限 25 条
+        final int batchSize = 9; // 保守批量（远低于 DashScope embedding 批量上限），规避 QPS 限制
         int ok = 0;
         int fail = 0;
         for (int start = 0; start < pois.size(); start += batchSize) {

@@ -104,12 +104,17 @@ services:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/discover}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # 数据库结构管理：默认 validate（Hibernate 只校验不改表，变更走 Flyway）。
+      # 全新空库首次启动设 DDL_AUTO=update 建全量表，成功后删除该变量恢复 validate。
+      DDL_AUTO: ${DDL_AUTO:-validate}
+      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-true}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: "5672"
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_ENABLED: ${RABBITMQ_ENABLED:-true}
       JWT_SECRET: ${JWT_SECRET:-}
       SUPER_ADMIN_USERNAME: ${SUPER_ADMIN_USERNAME:-admin}
       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-admin123}
@@ -122,6 +127,13 @@ services:
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
       DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       LLM_MODEL: ${LLM_MODEL:-qwen-plus}
+      EMBED_MODEL: ${EMBED_MODEL:-text-embedding-v4}
+      # 对话/向量模型可分别指向不同厂商（OpenAI 兼容），不设则回落到 DASHSCOPE_*
+      # 注意：这里必须嵌套回落而非默认空串——空串会被 Spring 视为"已设置"，反而覆盖共用配置
+      CHAT_BASE_URL: ${CHAT_BASE_URL:-${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}}
+      CHAT_API_KEY: ${CHAT_API_KEY:-${DASHSCOPE_API_KEY:-disabled-when-assistant-off}}
+      EMBED_BASE_URL: ${EMBED_BASE_URL:-${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}}
+      EMBED_API_KEY: ${EMBED_API_KEY:-${DASHSCOPE_API_KEY:-disabled-when-assistant-off}}
     ports:
       - "8080:8080"
     volumes:

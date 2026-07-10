@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -80,6 +81,29 @@ public class AssistantSemanticCache {
                     locBucket(lat, lng), message, toVectorLiteral(vec), response);
         } catch (Exception e) {
             log.warn("语义缓存写入失败（忽略）：{}", e.getMessage());
+        }
+    }
+
+    /**
+     * 过期缓存物理清理：TTL 只在 lookup 时按 created_at 过滤，行数会只增不减；
+     * 这里定时删除已过期的行，防止 assistant_cache 无限膨胀拖慢 HNSW 索引与查询。
+     * fail-open：清理失败仅记日志，下一轮重试（依赖主启动类 @EnableScheduling）。
+     */
+    @Scheduled(fixedDelayString = "${app.assistant.cache.cleanup-interval-ms:3600000}",
+            initialDelayString = "${app.assistant.cache.cleanup-initial-delay-ms:60000}")
+    public void evictExpired() {
+        if (!properties.getCache().isEnabled()) {
+            return;
+        }
+        try {
+            int deleted = jdbcTemplate.update(
+                    "DELETE FROM assistant_cache WHERE created_at < now() - (? || ' seconds')::interval",
+                    properties.getCache().getTtlSeconds());
+            if (deleted > 0) {
+                log.info("语义缓存清理：删除过期条目 {} 条", deleted);
+            }
+        } catch (Exception e) {
+            log.warn("语义缓存清理失败（忽略，下轮重试）：{}", e.getMessage());
         }
     }
 

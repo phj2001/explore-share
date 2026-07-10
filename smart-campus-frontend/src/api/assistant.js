@@ -8,10 +8,11 @@ import { getToken } from '@/utils/auth.js'
  * 浏览器原生 EventSource 只能 GET、无法带 Authorization 头，故用 fetch + ReadableStream
  * 手动消费 SSE。
  *
- * @param payload  { message, lat, lng, radius? }
- * @param handlers { onChunk(text), onError(msg), onDone(), signal }
+ * @param payload  { message, lat, lng, radius?, conversationId? }  conversationId 由调用方生成
+ *                 （同一次面板会话内复用同一个 ID），用于后端多轮对话记忆；不传则为无历史单轮请求。
+ * @param handlers { onChunk(text), onError(msg, meta?)：meta.code === 'DISABLED' 表示后端功能整体未开启, onDone(), signal }
  */
-export async function streamChat({ message, lat, lng, radius }, { onChunk, onError, onDone, signal } = {}) {
+export async function streamChat({ message, lat, lng, radius, conversationId }, { onChunk, onError, onDone, signal } = {}) {
   const token = getToken()
   let resp
   try {
@@ -22,7 +23,7 @@ export async function streamChat({ message, lat, lng, radius }, { onChunk, onErr
         Accept: 'text/event-stream',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ message, lat, lng, radius }),
+      body: JSON.stringify({ message, lat, lng, radius, conversationId }),
       signal,
     })
   } catch (e) {
@@ -31,7 +32,24 @@ export async function streamChat({ message, lat, lng, radius }, { onChunk, onErr
   }
 
   if (!resp.ok || !resp.body) {
-    onError?.(resp.status === 401 ? '登录已失效，请重新登录' : `请求失败 (${resp.status})`)
+    // 404：后端 @ConditionalOnProperty(app.assistant.enabled=true) 未装配 controller，
+    // 说明助手功能当前被后端整体关闭（而非网络故障），单独给出可辨识的提示与错误码，
+    // 便于前端据此展示"暂不可用"横幅而不是每次都当普通失败重试。
+    if (resp.status === 404) {
+      onError?.('AI 助手暂未开启，敬请期待', { code: 'DISABLED' })
+      return
+    }
+    // 限流(429)/护栏(400)等业务错误的 body 是 JSON Result，读取其中 message 给出具体提示
+    let message = resp.status === 401 ? '登录已失效，请重新登录' : `请求失败 (${resp.status})`
+    try {
+      const body = await resp.json()
+      if (body?.message) {
+        message = body.message
+      }
+    } catch {
+      // body 不是 JSON（如网关错误页），保留默认提示
+    }
+    onError?.(message)
     return
   }
 

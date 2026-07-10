@@ -38,6 +38,12 @@ public class AssistantProperties {
     /** 输入护栏（M4）。 */
     private final Guard guard = new Guard();
 
+    /** 多轮对话记忆（M7，升级方案 P1）。 */
+    private final History history = new History();
+
+    /** 个性化推荐（M7，升级方案 P2）。 */
+    private final Personalization personalization = new Personalization();
+
     @Data
     public static class Retrieval {
 
@@ -62,6 +68,10 @@ public class AssistantProperties {
         private double similarityThreshold = 0.95;
         /** 缓存有效期（秒）。 */
         private long ttlSeconds = 86400;
+        /** 过期行物理清理间隔（毫秒，默认 1 小时）；TTL 只在查询时过滤，需定时删除防表膨胀。 */
+        private long cleanupIntervalMs = 3600000;
+        /** 清理任务首轮延迟（毫秒，默认 1 分钟），避开应用启动高峰。 */
+        private long cleanupInitialDelayMs = 60000;
     }
 
     @Data
@@ -76,5 +86,23 @@ public class AssistantProperties {
     public static class Guard {
         /** 用户消息最大长度。 */
         private int maxMessageLength = 500;
+    }
+
+    @Data
+    public static class History {
+        /** 是否启用多轮对话记忆；关闭时行为退回 M3 单轮模式。 */
+        private boolean enabled = true;
+        /** 组装 prompt 时携带的最近历史轮次数（一问一答算 1 轮），避免 token 无限增长。 */
+        private int maxTurns = 6;
+        /** 会话在 Redis 中的存活时间（分钟），超时未续期自动过期，无需显式清理接口。 */
+        private long ttlMinutes = 30;
+    }
+
+    @Data
+    public static class Personalization {
+        /** 是否启用个性化工具（getUserPreferences）。 */
+        private boolean enabled = true;
+        /** 汇总用户偏好时各来源（收藏/签到）各自读取的最大记录数。 */
+        private int maxRecords = 20;
     }
 }
