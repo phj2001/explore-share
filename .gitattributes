@@ -1,0 +1,19 @@
+# 行尾符规范：与 .editorconfig 保持一致，统一使用 CRLF。
+# 消除跨平台/编辑器造成的 CRLF↔LF 翻转"伪改动"（git diff -w 为空的纯空白差异）。
+* text=auto eol=crlf
+
+# 二进制文件：不做行尾转换，避免被破坏
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.zip   binary
+*.jar   binary
+*.class binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary

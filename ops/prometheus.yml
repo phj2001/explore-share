@@ -3,9 +3,7 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  # 后端 Spring Boot Actuator + Micrometer Prometheus 端点
-  # 注意：M0 阶段 backend 尚未暴露 /actuator/prometheus（M1 落地），
-  # 此处 scrape 会临时 404，不影响 prometheus 容器自身存活。
+  # 后端 Spring Boot Actuator + Micrometer Prometheus 端点（SecurityConfig 已放行匿名抓取）
   - job_name: smart-campus-backend
     metrics_path: /actuator/prometheus
     static_configs:
