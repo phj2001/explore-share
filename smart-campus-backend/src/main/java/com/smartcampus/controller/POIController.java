@@ -9,6 +9,7 @@ import com.smartcampus.dto.response.POIOptionResponse;
 import com.smartcampus.dto.response.POIQueryResponse;
 import com.smartcampus.dto.response.POIResponse;
 import com.smartcampus.entity.POI;
+import com.smartcampus.exception.BusinessException;
 import com.smartcampus.service.POIService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -53,7 +54,7 @@ public class POIController {
     public Result<POI> getPOIById(@PathVariable Long id) {
         return poiService.getPOIById(id)
                 .map(Result::success)
-                .orElse(Result.error(404, "POI不存在"));
+                .orElseThrow(() -> new BusinessException(404, "POI不存在"));
     }
 
     /**
