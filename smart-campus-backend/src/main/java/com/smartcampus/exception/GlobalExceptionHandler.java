@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +38,15 @@ public class GlobalExceptionHandler {
             log.warn("业务异常({}): {}", status.value(), e.getMessage());
         }
         return ResponseEntity.status(status).body(Result.error(e.getCode(), e.getMessage()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Result<Void> handleNoResourceFoundException(NoResourceFoundException e) {
+        // controller 未装配（如 AI 助手 @ConditionalOnProperty 关闭）或请求路径确实不存在。
+        // 必须返回 404——若落入下方 Exception 兜底会变 500，前端就无法据 404 触发"功能未开启"降级。
+        log.warn("资源不存在: {}", e.getResourcePath());
+        return Result.error(404, "请求的资源不存在");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

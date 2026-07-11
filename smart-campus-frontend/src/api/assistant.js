@@ -20,7 +20,10 @@ export async function streamChat({ message, lat, lng, radius, conversationId }, 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
+        // SSE 优先（正常流式），application/json 兜底：controller 卸载/异常时 @ExceptionHandler
+        // 只能返回 JSON 错误体，若 Accept 仅限 text/event-stream 会触发内容协商失败(406)，
+        // 前端反而拿不到 404 降级信号。
+        Accept: 'text/event-stream, application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ message, lat, lng, radius, conversationId }),
