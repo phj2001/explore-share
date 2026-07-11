@@ -8,6 +8,7 @@ import com.smartcampus.dto.request.SendEmailCodeRequest;
 import com.smartcampus.dto.response.LoginResponse;
 import com.smartcampus.dto.response.UserProfileResponse;
 import com.smartcampus.entity.User;
+import com.smartcampus.exception.BusinessException;
 import com.smartcampus.security.UserRole;
 import com.smartcampus.service.AuthService;
 import jakarta.validation.Valid;
@@ -61,13 +62,14 @@ public class AuthController {
     @GetMapping("/me")
     public Result<UserProfileResponse> getCurrentUser(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof Long userId)) {
-            return Result.error(401, "未登录或登录已失效");
+            // 透传 HTTP 401：此前 Result.error(401) 走 @RestController 默认 200，状态码不一致
+            throw new BusinessException(401, "未登录或登录已失效");
         }
 
         return authService.getUserById(userId)
                 .map(UserProfileResponse::fromUser)
                 .map(Result::success)
-                .orElse(Result.error(404, "用户不存在"));
+                .orElseThrow(() -> new BusinessException(404, "用户不存在"));
     }
 
     @GetMapping("/user")
@@ -75,7 +77,7 @@ public class AuthController {
         return authService.getUserByUsername(username)
                 .map(UserProfileResponse::fromUser)
                 .map(Result::success)
-                .orElse(Result.error(404, "用户不存在"));
+                .orElseThrow(() -> new BusinessException(404, "用户不存在"));
     }
 
     @GetMapping("/user/{id}")
@@ -83,7 +85,7 @@ public class AuthController {
         return authService.getUserById(id)
                 .map(UserProfileResponse::fromUser)
                 .map(Result::success)
-                .orElse(Result.error(404, "用户不存在"));
+                .orElseThrow(() -> new BusinessException(404, "用户不存在"));
     }
 
     @GetMapping("/check")
@@ -130,8 +132,11 @@ public class AuthController {
     }
 
     private Result<LoginResponse> doLogin(LoginRequest request) {
+        // 凭证错误抛 BusinessException(401)，由 GlobalExceptionHandler 透传为真实 HTTP 401，
+        // 而非 @RestController 默认的 HTTP 200（与本次"业务码透传 HTTP 状态码"改造一致）。
+        // 前端 login 请求已标记 skipAuthRedirect，不会因此在登录页触发"登录失效"跳转。
         return authService.login(request.getUsername(), request.getPassword())
                 .map(Result::success)
-                .orElse(Result.error("用户名/邮箱或密码错误"));
+                .orElseThrow(() -> new BusinessException(401, "用户名/邮箱或密码错误"));
     }
 }

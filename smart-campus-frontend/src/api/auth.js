@@ -5,7 +5,9 @@ export const register = (username, password, email, emailCode) => {
 }
 
 export const login = (username, password) => {
-  return request.post('/auth/login', { username, password })
+  // skipAuthRedirect：凭证错误时后端返回 401，但用户本就在登录页，
+  // 不应触发拦截器的"登录失效强制跳转"，交由页面静默显示错误文案即可。
+  return request.post('/auth/login', { username, password }, { skipAuthRedirect: true })
 }
 
 export const checkUsername = (username) => {

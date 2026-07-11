@@ -20,7 +20,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Result<Void>> handleBusinessException(BusinessException e) {
-        log.error("业务异常: {}", e.getMessage());
         // 业务码同时作为 HTTP 状态码返回（此前固定返回 200）：
         // ① 前端拦截器对 401 的"重新登录"跳转依赖真实 HTTP 状态码；
         // ② 网关/监控才能按状态码正确统计错误率。
@@ -28,6 +27,14 @@ public class GlobalExceptionHandler {
         HttpStatus status = HttpStatus.resolve(e.getCode() != null ? e.getCode() : 500);
         if (status == null) {
             status = HttpStatus.BAD_REQUEST; // 非标准业务码兜底为 400
+        }
+        // 4xx 为预期业务异常（凭证错误/资源不存在/参数业务校验等），WARN 即可，
+        // 避免大量预期错误污染 ERROR 级日志与按 ERROR 计数的监控告警；
+        // 5xx 才视为需关注的系统问题，保留 ERROR。
+        if (status.is5xxServerError()) {
+            log.error("业务异常(5xx): {}", e.getMessage());
+        } else {
+            log.warn("业务异常({}): {}", status.value(), e.getMessage());
         }
         return ResponseEntity.status(status).body(Result.error(e.getCode(), e.getMessage()));
     }
