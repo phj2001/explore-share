@@ -1,0 +1,89 @@
+name: Deploy Place Explore
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------- 构建后端 ----------
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'   # 按你实际用的JDK版本改，可用 java -version 在服务器上确认
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build backend
+        working-directory: smart-campus-backend
+        run: mvn -B package -DskipTests
+
+      - name: Find backend jar
+        id: backend_jar
+        working-directory: smart-campus-backend
+        run: |
+          JAR_PATH=$(find target -maxdepth 1 -name "*.jar" ! -name "*sources*" ! -name "*javadoc*" | head -n1)
+          echo "jar_path=$JAR_PATH" >> "$GITHUB_OUTPUT"
+
+      # ---------- 构建前端 ----------
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: smart-campus-frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: smart-campus-frontend
+        run: |
+          npm ci
+          npm run build
+
+      # ---------- 上传产物到服务器 ----------
+      - name: Prepare remote temp dir
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            rm -rf /tmp/deploy-incoming
+            mkdir -p /tmp/deploy-incoming/dist
+
+      - name: Copy backend jar
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "smart-campus-backend/${{ steps.backend_jar.outputs.jar_path }}"
+          target: "/tmp/deploy-incoming"
+          strip_components: 2
+
+      - name: Copy frontend dist
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "smart-campus-frontend/dist/*"
+          target: "/tmp/deploy-incoming/dist"
+          strip_components: 2
+
+      # ---------- 在服务器上执行部署脚本 ----------
+      - name: Run deploy scripts
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            JAR_FILE=$(find /tmp/deploy-incoming -maxdepth 1 -name "*.jar" | head -n1)
+            bash /opt/place-explore/deploy/deploy-backend.sh "$JAR_FILE"
+            bash /opt/place-explore/deploy/deploy-frontend.sh /tmp/deploy-incoming/dist
+            rm -rf /tmp/deploy-incoming
