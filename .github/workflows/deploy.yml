@@ -14,7 +14,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'   # 按你实际用的JDK版本改，可用 java -version 在服务器上确认
+          java-version: '21'   # 按你实际用的JDK版本改，可用 java -version 在服务器上确认
           distribution: 'temurin'
           cache: maven
 
