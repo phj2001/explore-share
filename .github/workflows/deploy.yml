@@ -39,6 +39,9 @@ jobs:
 
       - name: Build frontend
         working-directory: smart-campus-frontend
+        env:
+          VITE_AMAP_JS_KEY: ${{ secrets.VITE_AMAP_JS_KEY }}
+          VITE_AMAP_SECURITY_JS_CODE: ${{ secrets.VITE_AMAP_SECURITY_JS_CODE }}
         run: |
           npm ci
           npm run build
