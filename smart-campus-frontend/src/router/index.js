@@ -97,7 +97,7 @@ const routes = [
       {
         path: 'poi-applications',
         name: 'AdminPOIApplications',
-        component: () => import('@/views/admin/POIApplicationList.vue'),
+        component: () => import('@/views/Admin/POIApplicationList.vue'),
         meta: { title: '地点审核', requiresAuth: true, requiresAdmin: true }
       },
       {
