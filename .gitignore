@@ -22,6 +22,7 @@ smart-campus-backend/.idea/
 .env.*
 !smart-campus-frontend/.env.example
 !smart-campus-frontend/.env.production.example
+!smart-campus-backend/.env.prod.example
 smart-campus-backend/config/application-local.properties
 
 # 根目录仅保留 README，其余 .md 视为个人笔记
