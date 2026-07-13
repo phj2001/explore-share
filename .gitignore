@@ -22,4 +22,5 @@ smart-campus-backend/.idea/
 .env.*
 !smart-campus-frontend/.env.example
 !smart-campus-frontend/.env.production.example
+!smart-campus-backend/.env.prod.example
 smart-campus-backend/config/application-local.properties
