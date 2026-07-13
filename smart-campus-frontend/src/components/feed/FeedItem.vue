@@ -13,7 +13,7 @@
     <div class="feed-body">
       <router-link :to="{ name: 'Home', query: { poiId: item.poiId } }" class="feed-poi">
         {{ item.poiName }}
-        <span class="poi-category">{{ item.poiCategory }}</span>
+        <PoiCategoryBadge :category="item.poiCategory" size="small" />
       </router-link>
 
       <p v-if="item.content" class="feed-content">{{ item.content }}</p>
@@ -39,6 +39,8 @@
 </template>
 
 <script setup>
+import PoiCategoryBadge from '@/components/common/PoiCategoryBadge.vue'
+
 defineProps({
   item: { type: Object, required: true }
 })

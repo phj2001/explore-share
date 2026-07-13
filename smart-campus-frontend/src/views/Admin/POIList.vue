@@ -100,7 +100,7 @@
           <template #default="{ row }">
             <div class="poi-main">
               <strong>{{ row.name }}</strong>
-              <span>{{ row.category || '未分类' }}</span>
+              <PoiCategoryBadge :category="row.category" />
               <p>{{ row.description || '暂无地点说明' }}</p>
             </div>
           </template>
@@ -258,6 +258,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Plus, RefreshRight, Search, Upload } from '@element-plus/icons-vue'
 import { deletePOI, getPOICount, getPOIPage, importPOIs } from '@/api/poi'
 import { usePOIStore } from '@/stores/poi'
+import PoiCategoryBadge from '@/components/common/PoiCategoryBadge.vue'
 
 const router = useRouter()
 const route = useRoute()

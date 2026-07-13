@@ -38,10 +38,12 @@
         </el-button>
       </div>
 
+      <!-- 性能截断提示已下线（用户反馈：不需要该提示）
       <div v-if="!sdkError && activeResultSummary.truncated" class="map-limit-tip">
         当前视野内共有 {{ activeResultSummary.total }} 个地点，为保证性能，当前仅展示前
         {{ activeResultSummary.limit }} 个。请继续放大地图查看更多。
       </div>
+      -->
     </div>
 
     <el-dialog
@@ -57,7 +59,7 @@
       <div v-if="selectedPOI" class="poi-dialog-content">
         <section class="poi-overview">
           <div class="poi-overview-card">
-            <span class="poi-category">{{ selectedPOI.category }}</span>
+            <PoiCategoryBadge :category="selectedPOI.category" />
             <h3>{{ selectedPOI.name }}</h3>
             <p>{{ selectedPOI.description || '这个地点暂时还没有详细介绍。' }}</p>
           </div>
@@ -269,6 +271,8 @@ import {
   toAmapCoordinate
 } from '@/utils/amap'
 import { API_ORIGIN } from '@/utils/request'
+import { resolvePoiSymbol, renderPoiIconSvg } from '@/utils/poiSymbol'
+import PoiCategoryBadge from '@/components/common/PoiCategoryBadge.vue'
 
 const PoiSharePanel = defineAsyncComponent(() => import('@/components/map/PoiSharePanel.vue'))
 const POIApplicationDialog = defineAsyncComponent(() => import('@/components/map/POIApplicationDialog.vue'))
@@ -402,20 +406,15 @@ const getClusterGridSizeByZoom = () => {
   return 56
 }
 
-const createPoiMarkerContent = () => {
+const createPoiMarkerContent = (poi) => {
+  const symbol = resolvePoiSymbol(poi?.category)
+  const icon = renderPoiIconSvg(symbol, { size: 11, color: '#ffffff' })
+  const poiId = poi?.id != null ? String(poi.id) : ''
+  // 尺寸/描边/阴影等静态样式交给 :deep(.poi-marker)；inline 只保留分类色（背景+选中态发光环色）
   return `
-    <div style="
-      width: 18px;
-      height: 18px;
-      border-radius: 999px;
-      border: 3px solid #ffffff;
-      background: linear-gradient(135deg, #1f8c69, #2d9e7a);
-      box-shadow: 0 10px 20px rgba(31, 140, 105, 0.32);
-      user-select: none;
-      -webkit-user-select: none;
-      caret-color: transparent;
-      outline: none;
-    "></div>
+    <div class="poi-marker" data-poi-id="${poiId}" data-cat-key="${symbol.key}" style="background:${symbol.hex}; --poi-ring:${symbol.hex};">
+      <span class="poi-marker__icon">${icon}</span>
+    </div>
   `
 }
 
@@ -480,6 +479,18 @@ const clearMarkerFocusArtifacts = () => {
   const selection = window.getSelection?.()
   if (selection && selection.rangeCount > 0) {
     selection.removeAllRanges()
+  }
+}
+
+// 切换 POI marker 的选中态 class（放大 + 分类色发光环）
+// poiId 为 null 时清除所有选中态（关闭弹层时调用）
+const applyPoiMarkerActiveState = (poiId) => {
+  const root = mapRoot.value
+  if (!root) return
+  root.querySelectorAll('.poi-marker.is-active').forEach((el) => el.classList.remove('is-active'))
+  if (poiId != null) {
+    const target = root.querySelector(`.poi-marker[data-poi-id="${poiId}"]`)
+    if (target) target.classList.add('is-active')
   }
 }
 
@@ -631,8 +642,8 @@ const bindPoiMarkerInteractions = (marker, poi) => {
 const applyPoiMarkerPresentation = (marker, poi, position) => {
   marker.setPosition(position)
   marker.setTitle?.('')
-  marker.setContent?.(createPoiMarkerContent())
-  marker.setOffset?.(new AMapRef.Pixel(-9, -9))
+  marker.setContent?.(createPoiMarkerContent(poi))
+  marker.setOffset?.(new AMapRef.Pixel(-11, -11))
   marker.setTopWhenClick?.(true)
   marker.setExtData?.({
     poiId: poi.id,
@@ -645,8 +656,8 @@ const createPoiMarker = (poi, position) => {
     position,
     title: '',
     anchor: 'center',
-    content: createPoiMarkerContent(),
-    offset: new AMapRef.Pixel(-9, -9),
+    content: createPoiMarkerContent(poi),
+    offset: new AMapRef.Pixel(-11, -11),
     topWhenClick: true,
   })
   applyPoiMarkerPresentation(marker, poi, position)
@@ -735,6 +746,7 @@ const focusSelectedPoi = (poi) => {
   const position = getPoiMapPosition(poi)
   if (!position) return
 
+  applyPoiMarkerActiveState(poi?.id)
   map.setZoomAndCenter(Math.max(map.getZoom(), 17), position)
 }
 
@@ -1245,6 +1257,7 @@ const handleDialogClosed = () => {
   resetReviewState()
   selectedPOI.value = null
   mapStore.clearSelectedPOI()
+  applyPoiMarkerActiveState(null)
 }
 
 const resetPOIFavoriteState = () => {
@@ -1633,6 +1646,43 @@ watch(
   background: rgba(255, 255, 255, 0.98);
 }
 
+/* ── POI 分类符号 marker ── */
+/* marker content 注入到 .map-view 子树内，用 :deep() 命中 */
+:deep(.poi-marker) {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 6px 14px rgba(15, 42, 35, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  caret-color: transparent;
+  outline: none;
+  cursor: pointer;
+}
+
+:deep(.poi-marker__icon) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  pointer-events: none;
+}
+
+/* 选中态：放大 + 白色硬环 + 分类色软环（--poi-ring 由 content inline 提供） */
+:deep(.poi-marker.is-active) {
+  transform: scale(1.32);
+  box-shadow:
+    0 0 0 3px #ffffff,
+    0 0 0 6px color-mix(in srgb, var(--poi-ring, #1f8c69) 50%, transparent),
+    0 10px 22px rgba(15, 42, 35, 0.4);
+  z-index: 5;
+}
+
 .map-error {
   position: absolute;
   left: 20px;
@@ -1662,6 +1712,7 @@ watch(
   margin-top: 6px;
 }
 
+/* 性能截断提示已下线（用户反馈：不需要该提示）
 .map-limit-tip {
   position: absolute;
   right: 20px;
@@ -1677,6 +1728,7 @@ watch(
   border: 1px solid rgba(217, 119, 6, 0.18);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
 }
+*/
 
 .poi-dialog-content {
   display: flex;
@@ -2048,6 +2100,7 @@ watch(
     padding-inline: 14px;
   }
 
+  /* 性能截断提示已下线（用户反馈：不需要该提示）
   .map-limit-tip {
     left: 12px;
     right: 12px;
@@ -2056,6 +2109,7 @@ watch(
     padding: 12px 14px;
     font-size: 12px;
   }
+  */
 
   .poi-overview {
     padding: 18px;

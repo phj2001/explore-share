@@ -191,7 +191,10 @@ function stop() {
 .assistant-fab {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  /* 抬高到地图工具栏(.map-toolbar)正上方，避免与"清除名称/创建路线/申请添加地点"
+     按钮在右下角重叠遮挡；当前值 100px = 地图工具栏高度(约40px) + 间距(约60px)，
+     safe-area 适配 iPhone 等底部安全区，桌面端 env() 返回 0 即 100px。 */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 100px);
   z-index: 2000;
   display: flex;
   align-items: center;
