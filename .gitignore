@@ -25,6 +25,8 @@ smart-campus-backend/.idea/
 !smart-campus-backend/.env.prod.example
 smart-campus-backend/config/application-local.properties
 
-# 根目录仅保留 README，其余 .md 视为个人笔记
+# 根目录仅保留 README 与运维文档，其余 .md 视为个人笔记
 /*.md
 !/README.md
+!/DEPLOY.md
+!/SYSTEMD.md
