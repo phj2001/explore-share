@@ -3,8 +3,9 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  # 后端 Spring Boot Actuator + Micrometer Prometheus 端点（SecurityConfig 已放行匿名抓取）
+  # 后端 Spring Boot Actuator + Micrometer Prometheus 端点
+  # actuator 已隔离到独立 management 端口（默认 9091，不对公网暴露）；SecurityConfig 放行 /actuator/**
   - job_name: smart-campus-backend
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ['backend:8080']
+      - targets: ['backend:9091']

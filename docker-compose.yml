@@ -129,18 +129,19 @@ services:
       LLM_MODEL: ${LLM_MODEL:-qwen-plus}
       EMBED_MODEL: ${EMBED_MODEL:-text-embedding-v4}
       # 对话/向量模型可分别指向不同厂商（OpenAI 兼容），不设则回落到 DASHSCOPE_*
-      # 注意：这里必须嵌套回落而非默认空串——空串会被 Spring 视为"已设置"，反而覆盖共用配置
+      # 注意：嵌套回落而非默认空串——空串会被 Spring 视为"已设置"，反而覆盖共用配置
+      # assistant 关闭时 api-key 允许为空（后端 EnvironmentPostProcessor 会排除 Spring AI autoconfigure）
       CHAT_BASE_URL: ${CHAT_BASE_URL:-${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}}
-      CHAT_API_KEY: ${CHAT_API_KEY:-${DASHSCOPE_API_KEY:-disabled-when-assistant-off}}
+      CHAT_API_KEY: ${CHAT_API_KEY:-${DASHSCOPE_API_KEY:-}}
       EMBED_BASE_URL: ${EMBED_BASE_URL:-${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}}
-      EMBED_API_KEY: ${EMBED_API_KEY:-${DASHSCOPE_API_KEY:-disabled-when-assistant-off}}
+      EMBED_API_KEY: ${EMBED_API_KEY:-${DASHSCOPE_API_KEY:-}}
     ports:
       - "8080:8080"
     volumes:
       - backend_storage:/app/uploads
     healthcheck:
-      # 修复 #8：后端就绪探针（/actuator/health 已在 SecurityConfig 放行）
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      # 修复 #8：后端就绪探针；actuator 已隔离到独立 management 端口（默认 9091，见 application.properties）
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9091/actuator/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

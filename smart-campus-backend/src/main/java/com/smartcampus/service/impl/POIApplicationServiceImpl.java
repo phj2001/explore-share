@@ -15,6 +15,7 @@ import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.NotificationService;
 import com.smartcampus.service.POIService;
 import com.smartcampus.service.POIApplicationService;
+import com.smartcampus.service.SensitiveWordFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +39,7 @@ public class POIApplicationServiceImpl implements POIApplicationService {
     private final UserRepository userRepository;
     private final POIService poiService;
     private final NotificationService notificationService;
+    private final SensitiveWordFilter sensitiveWordFilter;
 
     @Override
     @Transactional
@@ -56,9 +58,9 @@ public class POIApplicationServiceImpl implements POIApplicationService {
 
         POIApplication app = new POIApplication();
         app.setApplicant(applicant);
-        app.setName(request.getName().trim());
+        app.setName(sensitiveWordFilter.clean(request.getName().trim()));
         app.setCategory(request.getCategory().trim());
-        app.setDescription(request.getDescription());
+        app.setDescription(sensitiveWordFilter.clean(request.getDescription()));
         app.setLatitude(request.getLatitude());
         app.setLongitude(request.getLongitude());
         app.setAddress(request.getAddress());

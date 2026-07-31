@@ -18,6 +18,7 @@ import com.smartcampus.repository.UserRouteLikeRepository;
 import com.smartcampus.repository.UserRouteRepository;
 import com.smartcampus.service.AchievementService;
 import com.smartcampus.service.NotificationService;
+import com.smartcampus.service.SensitiveWordFilter;
 import com.smartcampus.service.UserRouteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -48,6 +49,7 @@ public class UserRouteServiceImpl implements UserRouteService {
     private final POIRepository poiRepository;
     private final AchievementService achievementService;
     private final NotificationService notificationService;
+    private final SensitiveWordFilter sensitiveWordFilter;
 
     @Override
     @Transactional
@@ -63,9 +65,9 @@ public class UserRouteServiceImpl implements UserRouteService {
     @Transactional
     public UserRouteResponse updateRoute(Long routeId, Long userId, CreateUserRouteRequest request) {
         UserRoute route = getOwnedRoute(routeId, userId);
-        route.setTitle(request.getTitle());
-        route.setSummary(request.getSummary());
-        route.setDescription(request.getDescription());
+        route.setTitle(sensitiveWordFilter.clean(request.getTitle()));
+        route.setSummary(sensitiveWordFilter.clean(request.getSummary()));
+        route.setDescription(sensitiveWordFilter.clean(request.getDescription()));
         route.setDefaultMode(request.getDefaultMode() != null ? request.getDefaultMode() : "walking");
         route.setCoverImageUrl(request.getCoverImageUrl());
 
@@ -173,9 +175,9 @@ public class UserRouteServiceImpl implements UserRouteService {
     private UserRoute buildRoute(User user, CreateUserRouteRequest request) {
         UserRoute route = new UserRoute();
         route.setUser(user);
-        route.setTitle(request.getTitle());
-        route.setSummary(request.getSummary());
-        route.setDescription(request.getDescription());
+        route.setTitle(sensitiveWordFilter.clean(request.getTitle()));
+        route.setSummary(sensitiveWordFilter.clean(request.getSummary()));
+        route.setDescription(sensitiveWordFilter.clean(request.getDescription()));
         route.setDefaultMode(request.getDefaultMode() != null ? request.getDefaultMode() : "walking");
         route.setCoverImageUrl(request.getCoverImageUrl());
         route.setStatus(STATUS_PENDING);

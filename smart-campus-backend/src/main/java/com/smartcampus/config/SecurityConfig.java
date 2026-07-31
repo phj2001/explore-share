@@ -45,10 +45,11 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // 升级项①可观测性（修复 #2）：放行健康检查与 Prometheus 抓取端点，
-                        // 否则 anyRequest().authenticated() 会让 Prometheus 匿名抓取吃 401、Grafana 无数据。
-                        // 生产建议进一步限制为内网/独立 management 端口。
-                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
+                        // 可观测性端点已隔离到独立 management 端口（management.server.port，默认 9091，
+                        // 不对公网暴露，见 application.properties）。安全由网络层保证，这里放行 /actuator/**
+                        // 供 healthcheck(/actuator/health) 与 Prometheus(/actuator/prometheus) 在 management
+                        // 端口匿名抓取；主端口 8080 已无 /actuator 路径。
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/check").permitAll()
                         .requestMatchers("/api/auth/sendRegisterCode", "/api/auth/sendResetCode", "/api/auth/resetPassword").permitAll()

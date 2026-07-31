@@ -20,7 +20,7 @@ jobs:
 
       - name: Build backend
         working-directory: smart-campus-backend
-        run: mvn -B package -DskipTests
+        run: mvn -B package
 
       - name: Find backend jar
         id: backend_jar

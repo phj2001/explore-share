@@ -12,6 +12,7 @@ import com.smartcampus.repository.POIRepository;
 import com.smartcampus.repository.POIReviewRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.POIReviewService;
+import com.smartcampus.service.SensitiveWordFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +35,7 @@ public class POIReviewServiceImpl implements POIReviewService {
     private final POIReviewRepository poiReviewRepository;
     private final POIRepository poiRepository;
     private final UserRepository userRepository;
+    private final SensitiveWordFilter sensitiveWordFilter;
 
     @Override
     @Transactional(readOnly = true)
@@ -82,7 +84,7 @@ public class POIReviewServiceImpl implements POIReviewService {
                 });
 
         review.setRating(request.getRating().shortValue());
-        review.setContent(StringUtils.hasText(content) ? content.trim() : null);
+        review.setContent(sensitiveWordFilter.clean(StringUtils.hasText(content) ? content.trim() : null));
 
         POIReview saved = poiReviewRepository.save(review);
         return toReviewResponse(saved, userId);

@@ -10,7 +10,8 @@ import com.smartcampus.repository.ActivityRepository;
 import com.smartcampus.repository.POIRepository;
 import com.smartcampus.service.AdminActivityService;
 import com.smartcampus.service.AdminOperationLogService;
-import com.smartcampus.util.ImageThumbnailUtils;
+import com.smartcampus.service.storage.StorageCategory;
+import com.smartcampus.service.storage.StorageService;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -54,17 +55,7 @@ public class AdminActivityServiceImpl implements AdminActivityService {
     private final ActivityRepository activityRepository;
     private final POIRepository poiRepository;
     private final AdminOperationLogService adminOperationLogService;
-
-    @Value("${app.upload.activity-dir:uploads/activities}")
-    private String activityUploadDir;
-
-    private Path activityStoragePath;
-
-    @PostConstruct
-    public void init() throws IOException {
-        activityStoragePath = Paths.get(activityUploadDir).toAbsolutePath().normalize();
-        Files.createDirectories(activityStoragePath);
-    }
+    private final StorageService storageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -382,19 +373,7 @@ public class AdminActivityServiceImpl implements AdminActivityService {
         }
 
         String filename = UUID.randomUUID().toString().replace("-", "") + "." + extension;
-        Path targetPath = activityStoragePath.resolve(filename).normalize();
-        if (!targetPath.startsWith(activityStoragePath)) {
-            throw new BusinessException(400, "非法的封面存储路径");
-        }
-
-        try {
-            Files.write(targetPath, bytes);
-            ImageThumbnailUtils.createThumbnailIfSupported(bytes, extension, targetPath, COVER_THUMB_MAX_WIDTH, COVER_THUMB_MAX_HEIGHT);
-        } catch (IOException e) {
-            throw new BusinessException(500, "活动封面保存失败");
-        }
-
-        return IMAGE_URL_PREFIX + filename;
+        return storageService.store(StorageCategory.ACTIVITY, filename, bytes);
     }
 
     private void deleteImageQuietly(String imageUrl) {
@@ -407,12 +386,7 @@ public class AdminActivityServiceImpl implements AdminActivityService {
             return;
         }
 
-        Path targetPath = activityStoragePath.resolve(filename).normalize();
-        if (!targetPath.startsWith(activityStoragePath)) {
-            return;
-        }
-
-        ImageThumbnailUtils.deleteImageAndThumbnailQuietly(targetPath);
+        storageService.delete(StorageCategory.ACTIVITY, filename);
     }
 
     private boolean savedImageUrlEqualsOriginal(String savedImageUrl, String originalCoverImageUrl) {

@@ -8,7 +8,8 @@ import com.smartcampus.exception.BusinessException;
 import com.smartcampus.repository.AnnouncementRepository;
 import com.smartcampus.service.AdminAnnouncementService;
 import com.smartcampus.service.AdminOperationLogService;
-import com.smartcampus.util.ImageThumbnailUtils;
+import com.smartcampus.service.storage.StorageCategory;
+import com.smartcampus.service.storage.StorageService;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -50,17 +51,7 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
 
     private final AnnouncementRepository announcementRepository;
     private final AdminOperationLogService adminOperationLogService;
-
-    @Value("${app.upload.announcement-dir:uploads/announcements}")
-    private String announcementUploadDir;
-
-    private Path announcementStoragePath;
-
-    @PostConstruct
-    public void init() throws IOException {
-        announcementStoragePath = Paths.get(announcementUploadDir).toAbsolutePath().normalize();
-        Files.createDirectories(announcementStoragePath);
-    }
+    private final StorageService storageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -357,19 +348,7 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
         }
 
         String filename = UUID.randomUUID().toString().replace("-", "") + "." + extension;
-        Path targetPath = announcementStoragePath.resolve(filename).normalize();
-        if (!targetPath.startsWith(announcementStoragePath)) {
-            throw new BusinessException(400, "非法的封面存储路径");
-        }
-
-        try {
-            Files.write(targetPath, bytes);
-            ImageThumbnailUtils.createThumbnailIfSupported(bytes, extension, targetPath, COVER_THUMB_MAX_WIDTH, COVER_THUMB_MAX_HEIGHT);
-        } catch (IOException e) {
-            throw new BusinessException(500, "公告封面保存失败");
-        }
-
-        return IMAGE_URL_PREFIX + filename;
+        return storageService.store(StorageCategory.ANNOUNCEMENT, filename, bytes);
     }
 
     private void deleteImageQuietly(String imageUrl) {
@@ -382,12 +361,7 @@ public class AdminAnnouncementServiceImpl implements AdminAnnouncementService {
             return;
         }
 
-        Path targetPath = announcementStoragePath.resolve(filename).normalize();
-        if (!targetPath.startsWith(announcementStoragePath)) {
-            return;
-        }
-
-        ImageThumbnailUtils.deleteImageAndThumbnailQuietly(targetPath);
+        storageService.delete(StorageCategory.ANNOUNCEMENT, filename);
     }
 
     private String detectImageExtension(byte[] bytes) {

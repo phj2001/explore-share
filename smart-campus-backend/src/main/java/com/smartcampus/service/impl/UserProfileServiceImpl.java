@@ -6,6 +6,8 @@ import com.smartcampus.entity.User;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.security.JwtTokenProvider;
 import com.smartcampus.service.UserProfileService;
+import com.smartcampus.service.storage.StorageCategory;
+import com.smartcampus.service.storage.StorageService;
 import com.smartcampus.util.RedisUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -35,17 +37,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final PasswordEncoder passwordEncoder;
     private final RedisUtils redisUtils;
     private final JwtTokenProvider jwtTokenProvider;
-
-    @Value("${app.upload.avatar-dir:uploads/avatars}")
-    private String avatarUploadDir;
-
-    private Path avatarStoragePath;
-
-    @PostConstruct
-    public void init() throws IOException {
-        avatarStoragePath = Paths.get(avatarUploadDir).toAbsolutePath().normalize();
-        Files.createDirectories(avatarStoragePath);
-    }
+    private final StorageService storageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -112,20 +104,10 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         User user = getRequiredUser(userId);
         String filename = UUID.randomUUID().toString().replace("-", "") + "." + extension;
-        Path targetPath = avatarStoragePath.resolve(filename).normalize();
-
-        if (!targetPath.startsWith(avatarStoragePath)) {
-            throw new IllegalArgumentException("非法的头像存储路径");
-        }
-
-        try {
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new RuntimeException("头像保存失败", e);
-        }
+        String avatarUrl = storageService.store(StorageCategory.AVATAR, filename, fileBytes);
 
         deleteOldAvatar(user.getAvatarUrl());
-        user.setAvatarUrl(AVATAR_URL_PREFIX + filename);
+        user.setAvatarUrl(avatarUrl);
         return userRepository.save(user);
     }
 
@@ -151,15 +133,7 @@ public class UserProfileServiceImpl implements UserProfileService {
             return;
         }
 
-        Path oldFile = avatarStoragePath.resolve(filename).normalize();
-        if (!oldFile.startsWith(avatarStoragePath)) {
-            return;
-        }
-
-        try {
-            Files.deleteIfExists(oldFile);
-        } catch (IOException ignored) {
-        }
+        storageService.delete(StorageCategory.AVATAR, filename);
     }
 
     private String detectImageExtension(byte[] bytes) {

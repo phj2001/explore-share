@@ -1,0 +1,5 @@
+# 注册 EnvironmentPostProcessor：assistant 关闭时动态排除 Spring AI autoconfigure。
+# EnvironmentPostProcessor 由 spring.factories 发现（与 AutoConfiguration 走 .imports 的机制不同），
+# 在自动配置之前执行，因此能按 app.assistant.enabled 条件化注入 spring.autoconfigure.exclude。
+org.springframework.boot.EnvironmentPostProcessor=\
+com.smartcampus.config.AssistantAutoConfigureExclusionEnvironmentPostProcessor

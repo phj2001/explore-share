@@ -128,10 +128,13 @@ public class AssistantChatService {
         }
         meterRegistry.counter("assistant.chat.cache", "result", cacheable ? "miss" : "bypass").increment();
 
-        // 说明：Spring AI 2.0「流式 .stream() + 工具调用」对 DashScope/Qwen 的工具增量解析存在兼容问题
-        // （NoSuchElementException: No value present）。这里改用更成熟、兼容的非流式 call()（工具调用稳定），
-        // 拿到完整回答后分块"流式回放"给前端——保留 Agent + Tool Use，前端 SSE 体验不变。
+        // 说明：Spring AI 2.0「流式 .stream() + 工具调用」对 DashScope/Qwen 存在已知兼容缺陷
+        // （NoSuchElementException: No value present）——根因是 Spring AI 未正确跨流式 chunk 聚合 tool_call 分片，
+        // 见上游 issue spring-projects/spring-ai#4790 与 spring-ai-alibaba#1025（2026-07 验证仍未修复）。
+        // 官方 workaround 即「关闭 stream，改用非流式 call()」，与本实现一致——非"不会做真流式"，而是有据可依的工程妥协。
+        // 故用非流式 call()（工具调用稳定），拿到完整回答后分块"流式回放"给前端，保留 Agent + Tool Use，前端 SSE 体验不变。
         // 放到 boundedElastic 线程执行阻塞调用，避免占用请求/事件循环线程。
+        // 待上游修复后可平滑切回 .stream() 真流式（首字延迟更低）。
         return Flux.defer(() -> {
                     try {
                         String reply = chatClient.prompt()

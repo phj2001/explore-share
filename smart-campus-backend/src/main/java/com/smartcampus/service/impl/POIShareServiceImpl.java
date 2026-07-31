@@ -22,7 +22,9 @@ import com.smartcampus.security.UserRole;
 import com.smartcampus.service.AchievementService;
 import com.smartcampus.service.NotificationService;
 import com.smartcampus.service.POIShareService;
-import com.smartcampus.util.ImageThumbnailUtils;
+import com.smartcampus.service.SensitiveWordFilter;
+import com.smartcampus.service.storage.StorageCategory;
+import com.smartcampus.service.storage.StorageService;
 import com.smartcampus.util.RedisUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -80,17 +82,8 @@ public class POIShareServiceImpl implements POIShareService {
     private final RedisUtils redisUtils;
     private final AchievementService achievementService;
     private final NotificationService notificationService;
-
-    @Value("${app.upload.poi-share-dir:uploads/poi-shares}")
-    private String poiShareUploadDir;
-
-    private Path poiShareStoragePath;
-
-    @PostConstruct
-    public void init() throws IOException {
-        poiShareStoragePath = Paths.get(poiShareUploadDir).toAbsolutePath().normalize();
-        Files.createDirectories(poiShareStoragePath);
-    }
+    private final SensitiveWordFilter sensitiveWordFilter;
+    private final StorageService storageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -152,7 +145,7 @@ public class POIShareServiceImpl implements POIShareService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(404, "用户不存在"));
 
-        String normalizedContent = normalizeContent(content);
+        String normalizedContent = sensitiveWordFilter.clean(normalizeContent(content));
         List<MultipartFile> validImages = normalizeImages(images);
         validateSharePayload(normalizedContent, validImages);
 
@@ -280,7 +273,7 @@ public class POIShareServiceImpl implements POIShareService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(404, "用户不存在"));
 
-        String normalizedContent = normalizeReplyContent(content);
+        String normalizedContent = sensitiveWordFilter.clean(normalizeReplyContent(content));
 
         POIShareReply reply = new POIShareReply();
         reply.setShare(share);
@@ -483,19 +476,7 @@ public class POIShareServiceImpl implements POIShareService {
         }
 
         String filename = UUID.randomUUID().toString().replace("-", "") + "." + extension;
-        Path targetPath = poiShareStoragePath.resolve(filename).normalize();
-        if (!targetPath.startsWith(poiShareStoragePath)) {
-            throw new BusinessException(400, "非法的图片存储路径");
-        }
-
-        try {
-            Files.write(targetPath, bytes);
-            ImageThumbnailUtils.createThumbnailIfSupported(bytes, extension, targetPath, SHARE_THUMB_MAX_WIDTH, SHARE_THUMB_MAX_HEIGHT);
-        } catch (IOException e) {
-            throw new BusinessException(500, "分享图片保存失败");
-        }
-
-        return IMAGE_URL_PREFIX + filename;
+        return storageService.store(StorageCategory.POI_SHARE, filename, bytes);
     }
 
     private void deleteImageQuietly(String imageUrl) {
@@ -508,12 +489,7 @@ public class POIShareServiceImpl implements POIShareService {
             return;
         }
 
-        Path targetPath = poiShareStoragePath.resolve(filename).normalize();
-        if (!targetPath.startsWith(poiShareStoragePath)) {
-            return;
-        }
-
-        ImageThumbnailUtils.deleteImageAndThumbnailQuietly(targetPath);
+        storageService.delete(StorageCategory.POI_SHARE, filename);
     }
 
     private String detectImageExtension(byte[] bytes) {
