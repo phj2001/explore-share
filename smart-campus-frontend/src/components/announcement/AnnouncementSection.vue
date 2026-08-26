@@ -185,7 +185,7 @@
     <!-- 公告详情弹窗 -->
     <el-dialog
       v-model="detailVisible"
-      width="760px"
+      width="min(92vw, 760px)"
       append-to-body
       destroy-on-close
       :close-on-click-modal="true"
@@ -326,7 +326,7 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── AnnouncementSection 新设计系统 ── */
 .notice-rail,
 .mobile-trigger,
@@ -555,22 +555,22 @@ onBeforeUnmount(() => {
   z-index: 930;
   border: none;
   border-radius: 999px;
-  padding: 10px 14px;
+  padding: 6px 11px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: linear-gradient(135deg, var(--forest-600), var(--forest-800));
   color: #fff;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  box-shadow: 0 12px 28px rgba(10, 94, 68, 0.24);
+  box-shadow: 0 8px 20px rgba(10, 94, 68, 0.22);
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
 
 .mobile-trigger:hover {
-  box-shadow: 0 14px 32px rgba(10, 94, 68, 0.32);
+  box-shadow: 0 10px 24px rgba(10, 94, 68, 0.3);
 }
 
 .mobile-shell {
@@ -707,6 +707,17 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
 }
 
+/* 触屏：移动面板入口与弹窗关闭按钮撑足热区（次要入口 ≥ 40px） */
+@include coarse-pointer {
+  .mobile-trigger {
+    min-height: 40px;
+  }
+
+  .detail-footer :deep(.el-button) {
+    min-height: 44px;
+  }
+}
+
 .detail-cover {
   width: 100%;
   height: 240px;
@@ -751,16 +762,15 @@ onBeforeUnmount(() => {
   to   { opacity: 1; transform: translateX(0); }
 }
 
-@media (max-width: 900px) {
+@include respond-to(md) {
   .detail-footer { justify-content: stretch; }
 }
 
-@media (max-width: 560px) {
+@include respond-to(sm) {
   .mobile-trigger {
     left: 10px;
-    top: 72px;
-    padding: 8px 12px;
-    font-size: 12px;
+    top: 64px;
+    padding: 5px 10px;
   }
 
   .featured-card { padding: 12px; border-radius: 10px; }

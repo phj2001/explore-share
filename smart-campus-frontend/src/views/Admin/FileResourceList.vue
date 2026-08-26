@@ -176,24 +176,41 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { RefreshRight, Search } from '@element-plus/icons-vue'
 import { deleteAdminFileResource, getAdminFileResourcePage } from '@/api/adminFileResource'
 import { API_ORIGIN } from '@/utils/request'
+import { useAdminList } from '@/composables/useAdminList'
 
 const router = useRouter()
 
 const keyword = ref('')
 const resourceType = ref()
 const status = ref()
-const currentPage = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const resources = ref([])
-const loading = ref(false)
 const deletingKey = ref('')
+
+const {
+  list: resources,
+  loading,
+  currentPage,
+  pageSize,
+  total,
+  load: loadResources,
+  search: handleSearch,
+  reset,
+  handlePageSizeChange
+} = useAdminList({
+  fetchPage: ({ page, size }) => getAdminFileResourcePage({
+    keyword: keyword.value.trim() || undefined,
+    resourceType: resourceType.value,
+    status: status.value,
+    page,
+    size
+  }),
+  errorMessage: '加载文件资源失败'
+})
 
 const resourceTypeOptions = [
   { label: '用户头像', value: 'AVATAR' },
@@ -217,42 +234,11 @@ const heroStats = computed(() => {
   ]
 })
 
-const loadResources = async () => {
-  loading.value = true
-  try {
-    const data = await getAdminFileResourcePage({
-      keyword: keyword.value.trim() || undefined,
-      resourceType: resourceType.value,
-      status: status.value,
-      page: currentPage.value - 1,
-      size: pageSize.value
-    })
-    resources.value = data.records || []
-    total.value = data.total || 0
-    currentPage.value = (data.page || 0) + 1
-  } catch (error) {
-    ElMessage.error(error.message || '加载文件资源失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleSearch = async () => {
-  currentPage.value = 1
-  await loadResources()
-}
-
-const handlePageSizeChange = async () => {
-  currentPage.value = 1
-  await loadResources()
-}
-
 const resetFilters = async () => {
   keyword.value = ''
   resourceType.value = undefined
   status.value = undefined
-  currentPage.value = 1
-  await loadResources()
+  await reset()
 }
 
 const buildDeleteKey = (row) => `${row.resourceType}|${row.resourceUrl}|${row.ownerId ?? '-'}`
@@ -372,10 +358,6 @@ const resolveAssetUrl = (value) => {
   if (/^https?:\/\//i.test(value)) return value
   return `${API_ORIGIN}${value.startsWith('/') ? value : `/${value}`}`
 }
-
-onMounted(async () => {
-  await loadResources()
-})
 </script>
 
 <style scoped>

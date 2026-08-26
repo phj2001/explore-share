@@ -38,7 +38,10 @@
             <div class="waypoints-section">
               <div class="waypoints-head">
                 <h3>途经点<span v-if="form.waypoints.length" class="wp-count">（{{ form.waypoints.length }}）</span></h3>
-                <span class="wp-hint">在右侧地图点击添加</span>
+                <span class="wp-hint">
+                  <span class="hint-desktop">在右侧地图点击添加</span>
+                  <span class="hint-mobile">在下方地图点击添加</span>
+                </span>
               </div>
 
               <div v-if="form.waypoints.length" class="waypoints-list">
@@ -74,7 +77,8 @@
               </div>
 
               <div v-else class="wp-empty">
-                在右侧地图点击位置来添加途经点
+                <span class="hint-desktop">在右侧地图点击位置来添加途经点</span>
+                <span class="hint-mobile">在下方地图点击位置来添加途经点</span>
               </div>
             </div>
 
@@ -316,9 +320,10 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .route-create-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -391,6 +396,11 @@ onUnmounted(() => {
 .wp-hint {
   font-size: 12px;
   color: var(--ink-400);
+}
+
+/* 桌面双栏时地图在右，单列（平板及以下）时地图在下 */
+.hint-mobile {
+  display: none;
 }
 
 .waypoints-list {
@@ -505,6 +515,7 @@ onUnmounted(() => {
 .create-map-view {
   width: 100%;
   height: calc(100vh - 200px);
+  height: calc(100dvh - 200px);
   min-height: 480px;
   cursor: crosshair;
 }
@@ -516,7 +527,8 @@ onUnmounted(() => {
   font-size: 13px;
 }
 
-@media (max-width: 960px) {
+/* 单列布局：地图在表单下方，文案同步切换；途经点列表交给页面滚动 */
+@include respond-to(md) {
   .create-layout {
     grid-template-columns: 1fr;
   }
@@ -526,19 +538,62 @@ onUnmounted(() => {
   }
 
   .create-map-view {
+    height: 50vh;
     height: 50svh;
     min-height: 320px;
   }
+
+  .hint-desktop {
+    display: none;
+  }
+
+  .hint-mobile {
+    display: inline;
+  }
+
+  .waypoints-list {
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
-@media (max-width: 640px) {
+@include respond-to(sm) {
   .create-form-panel {
     padding: 18px;
     border-radius: 24px;
   }
 
   .create-map-view {
+    height: 42vh;
     height: 42svh;
+  }
+}
+
+/* 触屏：操作按钮热区 ≥40px（提交为核心操作 44px）；输入框字号 ≥16px 防 iOS 聚焦缩放 */
+@include coarse-pointer {
+  .form-actions :deep(.el-button) {
+    min-height: 40px;
+  }
+
+  .form-actions :deep(.el-button--primary) {
+    min-height: 44px;
+  }
+
+  .waypoint-item :deep(.el-button) {
+    min-height: 40px;
+  }
+
+  .wp-name-input,
+  .wp-poi-select {
+    min-height: 40px;
+  }
+
+  .create-form :deep(.el-input__inner),
+  .create-form :deep(.el-textarea__inner),
+  .wp-name-input :deep(.el-input__inner),
+  .wp-poi-select :deep(.el-input__inner),
+  .wp-poi-select :deep(.el-select__wrapper) {
+    font-size: 16px;
   }
 }
 </style>

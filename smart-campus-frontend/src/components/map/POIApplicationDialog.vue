@@ -2,7 +2,7 @@
   <el-dialog
     model-value
     title="申请添加地点"
-    :width="560"
+    width="min(92vw, 560px)"
     @close="emit('close')"
   >
     <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
@@ -153,7 +153,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .mini-map {
   width: 100%;
   height: 260px;
@@ -172,5 +172,28 @@ onUnmounted(() => {
   margin-top: 6px;
   font-size: 12px;
   color: var(--front-text-muted);
+}
+
+/* 响应式：小屏弹窗内嵌地图相应收矮 */
+@include respond-to(sm) {
+  .mini-map {
+    height: 200px;
+  }
+}
+
+/* 触屏：提交申请为核心操作撑 44px；输入字号 ≥16px 防 iOS 聚焦缩放 */
+@include coarse-pointer {
+  :deep(.el-button) {
+    min-height: 40px;
+  }
+
+  :deep(.el-button--primary) {
+    min-height: 44px;
+  }
+
+  :deep(.el-input__inner),
+  :deep(.el-textarea__inner) {
+    font-size: 16px;
+  }
 }
 </style>

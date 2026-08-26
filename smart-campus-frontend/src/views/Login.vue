@@ -72,7 +72,10 @@
             <p>{{ isLogin ? '使用账号或邮箱继续进入平台。' : '创建账号后将自动登录并进入首页。' }}</p>
           </div>
 
-          <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="auth-form">
+          <!-- validate-on-rule-change=false：rules 是随 isLogin 切换的 computed，
+               默认值会在切换登录/注册那一刻自动触发全量校验，导致空表单满屏红色提示；
+               关闭后仅在用户主动提交时校验，符合"填写完点注册才提示"的预期 -->
+          <el-form ref="formRef" :model="form" :rules="rules" :validate-on-rule-change="false" label-position="top" class="auth-form">
             <el-form-item label="用户名" prop="username">
               <el-input v-model="form.username" :placeholder="isLogin ? '用户名 / 邮箱' : '请输入用户名'" autocomplete="username" />
             </el-form-item>
@@ -414,7 +417,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* =========================================================
    登录页 — 左深色面板 · 右极简表单
    ========================================================= */
@@ -773,24 +776,24 @@ onUnmounted(() => {
 }
 
 /* 响应式 */
-@media (max-width: 960px) {
+@include respond-to(md) {
   .auth-page {
     grid-template-columns: 1fr;
     min-height: auto;
   }
-  .auth-intro {
-    padding: 40px 32px;
-    min-height: 280px;
-  }
-  .intro-grid { display: none; }
-  .intro-bottom { display: none; }
+  /* 手机端隐藏左侧项目简介模块，登录/注册界面保持简洁（桌面端保留） */
+  .auth-intro { display: none; }
   .auth-panel { padding: 36px 24px; }
 }
 
-@media (max-width: 520px) {
-  .auth-intro { padding: 28px 20px; }
+@include respond-to(xs) {
   .auth-panel { padding: 24px 16px; }
   .panel-head h2 { font-size: 20px; }
-  .intro-title { font-size: 26px; }
+}
+
+/* 触屏：登录为核心操作撑 44px；输入框字号 ≥16px 防 iOS 聚焦缩放 */
+@include coarse-pointer {
+  .auth-panel :deep(.el-button--primary) { min-height: 44px; }
+  .auth-panel :deep(.el-input__inner) { font-size: 16px; }
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <el-popover
     placement="bottom-end"
-    :width="380"
+    width="min(92vw, 380px)"
     trigger="click"
     @before-enter="onPopoverOpen"
   >
@@ -225,7 +225,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .notification-badge {
   line-height: 1;
 }
@@ -344,5 +344,25 @@ onUnmounted(() => {
 
 .notification-empty {
   padding: 24px 0;
+}
+
+/* 窄屏：下拉列表限高（dvh 随地址栏收放），避免小屏/横屏溢出 */
+@include respond-to(xs) {
+  .notification-list {
+    max-height: 60vh;
+    max-height: 60dvh;
+  }
+}
+
+/* 触屏：铃铛入口与"加载更多"撑足热区 */
+@include coarse-pointer {
+  .notification-bell {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .notification-more :deep(.el-button) {
+    min-height: 40px;
+  }
 }
 </style>

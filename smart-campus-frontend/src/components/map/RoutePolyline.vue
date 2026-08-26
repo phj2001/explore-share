@@ -24,7 +24,7 @@
       </div>
       <div class="header-actions">
         <el-button :icon="Minus" text @click="handleCollapsePanel" />
-        <el-button v-if="routeStart || routeEnd || routeResult" :icon="Delete" text @click="handleClearRoute" />
+        <el-button v-if="routeStart || routeEnd || routeResult" :icon="Delete" text type="danger" @click="handleClearRoute" />
       </div>
     </div>
 
@@ -150,16 +150,18 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, Guide, Minus, Sort } from '@element-plus/icons-vue'
 import { useMapStore } from '@/stores/map'
+import { useViewport } from '@/composables/useViewport'
 
 const emit = defineEmits(['visibility-change'])
 
 const mapStore = useMapStore()
 const isCollapsed = ref(true)
-const isMobileViewport = ref(false)
+const { isMobile } = useViewport()
+const isMobileViewport = computed(() => isMobile.value)
 
 const routeStart = computed(() => mapStore.routeStart)
 const routeEnd = computed(() => mapStore.routeEnd)
@@ -255,22 +257,9 @@ const handleCollapsePanel = () => {
   isCollapsed.value = true
   emit('visibility-change', false)
 }
-
-const updateViewportState = () => {
-  isMobileViewport.value = window.innerWidth <= 768
-}
-
-onMounted(() => {
-  updateViewportState()
-  window.addEventListener('resize', updateViewportState)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateViewportState)
-})
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .route-trigger {
   position: absolute;
   top: 20px;
@@ -314,6 +303,7 @@ onUnmounted(() => {
   z-index: 1400;
   width: 360px;
   max-height: calc(100vh - 120px);
+  max-height: calc(100dvh - 120px);
   display: flex;
   flex-direction: column;
   background: rgba(247, 250, 247, 0.96);
@@ -326,6 +316,7 @@ onUnmounted(() => {
 
 .route-panel.has-route {
   height: calc(100vh - 120px);
+  height: calc(100dvh - 120px);
 }
 
 .route-panel.is-picking-mobile {
@@ -346,6 +337,28 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+
+  /* 头部是深绿渐变底，Element Plus text 按钮默认灰 #909399 在这里几乎看不清，
+     收起按钮改浅白，删除按钮用 danger 亮红并提亮一档保证深底可读 */
+  :deep(.el-button) {
+    color: rgba(255, 255, 255, 0.88);
+
+    &:hover,
+    &:focus {
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.14);
+    }
+  }
+
+  :deep(.el-button.el-button--danger) {
+    color: var(--el-color-danger-light-3);
+
+    &:hover,
+    &:focus {
+      color: var(--el-color-danger-light-5);
+      background-color: rgba(245, 108, 108, 0.18);
+    }
+  }
 }
 
 .panel-header h3 {
@@ -608,13 +621,22 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
-@media (max-width: 768px) {
+@include respond-to(md) {
   .route-trigger {
     top: 12px;
     right: 12px;
-    min-width: 92px;
-    height: 44px;
-    padding: 0 14px;
+    min-width: 76px;
+    height: 36px;
+    padding: 0 12px;
+    box-shadow: 0 8px 20px rgba(31, 140, 105, 0.2);
+  }
+
+  .route-trigger .el-icon {
+    font-size: 16px;
+  }
+
+  .route-trigger span {
+    font-size: 12.5px;
   }
 
   .route-panel {
@@ -623,7 +645,9 @@ onUnmounted(() => {
     top: calc(100% + 12px);
     bottom: auto;
     width: auto;
+    max-height: 60vh;
     max-height: 60svh;
+    height: 60vh;
     height: 60svh;
     border-radius: 22px 22px 18px 18px;
     box-shadow: 0 20px 40px rgba(31, 140, 105, 0.15);
@@ -631,7 +655,9 @@ onUnmounted(() => {
   }
 
   .route-panel.has-route {
+    height: 72vh;
     height: 72svh;
+    max-height: 72vh;
     max-height: 72svh;
   }
 
@@ -659,7 +685,7 @@ onUnmounted(() => {
   }
 
   .panel-header p {
-    font-size: 10px;
+    font-size: 11px;
     line-height: 1.4;
   }
 
@@ -691,9 +717,12 @@ onUnmounted(() => {
   .banner-copy p,
   .banner-kicker,
   .waypoint-head,
-  .waypoint-chip,
+  .waypoint-chip {
+    font-size: 11px;
+  }
+
   .point-text span {
-    font-size: 10px;
+    font-size: 10.5px;
   }
 
   .pick-banner {
@@ -709,7 +738,7 @@ onUnmounted(() => {
   .point-tag {
     width: 24px;
     height: 24px;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .point-text strong {
@@ -722,7 +751,7 @@ onUnmounted(() => {
   }
 
   .route-actions :deep(.el-button) {
-    min-height: 34px;
+    min-height: 40px;
   }
 
   .route-actions :deep(.el-button--small) {
@@ -730,9 +759,9 @@ onUnmounted(() => {
   }
 
   .route-actions :deep(.el-button.is-circle) {
-    width: 30px;
-    min-width: 30px;
-    height: 30px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
   }
 
   .compact-pick-body .pick-banner {
@@ -748,7 +777,7 @@ onUnmounted(() => {
   }
 
   .summary-item span {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .summary-item strong {
@@ -774,7 +803,7 @@ onUnmounted(() => {
   .step-index {
     width: 22px;
     height: 22px;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .step-content p {
@@ -784,7 +813,16 @@ onUnmounted(() => {
 
   .step-content span {
     margin-top: 2px;
-    font-size: 10px;
+    font-size: 11px;
+  }
+}
+
+/* 触屏热区：面板头部/选点横幅里的紧凑按钮撑到 40px */
+@include coarse-pointer {
+  .header-actions :deep(.el-button),
+  .pick-banner :deep(.el-button) {
+    min-height: 40px;
+    min-width: 40px;
   }
 }
 </style>

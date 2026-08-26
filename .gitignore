@@ -6,6 +6,13 @@ Thumbs.db
 *.log
 .claude
 
+# 本地调试工具产物（Playwright MCP 快照/日志、验证截图）
+.playwright-mcp/
+/*.png
+
+# 个人文件（简历等）不入库
+/*.pdf
+
 
 # Frontend build artifacts
 smart-campus-frontend/node_modules/

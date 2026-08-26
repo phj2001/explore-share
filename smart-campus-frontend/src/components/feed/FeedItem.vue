@@ -26,6 +26,7 @@
           :preview-src-list="item.imageUrls"
           fit="cover"
           preview-teleported
+          lazy
           class="feed-image"
         />
       </div>
@@ -52,7 +53,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
 const formatTime = (value) => value ? dateTimeFormatter.format(new Date(value)) : ''
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── FeedItem 新设计系统 ── */
 .feed-item {
   padding: 18px 20px;
@@ -179,7 +180,7 @@ const formatTime = (value) => value ? dateTimeFormatter.format(new Date(value)) 
 }
 
 /* 响应式 */
-@media (max-width: 480px) {
+@include respond-to(xs) {
   .feed-item {
     padding: 14px 16px;
     gap: 10px;
@@ -191,6 +192,13 @@ const formatTime = (value) => value ? dateTimeFormatter.format(new Date(value)) 
 
   .feed-image {
     height: 100px;
+  }
+}
+
+/* 触屏：地点链接热区 40px */
+@include coarse-pointer {
+  .feed-poi {
+    min-height: 40px;
   }
 }
 </style>

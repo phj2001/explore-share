@@ -115,20 +115,35 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { computed, ref } from 'vue'
 import { RefreshRight, Search } from '@element-plus/icons-vue'
 import { getAdminOperationLogPage } from '@/api/adminOperationLog'
+import { useAdminList } from '@/composables/useAdminList'
 
 const moduleOptions = ['公告管理', '活动管理', '路线管理', '用户管理', '内容管理', '举报审核', '地点分类']
 
 const keyword = ref('')
 const moduleName = ref()
-const currentPage = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const logs = ref([])
-const loading = ref(false)
+
+const {
+  list: logs,
+  loading,
+  currentPage,
+  pageSize,
+  total,
+  load: loadLogs,
+  search: handleSearch,
+  reset,
+  handlePageSizeChange
+} = useAdminList({
+  fetchPage: ({ page, size }) => getAdminOperationLogPage({
+    keyword: keyword.value.trim() || undefined,
+    moduleName: moduleName.value || undefined,
+    page,
+    size
+  }),
+  errorMessage: '加载系统日志失败'
+})
 
 const activeFilters = computed(() => {
   const items = []
@@ -156,40 +171,10 @@ const heroStats = computed(() => {
   ]
 })
 
-const loadLogs = async () => {
-  loading.value = true
-  try {
-    const data = await getAdminOperationLogPage({
-      keyword: keyword.value.trim() || undefined,
-      moduleName: moduleName.value || undefined,
-      page: currentPage.value - 1,
-      size: pageSize.value
-    })
-    logs.value = data.records || []
-    total.value = data.total || 0
-    currentPage.value = (data.page || 0) + 1
-  } catch (error) {
-    ElMessage.error(error.message || '加载系统日志失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleSearch = async () => {
-  currentPage.value = 1
-  await loadLogs()
-}
-
-const handlePageSizeChange = async () => {
-  currentPage.value = 1
-  await loadLogs()
-}
-
 const resetFilters = async () => {
   keyword.value = ''
   moduleName.value = undefined
-  currentPage.value = 1
-  await loadLogs()
+  await reset()
 }
 
 const removeFilter = async (key) => {
@@ -215,10 +200,6 @@ const formatDate = (value) => {
     minute: '2-digit'
   }).format(new Date(value))
 }
-
-onMounted(async () => {
-  await loadLogs()
-})
 </script>
 
 <style scoped>

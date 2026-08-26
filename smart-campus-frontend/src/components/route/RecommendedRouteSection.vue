@@ -54,7 +54,7 @@
       </article>
     </div>
 
-    <el-dialog v-model="dialogVisible" title="推荐路线详情" width="760px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" title="推荐路线详情" width="min(92vw, 760px)" destroy-on-close>
       <template v-if="selectedRoute">
         <div class="detail-layout">
           <img
@@ -193,7 +193,7 @@ const focusWaypoint = async (point) => {
 onMounted(() => loadRoutes(false))
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── RecommendedRouteSection 新设计系统 ── */
 .route-section {
   padding: 48px 0;
@@ -506,13 +506,13 @@ onMounted(() => loadRoutes(false))
 }
 
 /* 响应式 */
-@media (max-width: 1280px) {
+@include respond-to(xl) {
   .route-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 760px) {
+@include respond-to(md) {
   .route-section {
     padding: 32px 0;
   }
@@ -521,8 +521,15 @@ onMounted(() => loadRoutes(false))
     grid-template-columns: 1fr;
   }
 
+  /* 两列布局下"查看地点"按钮换到第二行右列，不与文字挤同一列 */
   .timeline-item {
     grid-template-columns: 28px minmax(0, 1fr);
+
+    :deep(.el-button) {
+      grid-column: 2;
+      justify-self: start;
+      margin-left: 0;
+    }
   }
 
   .route-actions,
@@ -532,7 +539,7 @@ onMounted(() => loadRoutes(false))
   }
 }
 
-@media (max-width: 560px) {
+@include respond-to(sm) {
   .section-header {
     flex-direction: column;
     align-items: flex-start;
@@ -561,6 +568,25 @@ onMounted(() => loadRoutes(false))
   .detail-cover {
     height: 200px;
     border-radius: 10px;
+  }
+}
+
+/* 触屏：刷新圆钮与操作按钮热区 ≥40px（primary 核心操作 44px） */
+@include coarse-pointer {
+  .refresh-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .route-actions :deep(.el-button),
+  .dialog-footer :deep(.el-button),
+  .timeline-item :deep(.el-button) {
+    min-height: 40px;
+  }
+
+  .route-actions :deep(.el-button--primary),
+  .dialog-footer :deep(.el-button--primary) {
+    min-height: 44px;
   }
 }
 </style>

@@ -359,4 +359,18 @@ body.admin-theme-active .el-overlay {
   .admin-shell .content .info-panel {
     padding: 12px 12px 8px !important;
   }
+
+  // 兜底：窄屏分页条允许换行 + 收窄页码按钮，防 sizes+多页码整体溢出
+  .admin-shell .content .el-pagination {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    justify-content: flex-end;
+    --el-pagination-button-width: 30px;
+  }
+
+  // 兜底：弹窗/抽屉宽度不超视口（固定 px 宽的 Admin 弹窗 820/1080 等自动收缩）
+  body.admin-theme-active .el-dialog,
+  body.admin-theme-active .el-drawer {
+    max-width: calc(100vw - 24px);
+  }
 }

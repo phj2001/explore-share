@@ -27,7 +27,7 @@ import { useUserStore } from '@/stores/user'
 const userStore = useUserStore()
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .site-footer {
   padding: 16px 0;
   border-top: 1px solid var(--front-border);
@@ -98,7 +98,16 @@ const userStore = useUserStore()
   color: var(--forest-700);
 }
 
-@media (max-width: 480px) {
+// 触屏热区：页脚链接撑到 40px（coarse 指针才生效，桌面鼠标不受影响）
+@include coarse-pointer {
+  .footer-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+}
+
+@include respond-to(xs) {
   .footer-inner {
     flex-direction: column;
     align-items: flex-start;

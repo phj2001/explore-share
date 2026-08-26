@@ -43,6 +43,20 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        // 全局注入响应式 mixin（断点唯一事实来源），组件内可直接 @include respond-to(md)
+        additionalData: "@use '@/assets/styles/mixins.scss' as *;\n"
+      }
+    }
+  },
+  server: {
+  host: true,                              // 监听 0.0.0.0，手机可访问
+  proxy: {
+    '/uploads': 'http://localhost:8080'    // 图片走电脑本机转发
+  }
+},
   build: {
     rollupOptions: {
       output: {

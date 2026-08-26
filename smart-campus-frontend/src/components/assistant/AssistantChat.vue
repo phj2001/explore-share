@@ -187,7 +187,7 @@ function stop() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .assistant-fab {
   position: fixed;
   right: 24px;
@@ -219,6 +219,8 @@ function stop() {
   max-width: calc(100vw - 32px);
   height: 520px;
   max-height: calc(100vh - 100px);
+  /* dvh 随移动端地址栏收放；不支持 dvh 的浏览器此行无效，自动回退上一行 */
+  max-height: calc(100dvh - 100px);
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -313,4 +315,48 @@ function stop() {
 .btn-send { background: #1f8c69; color: #fff; }
 .btn-send:disabled { background: #b9c7c2; cursor: not-allowed; }
 .btn-stop { background: #e6a23c; color: #fff; }
+
+/* 窄屏：面板贴边更紧，并避开 iPhone 底部安全区；悬浮入口同步缩小 */
+@include respond-to(md) {
+  .assistant-panel {
+    right: 12px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    max-height: calc(100vh - 80px);
+    max-height: calc(100dvh - 80px);
+  }
+
+  .assistant-fab {
+    right: 12px;
+    padding: 7px 13px;
+    border-radius: 20px;
+    font-size: 12.5px;
+  }
+
+  .fab-icon {
+    font-size: 16px;
+  }
+}
+
+/* 触屏：发送为核心操作撑 44px，悬浮入口/头部小按钮 ≥40px；输入字号 ≥16px 防 iOS 聚焦缩放 */
+@include coarse-pointer {
+  .assistant-fab {
+    min-height: 40px;
+  }
+
+  .clear-btn,
+  .close-btn {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 4px 10px;
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 8px 20px;
+  }
+
+  .input-area {
+    font-size: 16px;
+  }
+}
 </style>

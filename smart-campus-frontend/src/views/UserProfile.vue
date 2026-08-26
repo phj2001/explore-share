@@ -108,6 +108,7 @@
                     :src="url"
                     :preview-src-list="share.imageUrls"
                     fit="cover"
+                    lazy
                     preview-teleported
                     class="share-image"
                   />
@@ -455,7 +456,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* =========================================================
    个人中心 — 护照感封面 · 徽章成就墙
    ========================================================= */
@@ -881,7 +882,7 @@ onMounted(async () => {
   color: var(--ink-400);
 }
 
-@media (max-width: 768px) {
+@include respond-to(md) {
   .profile-hero {
     flex-direction: column;
     align-items: flex-start;
@@ -897,10 +898,26 @@ onMounted(async () => {
   .share-images { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (max-width: 480px) {
+@include respond-to(xs) {
   .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .profile-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .profile-tabs::-webkit-scrollbar { display: none; }
   .tab-btn { white-space: nowrap; flex-shrink: 0; }
+}
+
+/* 触屏：关注为核心操作撑 44px；tab/统计项/加载更多 ≥40px */
+@include coarse-pointer {
+  .hero-name-row :deep(.el-button) {
+    min-height: 44px;
+  }
+
+  .tab-btn,
+  .stat-item.clickable {
+    min-height: 40px;
+  }
+
+  .load-more :deep(.el-button) {
+    min-height: 40px;
+  }
 }
 </style>

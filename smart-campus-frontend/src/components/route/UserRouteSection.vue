@@ -71,7 +71,7 @@ const loadMore = () => loadData(false)
 onMounted(() => loadData(true))
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── UserRouteSection 新设计系统 ── */
 .user-route-section {
   padding: 48px 0;
@@ -154,13 +154,13 @@ onMounted(() => loadData(true))
 }
 
 /* 响应式 */
-@media (max-width: 900px) {
+@include respond-to(md) {
   .routes-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 560px) {
+@include respond-to(sm) {
   .user-route-section {
     padding: 32px 0;
   }
@@ -180,6 +180,20 @@ onMounted(() => loadData(true))
   .routes-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+}
+
+/* 触屏：创建/加载更多等操作按钮热区 ≥40px（创建路线为核心入口） */
+@include coarse-pointer {
+  .section-head :deep(.el-button),
+  .empty-cta :deep(.el-button),
+  .load-more :deep(.el-button) {
+    min-height: 40px;
+  }
+
+  .section-head :deep(.el-button--primary),
+  .empty-cta :deep(.el-button--primary) {
+    min-height: 44px;
   }
 }
 </style>

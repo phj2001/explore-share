@@ -73,7 +73,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── FeedSection 新设计系统 ── */
 .feed-section {
   padding: 48px 0;
@@ -160,7 +160,7 @@ onMounted(() => {
 }
 
 /* 响应式 */
-@media (max-width: 640px) {
+@include respond-to(sm) {
   .feed-section {
     padding: 32px 0;
   }
@@ -174,6 +174,14 @@ onMounted(() => {
     align-items: flex-start;
     gap: 12px;
     padding: 16px 18px;
+  }
+}
+
+/* 触屏：加载更多/去登录按钮热区 40px */
+@include coarse-pointer {
+  .load-more :deep(.el-button),
+  .feed-login-hint :deep(.el-button) {
+    min-height: 40px;
   }
 }
 </style>

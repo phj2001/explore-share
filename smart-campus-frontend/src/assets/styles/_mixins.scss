@@ -1,0 +1,38 @@
+// 响应式断点规范（唯一事实来源）
+// 本文件经 vite css.additionalData 注入到所有编译单元，保持自包含：勿 @use 其他项目样式（会循环注入）。
+// sass 内置模块不受此限。
+@use 'sass:map';
+
+//
+// 用法（desktop-first 降级，与项目现有 max-width 写法一致）：
+//   @include respond-to(md) { ... }        →  @media (max-width: 768px) { ... }
+//   @include coarse-pointer { ... }        →  @media (pointer: coarse) { ... }   // 触屏热区优化
+
+// 5 档断点收敛（替代历史上 19 种零散值，旧值就近归并）
+$bp-xs: 480px;  // 小手机        ← 旧 480/520
+$bp-sm: 640px;  // 大手机        ← 旧 560/640
+$bp-md: 768px;  // 平板竖屏/移动态切换线 ← 旧 760/720/860/900/960
+$bp-lg: 1024px; // 平板横屏      ← 旧 1024/1080/1100/1120
+$bp-xl: 1280px; // 小桌面        ← 旧 1180/1200/1240/1280/1440
+
+$breakpoints: (
+  xs: $bp-xs,
+  sm: $bp-sm,
+  md: $bp-md,
+  lg: $bp-lg,
+  xl: $bp-xl
+);
+
+// 按断点降级查询（max-width）
+@mixin respond-to($bp) {
+  @media (max-width: map.get($breakpoints, $bp)) {
+    @content;
+  }
+}
+
+// 触控设备（无精确指针）：热区/字号优化分支
+@mixin coarse-pointer {
+  @media (pointer: coarse) {
+    @content;
+  }
+}

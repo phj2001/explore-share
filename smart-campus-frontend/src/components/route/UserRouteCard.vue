@@ -1,7 +1,7 @@
 <template>
   <router-link :to="'/route/' + route.id" class="route-card">
     <div v-if="route.coverImageUrl" class="route-cover">
-      <el-image :src="route.coverImageUrl" fit="cover" class="cover-img" />
+      <el-image :src="route.coverImageUrl" fit="cover" lazy class="cover-img" />
     </div>
     <div class="route-body">
       <h3>{{ route.title }}</h3>
@@ -33,7 +33,7 @@ const modeLabels = { walking: '步行', cycling: '骑行', driving: '驾车' }
 const modeLabel = computed(() => modeLabels[props.route.defaultMode] || props.route.defaultMode)
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── UserRouteCard 新设计系统 ── */
 .route-card {
   display: flex;

@@ -85,12 +85,15 @@
           <el-icon><Search /></el-icon>
         </button>
         <NotificationBell v-if="userStore.isLoggedIn" />
-        <router-link v-if="userStore.isLoggedIn" to="/settings" class="mobile-avatar-link">
+        <router-link v-if="userStore.isLoggedIn" to="/settings" class="mobile-avatar-link" aria-label="个人中心">
           <el-avatar :size="32" :src="avatarUrl || undefined" class="profile-avatar">
             {{ displayName.slice(0, 1).toUpperCase() }}
           </el-avatar>
         </router-link>
         <router-link v-else to="/login" class="mobile-login-link">登录</router-link>
+        <button class="mobile-btn mobile-btn--menu" aria-label="打开菜单" @click="mobileMenuVisible = true">
+          <el-icon><Menu /></el-icon>
+        </button>
       </div>
 
     </div>
@@ -108,6 +111,59 @@
         <button class="search-btn" @click="handleSearch">探索</button>
       </div>
     </div>
+
+    <!-- 移动端导航抽屉：恢复窄屏下丢失的全部入口（首页/个人中心/后台/退出登录）
+         append-to-body：逃逸 site-header(sticky, z-index:1000) 的层叠上下文，
+         避免抽屉遮罩/面板被地图浮层(z-index 1100~2000)遮挡 -->
+    <el-drawer
+      v-model="mobileMenuVisible"
+      direction="rtl"
+      size="min(78vw, 320px)"
+      :with-header="false"
+      class="mobile-menu-drawer"
+      append-to-body
+    >
+      <div class="mobile-menu">
+        <div v-if="userStore.isLoggedIn" class="menu-user">
+          <el-avatar :size="44" :src="avatarUrl || undefined" class="profile-avatar">
+            {{ displayName.slice(0, 1).toUpperCase() }}
+          </el-avatar>
+          <div class="menu-user-info">
+            <strong>{{ displayName }}</strong>
+            <span>已登录</span>
+          </div>
+        </div>
+        <div v-else class="menu-user menu-user--guest">
+          <strong>欢迎来到地点探索</strong>
+          <span>登录后可分享地点、创建路线</span>
+        </div>
+
+        <nav class="menu-links">
+          <router-link to="/" class="menu-link" @click="closeMobileMenu">
+            <el-icon><Compass /></el-icon>
+            <span>探索首页</span>
+          </router-link>
+          <router-link v-if="userStore.isLoggedIn" to="/settings" class="menu-link" @click="closeMobileMenu">
+            <el-icon><User /></el-icon>
+            <span>个人中心</span>
+          </router-link>
+          <router-link
+            v-if="userStore.isAdminOrAbove"
+            to="/admin/overview"
+            class="menu-link menu-link--admin"
+            @click="closeMobileMenu"
+          >
+            <el-icon><Grid /></el-icon>
+            <span>后台管理</span>
+          </router-link>
+        </nav>
+
+        <div class="menu-footer">
+          <button v-if="userStore.isLoggedIn" class="menu-logout" @click="handleLogoutFromMenu">退出登录</button>
+          <router-link v-else to="/login" class="menu-login" @click="closeMobileMenu">登录 / 注册</router-link>
+        </div>
+      </div>
+    </el-drawer>
   </header>
 </template>
 
@@ -115,7 +171,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Compass, Grid, Menu, Search, User } from '@element-plus/icons-vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import { usePOIStore } from '@/stores/poi'
 import { useUserStore } from '@/stores/user'
@@ -128,6 +184,16 @@ const searchText = ref('')
 const selectedCategory = ref('')
 const poiCategories = ref([])
 const mobileSearchVisible = ref(false)
+const mobileMenuVisible = ref(false)
+
+const closeMobileMenu = () => {
+  mobileMenuVisible.value = false
+}
+
+const handleLogoutFromMenu = async () => {
+  closeMobileMenu()
+  await handleLogout()
+}
 
 const displayName = computed(() => userStore.displayName || '当前用户')
 const avatarUrl = computed(() => userStore.avatarUrl)
@@ -204,7 +270,7 @@ const toggleMobileSearch = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .site-header {
   position: sticky;
   top: 0;
@@ -468,12 +534,27 @@ const toggleMobileSearch = () => {
 }
 .mobile-btn:hover { background: var(--paper-100); }
 
+/* 菜单（核心导航入口，随页眉收窄同步缩小） */
+.mobile-btn--menu {
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+}
+
 .mobile-avatar-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 999px;
   text-decoration: none;
 }
 
 .mobile-login-link {
-  padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
   border-radius: 999px;
   background: var(--forest-700);
   color: #fff;
@@ -495,15 +576,139 @@ const toggleMobileSearch = () => {
   align-items: center;
 }
 
-/* 响应式 */
-@media (max-width: 1100px) {
+/* 移动端导航抽屉：append-to-body 后抽屉 teleport 到 body，scoped :deep 选择器不再命中，
+   改用 :global（mobile-menu-drawer class 为本组件专属，无全局污染） */
+:global(.mobile-menu-drawer .el-drawer__body) {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-menu {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 18px;
+}
+
+.menu-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--paper-50, #f7faf7);
+  border: 1px solid var(--front-border);
+}
+
+.menu-user--guest {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.menu-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.menu-user strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.menu-user span {
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+.menu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-800);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.menu-link .el-icon {
+  font-size: 18px;
+  color: var(--forest-600);
+}
+.menu-link.router-link-active {
+  background: var(--forest-50);
+  color: var(--forest-700);
+}
+.menu-link--admin .el-icon {
+  color: var(--ink-500);
+}
+
+.menu-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-logout {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--front-border);
+  background: #fff;
+  color: var(--ink-600);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.menu-logout:hover {
+  background: var(--paper-100);
+  color: var(--ink-800);
+}
+
+.menu-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  background: var(--forest-700);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.menu-login:hover {
+  background: var(--forest-800);
+  color: #fff;
+}
+
+/* 响应式（断点统一走 _mixins.scss 的 respond-to） */
+@include respond-to(lg) {
   .header-inner {
     grid-template-columns: auto 1fr auto;
   }
   .brand-sub { display: none; }
 }
 
-@media (max-width: 860px) {
+@include respond-to(md) {
   .header-inner {
     grid-template-columns: auto 1fr auto;
   }
@@ -513,18 +718,24 @@ const toggleMobileSearch = () => {
   .logout-btn { display: none; }
 }
 
-@media (max-width: 640px) {
+@include respond-to(sm) {
   .header-inner {
     grid-template-columns: auto auto;
     justify-content: space-between;
-    padding: 10px 0;
+    padding: 8px 0;
   }
   .search-bar { display: none; }
   .nav-right { display: none; }
   .mobile-actions { display: flex; }
+
+  /* 收窄手机页眉：品牌标同步缩小（桌面 ≥640px 保持原尺寸） */
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+  }
 }
 
-@media (max-width: 480px) {
+@include respond-to(xs) {
   .brand-copy strong { font-size: 15px; }
 }
 </style>

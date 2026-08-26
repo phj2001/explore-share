@@ -27,7 +27,7 @@ const scrollTo = (id) => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── HeroBanner 新设计系统 ── */
 
 /* 等高线背景装饰（SVG data URI，浅色翠绿等高线） */
@@ -58,7 +58,7 @@ const scrollTo = (id) => {
   top: 18px;
   right: 24px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.16em;
   color: var(--ink-400);
   opacity: 0.8;
@@ -132,7 +132,14 @@ const scrollTo = (id) => {
 }
 
 /* 响应式 */
-@media (max-width: 768px) {
+// 触屏热区：chip 撑到 40px（coarse 指针才生效）
+@include coarse-pointer {
+  .nav-chip {
+    min-height: 40px;
+  }
+}
+
+@include respond-to(md) {
   .hero-banner {
     padding: 36px 24px 32px;
     border-radius: 14px;
@@ -155,7 +162,7 @@ const scrollTo = (id) => {
   }
 }
 
-@media (max-width: 480px) {
+@include respond-to(xs) {
   .hero-banner {
     padding: 28px 18px 26px;
     background-image: linear-gradient(150deg, var(--paper-50) 0%, var(--forest-50) 100%);

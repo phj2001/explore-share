@@ -217,9 +217,10 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .route-detail-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -455,7 +456,7 @@ onUnmounted(() => {
   text-decoration: underline;
 }
 
-@media (max-width: 640px) {
+@include respond-to(sm) {
   .route-hero {
     flex-direction: column;
     padding: 20px;
@@ -475,6 +476,19 @@ onUnmounted(() => {
 
   .route-map {
     height: 280px;
+  }
+}
+
+/* 触屏：点赞/收藏为核心操作撑 44px；查看 POI 链接撑 40px */
+@include coarse-pointer {
+  .hero-actions :deep(.el-button) {
+    min-height: 44px;
+  }
+
+  .wp-link {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
   }
 }
 </style>

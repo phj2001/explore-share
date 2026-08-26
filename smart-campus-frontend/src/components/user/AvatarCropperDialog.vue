@@ -2,7 +2,7 @@
   <el-dialog
     :model-value="visible"
     title="裁剪头像"
-    width="560px"
+    width="min(92vw, 560px)"
     destroy-on-close
     @close="emit('cancel')"
     @closed="handleClose"
@@ -263,7 +263,7 @@ const handleClose = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .cropper-panel {
   display: flex;
   gap: 24px;
@@ -347,7 +347,7 @@ const handleClose = () => {
   white-space: nowrap;
 }
 
-@media (max-width: 720px) {
+@include respond-to(md) {
   .cropper-panel {
     flex-direction: column;
   }
@@ -355,6 +355,17 @@ const handleClose = () => {
   .cropper-stage {
     width: min(320px, 100%);
     height: min(320px, calc(100vw - 96px));
+  }
+}
+
+/* 触屏：确认裁剪为核心操作撑 44px */
+@include coarse-pointer {
+  :deep(.el-button) {
+    min-height: 40px;
+  }
+
+  :deep(.el-button--primary) {
+    min-height: 44px;
   }
 }
 </style>

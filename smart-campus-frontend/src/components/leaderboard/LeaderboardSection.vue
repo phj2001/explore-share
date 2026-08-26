@@ -99,7 +99,7 @@ watch([activeType, activePeriod], () => loadData())
 onMounted(() => loadData())
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── LeaderboardSection 新设计系统 ── */
 .leaderboard-section {
   padding: 48px 0;
@@ -274,13 +274,13 @@ onMounted(() => loadData())
 }
 
 /* 响应式 */
-@media (max-width: 900px) {
+@include respond-to(md) {
   .leaderboard-list {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 640px) {
+@include respond-to(sm) {
   .leaderboard-section {
     padding: 32px 0;
   }
@@ -296,6 +296,18 @@ onMounted(() => loadData())
 
   .section-head h2 {
     font-size: 20px;
+  }
+}
+
+/* 触屏：tab 切换与排行项撑足热区 */
+@include coarse-pointer {
+  .tab-btn,
+  .period-btn {
+    min-height: 40px;
+  }
+
+  .leaderboard-item {
+    min-height: 48px;
   }
 }
 </style>

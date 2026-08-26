@@ -653,7 +653,7 @@ onMounted(() => loadProfile())
 onBeforeUnmount(() => revokeCropperUrl())
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .settings-page {
   min-height: 100vh;
   display: flex;
@@ -1257,7 +1257,7 @@ onBeforeUnmount(() => revokeCropperUrl())
 }
 
 /* ---- Responsive ---- */
-@media (max-width: 1080px) {
+@include respond-to(lg) {
   .tab-grid,
   .favorites-grid,
   .routes-grid,
@@ -1266,19 +1266,20 @@ onBeforeUnmount(() => revokeCropperUrl())
   }
 }
 
-@media (max-width: 720px) {
+@include respond-to(md) {
   .settings-main { padding-top: 16px; }
   .profile-strip { padding: 16px 18px; }
   .social-grid { grid-template-columns: 1fr; }
   .card-head { flex-direction: column; align-items: flex-start; }
 }
 
-@media (max-width: 560px) {
+@include respond-to(sm) {
   .settings-main { padding: 12px 0 22px; }
   .settings-shell { gap: 14px; }
   .profile-strip { padding: 14px 16px; }
   .profile-name { font-size: 18px; }
   .profile-bio { max-width: 200px; }
+  .tab-grid,
   .favorites-grid,
   .routes-grid,
   .ach-grid {
@@ -1290,6 +1291,43 @@ onBeforeUnmount(() => revokeCropperUrl())
   }
   .settings-tabs :deep(.el-tabs__content) {
     padding: 16px;
+  }
+}
+
+/* 触屏：保存/更新密码为核心操作撑 44px；子标签与加载更多 ≥40px；输入 ≥16px 防 iOS 聚焦缩放 */
+@include coarse-pointer {
+  .settings-card :deep(.el-button--primary),
+  .settings-card :deep(.el-button--danger) {
+    min-height: 44px;
+  }
+
+  .load-more-row :deep(.el-button) {
+    min-height: 40px;
+  }
+
+  .sub-tab-btn {
+    min-height: 40px;
+  }
+
+  :deep(.el-input__inner),
+  :deep(.el-textarea__inner) {
+    font-size: 16px;
+  }
+
+  /* 触屏：tabs 直接手指横滑（替代热区极小的左右箭头） */
+  .settings-tabs :deep(.el-tabs__nav-scroll) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .settings-tabs :deep(.el-tabs__nav-scroll::-webkit-scrollbar) {
+    display: none;
+  }
+
+  .settings-tabs :deep(.el-tabs__nav-prev),
+  .settings-tabs :deep(.el-tabs__nav-next) {
+    display: none;
   }
 }
 </style>

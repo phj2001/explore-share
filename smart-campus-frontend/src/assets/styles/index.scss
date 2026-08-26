@@ -37,6 +37,13 @@ a {
   }
 }
 
+// 移动端弹窗兜底：任何固定宽度（px）的 el-dialog / el-message-box 不超出视口
+// 桌面端视口宽度远大于常规弹窗宽度，不受影响
+.el-dialog,
+.el-message-box {
+  max-width: calc(100vw - 24px);
+}
+
 // 滚动条
 ::-webkit-scrollbar {
   width: 6px;

@@ -63,6 +63,7 @@ declare module 'vue' {
     NotificationBell: typeof import('./components/common/NotificationBell.vue')['default']
     POIApplicationDialog: typeof import('./components/map/POIApplicationDialog.vue')['default']
     PoiCategoryBadge: typeof import('./components/common/PoiCategoryBadge.vue')['default']
+    PoiDetailDialog: typeof import('./components/map/PoiDetailDialog.vue')['default']
     PoiSharePanel: typeof import('./components/map/PoiSharePanel.vue')['default']
     RecommendedRouteSection: typeof import('./components/route/RecommendedRouteSection.vue')['default']
     RecommendedShareSection: typeof import('./components/recommendation/RecommendedShareSection.vue')['default']

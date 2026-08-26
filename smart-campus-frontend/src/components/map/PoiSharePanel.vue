@@ -28,6 +28,7 @@
           show-word-limit
           resize="none"
           placeholder="可以分享地点感受、路线体验或推荐理由"
+          @focus="handleInputFocus"
         />
 
         <el-upload
@@ -37,7 +38,7 @@
           :auto-upload="false"
           :limit="3"
           multiple
-          accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+          accept="image/*"
           :on-change="handleUploadChange"
           :on-preview="handlePreview"
           :on-remove="handleRemove"
@@ -58,10 +59,11 @@
               class="tag-input"
               placeholder="添加标签，空格分隔（最多5个）"
               maxlength="200"
+              @focus="handleInputFocus"
               @keydown.enter.prevent="submitShare"
             />
           </div>
-          <span class="upload-tip">支持 JPG / PNG / WEBP，单张不超过 5MB，最多 3 张。</span>
+          <span class="upload-tip">支持拍照或从相册选择（JPG / PNG / WEBP），最多 3 张，大图自动压缩。</span>
           <el-button type="primary" :loading="submitting" @click="submitShare">发布打卡</el-button>
         </div>
       </template>
@@ -129,6 +131,7 @@
             :src="imageUrl"
             :preview-src-list="share.imagePreviewUrls"
             fit="cover"
+            lazy
             preview-teleported
             class="share-image"
           />
@@ -201,6 +204,7 @@
                 show-word-limit
                 resize="none"
                 placeholder="写下你的回复"
+                @focus="handleInputFocus"
               />
               <div class="reply-composer-actions">
                 <span>回复会按时间顺序展示。</span>
@@ -226,14 +230,14 @@
 
     <el-empty v-else description="这个地点还没有打卡内容，来发布第一条吧" />
 
-    <el-dialog v-model="previewVisible" title="图片预览" width="640px">
+    <el-dialog v-model="previewVisible" title="图片预览" width="min(92vw, 640px)">
       <img :src="previewImageUrl" alt="预览图片" class="preview-image" />
     </el-dialog>
 
     <el-dialog
       v-model="reportDialogVisible"
       title="举报内容"
-      width="520px"
+      width="min(92vw, 520px)"
       destroy-on-close
       @closed="resetReportDialog"
     >
@@ -301,6 +305,7 @@ import { createReplyReport, createShareReport } from '@/api/contentReport'
 import { REPORT_REASON_OPTIONS, REPORT_REASON_OTHER } from '@/constants/contentReport'
 import { useUserStore } from '@/stores/user'
 import { API_ORIGIN } from '@/utils/request'
+import { compressImageFile } from '@/utils/imageCompress'
 
 const SHARE_PAGE_SIZE = 10
 const REPLY_PAGE_SIZE = 10
@@ -434,6 +439,49 @@ const resetPanel = () => {
   resetReportDialog()
 }
 
+// 进行中的压缩任务：发布前等待全部完成，避免提交原始大图
+const compressionTasks = new Set()
+
+const scheduleImageCompression = (file) => {
+  if (file.__compressed) {
+    return
+  }
+
+  const task = (async () => {
+    const original = file.raw
+    if (!original) {
+      return
+    }
+    const processed = await compressImageFile(original)
+    // 压缩期间用户可能已删除该图片
+    if (!uploadFileList.value.includes(file)) {
+      return
+    }
+
+    if (processed.size > 5 * 1024 * 1024) {
+      ElMessage.error('图片压缩后仍超过 5MB，请更换更小的图片')
+      if (file.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(file.url)
+      }
+      uploadFileList.value = uploadFileList.value.filter((item) => item !== file)
+      return
+    }
+
+    file.__compressed = true
+    if (processed !== original) {
+      if (file.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(file.url)
+      }
+      file.raw = processed
+      file.url = URL.createObjectURL(processed)
+      uploadFileList.value = [...uploadFileList.value]
+    }
+  })()
+
+  compressionTasks.add(task)
+  task.finally(() => compressionTasks.delete(task))
+}
+
 const sanitizeUploadList = (fileList) => {
   const sanitized = []
 
@@ -443,17 +491,17 @@ const sanitizeUploadList = (fileList) => {
       continue
     }
 
-    const isValidType = ['image/jpeg', 'image/png', 'image/webp'].includes(rawFile.type)
-    if (!isValidType) {
-      ElMessage.error('仅支持 JPG、PNG、WEBP 图片')
+    const isImage = rawFile.type.startsWith('image/')
+    if (!isImage) {
+      ElMessage.error('仅支持图片文件')
       if (file.url?.startsWith('blob:')) {
         URL.revokeObjectURL(file.url)
       }
       continue
     }
 
-    if (rawFile.size > 5 * 1024 * 1024) {
-      ElMessage.error('单张图片大小不能超过 5MB')
+    if (rawFile.size > 20 * 1024 * 1024) {
+      ElMessage.error('图片过大，请选择 20MB 以内的图片')
       if (file.url?.startsWith('blob:')) {
         URL.revokeObjectURL(file.url)
       }
@@ -464,6 +512,7 @@ const sanitizeUploadList = (fileList) => {
       file.url = URL.createObjectURL(rawFile)
     }
     sanitized.push(file)
+    scheduleImageCompression(file)
   }
 
   uploadFileList.value = sanitized.slice(0, 3)
@@ -484,6 +533,14 @@ const handleExceed = () => {
 const handlePreview = (file) => {
   previewImageUrl.value = file.url || ''
   previewVisible.value = true
+}
+
+// 软键盘弹出处理：等键盘动画稳定后把输入框滚到可视区中部，避免被键盘遮挡
+const handleInputFocus = (event) => {
+  const target = event.target
+  window.setTimeout(() => {
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, 300)
 }
 
 const applySharePage = (data, reset = false) => {
@@ -576,6 +633,11 @@ const loadMoreReplies = async (share) => {
 }
 
 const submitShare = async () => {
+  // 等待图片压缩完成，提交的始终是压缩后的文件
+  if (compressionTasks.size) {
+    await Promise.allSettled([...compressionTasks])
+  }
+
   const trimmedContent = shareContent.value.trim()
   const images = uploadFileList.value.map((file) => file.raw).filter(Boolean)
 
@@ -813,7 +875,7 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .share-panel {
   display: flex;
   flex-direction: column;
@@ -1140,7 +1202,7 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
 }
 
-@media (max-width: 900px) {
+@include respond-to(md) {
   .composer-actions,
   .login-tip,
   .reply-composer-actions,
@@ -1150,7 +1212,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 640px) {
+@include respond-to(sm) {
   .share-header,
   .share-card-head,
   .reply-item {
@@ -1164,6 +1226,27 @@ onBeforeUnmount(() => {
 
   .share-images {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 触屏：热区撑到 40px；输入框字号 ≥16px 防止 iOS 聚焦自动放大页面 */
+@include coarse-pointer {
+  .card-actions :deep(.el-button),
+  .share-actions :deep(.el-button),
+  .reply-more :deep(.el-button),
+  .reply-delete,
+  .reply-composer-actions :deep(.el-button) {
+    min-height: 40px;
+  }
+
+  .tag-input {
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  .composer-card :deep(.el-textarea__inner),
+  .reply-composer :deep(.el-textarea__inner) {
+    font-size: 16px;
   }
 }
 </style>

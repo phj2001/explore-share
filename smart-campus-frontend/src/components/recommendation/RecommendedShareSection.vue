@@ -116,7 +116,7 @@ const getNameInitial = (value) => (value || 'U').slice(0, 1).toUpperCase()
 onMounted(() => loadRecommendations(false))
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ── RecommendedShareSection 新设计系统 ── */
 .recommendation-section {
   padding: 48px 0;
@@ -362,13 +362,13 @@ onMounted(() => loadRecommendations(false))
 }
 
 /* 响应式 */
-@media (max-width: 1100px) {
+@include respond-to(lg) {
   .recommendation-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 720px) {
+@include respond-to(md) {
   .recommendation-section {
     padding: 32px 0;
   }
@@ -378,7 +378,7 @@ onMounted(() => loadRecommendations(false))
   }
 }
 
-@media (max-width: 560px) {
+@include respond-to(sm) {
   .section-head {
     flex-direction: column;
     align-items: flex-start;
@@ -402,6 +402,14 @@ onMounted(() => loadRecommendations(false))
   .card-body {
     padding: 12px 14px;
     gap: 8px;
+  }
+}
+
+/* 触屏：刷新按钮撑足热区 */
+@include coarse-pointer {
+  .refresh-btn {
+    width: 40px;
+    height: 40px;
   }
 }
 </style>
