@@ -15,6 +15,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -43,37 +44,31 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final LoginRiskControlService loginRiskControlService;
 
-    // ----------------------------- 注册（旧方法保持兼容）-----------------------------
-
-    @Override
-    @Transactional
-    public User register(User user) {
-        if (existsByUsername(user.getUsername())) {
-            throw new BusinessException(409, "用户名已存在，请更换后重试");
-        }
-        if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
-            throw new BusinessException(409, "邮箱已被注册，请使用其他邮箱");
-        }
-        user.setRole(UserRole.USER.getCode());
-        user.setStatus(UserStatus.ACTIVE.getCode());
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setCreatedAt(LocalDateTime.now());
-        return userRepository.save(user);
-    }
-
-    // ----------------------------- 注册（带邮箱验证）---------------------------
+    // ----------------------------- 注册（邮箱选填，填了则须验证码）----------------
 
     @Override
     @Transactional
     public User register(User user, String emailCode) {
-        // 校验邮箱验证码（带失败次数限制，防暴力枚举）
-        verifyEmailCode(REDIS_REGISTER_PREFIX + user.getEmail(), emailCode);
+        // 归一化：空白邮箱一律归 null。
+        // @Email 校验其实放行空串 ""，但 "" 会误入下方邮箱分支，且 email 列的部分唯一索引
+        // （WHERE email IS NOT NULL）会把 '' 视为已占用值，导致第二个空串用户撞唯一索引 500。
+        String email = StringUtils.hasText(user.getEmail()) ? user.getEmail().trim() : null;
+        user.setEmail(email);
 
+        // 先查用户名重复：注定失败的请求不白白消耗有效的邮箱验证码
         if (existsByUsername(user.getUsername())) {
             throw new BusinessException(409, "用户名已存在，请更换后重试");
         }
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new BusinessException(409, "邮箱已被注册，请使用其他邮箱");
+        if (email != null) {
+            if (!StringUtils.hasText(emailCode)) {
+                throw new BusinessException(400, "请输入邮箱验证码");
+            }
+            // 邮箱重复也放在验码之前：同理不烧掉用户已获取的验证码
+            if (userRepository.existsByEmail(email)) {
+                throw new BusinessException(409, "邮箱已被注册，请使用其他邮箱");
+            }
+            // 校验邮箱验证码（带失败次数限制，防暴力枚举）
+            verifyEmailCode(REDIS_REGISTER_PREFIX + email, emailCode.trim());
         }
         user.setRole(UserRole.USER.getCode());
         user.setStatus(UserStatus.ACTIVE.getCode());

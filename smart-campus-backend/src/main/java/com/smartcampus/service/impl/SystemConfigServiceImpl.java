@@ -169,6 +169,15 @@ public class SystemConfigServiceImpl implements SystemConfigService {
                 false,
                 value -> normalizeInt(value, 1, 20, "最近分享展示数量必须是 1 到 20 的整数")
         ));
+        definitions.put(SystemConfigService.ADMIN_CONTACT, new ConfigDefinition(
+                SystemConfigService.ADMIN_CONTACT,
+                "管理员联系方式",
+                "展示在登录页忘记密码流程中，供未绑定邮箱的用户联系管理员重置密码；留空表示未配置，前端不展示联系方式。",
+                "STRING",
+                "",
+                true,
+                SystemConfigServiceImpl::normalizeText
+        ));
         return definitions;
     }
 
@@ -196,6 +205,21 @@ public class SystemConfigServiceImpl implements SystemConfigService {
             throw new BusinessException(400, message);
         }
         return normalized;
+    }
+
+    /**
+     * 文本类配置归一化：null/空白返回空串（允许管理员清空配置，"清空"与"未配置"统一收敛为空串），
+     * 否则 trim 后限制长度。
+     */
+    private static String normalizeText(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() > 255) {
+            throw new BusinessException(400, "文本长度不能超过255个字符");
+        }
+        return trimmed;
     }
 
     private record ConfigDefinition(

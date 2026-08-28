@@ -8,11 +8,6 @@ import java.util.Optional;
 public interface AuthService {
 
     /**
-     * 用户注册
-     */
-    User register(User user);
-
-    /**
      * 用户登录验证（返回包含token的响应）
      * @return 验证成功返回LoginResponse，失败返回空
      */
@@ -60,7 +55,7 @@ public interface AuthService {
     void resetPassword(String email, String code, String newPassword);
 
     /**
-     * 注册（含邮箱验证码校验）
+     * 注册：邮箱选填。填写邮箱则须校验邮箱验证码；留空直接注册。
      */
     User register(User user, String emailCode);
 }

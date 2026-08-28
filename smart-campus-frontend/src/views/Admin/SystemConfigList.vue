@@ -42,13 +42,13 @@
 
         <el-table-column label="类型" width="110">
           <template #default="{ row }">
-            <el-tag :type="row.valueType === 'BOOLEAN' ? 'warning' : 'primary'" effect="plain">
-              {{ row.valueType === 'BOOLEAN' ? '布尔值' : '整数' }}
+            <el-tag :type="TYPE_META[row.valueType]?.tag || 'primary'" effect="plain">
+              {{ TYPE_META[row.valueType]?.label || row.valueType }}
             </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column label="当前值" width="140">
+        <el-table-column label="当前值" width="140" show-overflow-tooltip>
           <template #default="{ row }">
             <strong class="value-text">{{ formatValue(row) }}</strong>
           </template>
@@ -109,11 +109,20 @@
               inactive-text="关闭"
             />
             <el-input-number
-              v-else
+              v-else-if="editingConfig.valueType === 'INTEGER'"
               v-model="integerValue"
               :min="1"
               :max="20"
               controls-position="right"
+            />
+            <el-input
+              v-else
+              v-model="textValue"
+              type="textarea"
+              :rows="2"
+              maxlength="255"
+              show-word-limit
+              placeholder="留空表示未配置"
             />
           </el-form-item>
         </el-form>
@@ -141,6 +150,15 @@ const configs = ref([])
 const editingConfig = ref(null)
 const integerValue = ref(1)
 const booleanValue = ref(false)
+// 文本类配置（如管理员联系方式）的编辑值；空串即"清空/未配置"
+const textValue = ref('')
+
+// 配置类型元信息：类型列 tag 样式与文案的统一映射，新增类型时在此补充
+const TYPE_META = {
+  BOOLEAN: { label: '布尔值', tag: 'warning' },
+  INTEGER: { label: '整数', tag: 'primary' },
+  STRING: { label: '文本', tag: 'info' }
+}
 
 const heroStats = computed(() => {
   const total = configs.value.length
@@ -171,6 +189,7 @@ const openEditDialog = (config) => {
   editingConfig.value = { ...config }
   booleanValue.value = config.value === 'true'
   integerValue.value = Number(config.value || config.defaultValue || 1)
+  textValue.value = config.value || ''
   dialogVisible.value = true
 }
 
@@ -179,9 +198,15 @@ const handleSave = async () => {
     return
   }
 
-  const nextValue = editingConfig.value.valueType === 'BOOLEAN'
-    ? String(booleanValue.value)
-    : String(integerValue.value)
+  const valueType = editingConfig.value.valueType
+  let nextValue
+  if (valueType === 'BOOLEAN') {
+    nextValue = String(booleanValue.value)
+  } else if (valueType === 'STRING') {
+    nextValue = textValue.value.trim()
+  } else {
+    nextValue = String(integerValue.value)
+  }
 
   saving.value = true
   try {
@@ -203,11 +228,15 @@ const resetDialog = () => {
   editingConfig.value = null
   integerValue.value = 1
   booleanValue.value = false
+  textValue.value = ''
 }
 
 const formatValue = (row) => {
   if (row.valueType === 'BOOLEAN') {
     return row.value === 'true' ? '开启' : '关闭'
+  }
+  if (row.valueType === 'STRING') {
+    return row.value || '（未配置）'
   }
   return row.value
 }
@@ -215,6 +244,9 @@ const formatValue = (row) => {
 const formatDefaultValue = (row) => {
   if (row.valueType === 'BOOLEAN') {
     return row.defaultValue === 'true' ? '开启' : '关闭'
+  }
+  if (row.valueType === 'STRING') {
+    return row.defaultValue || '（未配置）'
   }
   return row.defaultValue
 }

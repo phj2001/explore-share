@@ -16,10 +16,11 @@ public class RegisterRequest {
     @Size(min = 6, max = 100, message = "密码长度必须在6到100个字符之间")
     private String password;
 
-    @NotBlank(message = "邮箱不能为空")
+    /** 选填：填写则走邮箱验证码流程；留空可直接注册（空白由 Service 层归一化为 null） */
     @Email(message = "邮箱格式不正确")
+    @Size(max = 255, message = "邮箱长度不能超过255个字符")
     private String email;
 
-    @NotBlank(message = "邮箱验证码不能为空")
+    /** 仅在填写邮箱时必填，由 Service 层校验 */
     private String emailCode;
 }

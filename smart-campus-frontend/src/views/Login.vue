@@ -86,13 +86,14 @@
               <el-form-item label="确认密码" prop="confirmPassword">
                 <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" autocomplete="new-password" show-password />
               </el-form-item>
-              <el-form-item label="邮箱" prop="email">
-                <el-input v-model="form.email" placeholder="请输入邮箱（用于找回密码）" autocomplete="email" />
+              <el-form-item label="邮箱（选填）" prop="email">
+                <el-input v-model="form.email" placeholder="选填，用于后续找回密码" autocomplete="email" />
+                <div class="field-hint">不填邮箱可直接注册；绑定邮箱后可通过邮箱自助找回密码</div>
               </el-form-item>
-              <el-form-item label="邮箱验证码" prop="emailCode">
+              <el-form-item v-if="hasEmail" label="邮箱验证码" prop="emailCode">
                 <div class="code-row">
                   <el-input v-model="form.emailCode" placeholder="请输入验证码" class="code-input" />
-                  <el-button :disabled="registerCountdown > 0 || !form.email || sendingRegisterCode" :loading="sendingRegisterCode" class="code-btn" @click="handleSendRegisterCode">
+                  <el-button :disabled="registerCountdown > 0 || !hasEmail || sendingRegisterCode" :loading="sendingRegisterCode" class="code-btn" @click="handleSendRegisterCode">
                     {{ registerCountdown > 0 ? `${registerCountdown}s 后重发` : '获取验证码' }}
                   </el-button>
                 </div>
@@ -125,6 +126,10 @@
               <el-form-item label="注册邮箱" prop="email">
                 <el-input v-model="resetForm.email" placeholder="请输入注册时使用的邮箱" />
               </el-form-item>
+              <div class="reset-guide">
+                <p>已绑定邮箱的用户，可直接通过邮箱验证码自助重置密码。</p>
+                <p>未绑定邮箱的用户，请联系系统管理员重置密码{{ adminContact ? '：' + adminContact : '' }}。</p>
+              </div>
               <div class="submit-zone">
                 <el-button type="primary" :loading="sendingResetCode" class="submit-button" @click="handleSendResetCode">发送验证码</el-button>
                 <button type="button" class="mode-switch" @click="showForgot = false">← 返回登录</button>
@@ -169,11 +174,12 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, onUnmounted } from 'vue'
+import { computed, reactive, ref, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { checkUsername, sendRegisterCode, sendResetCode, resetPassword } from '@/api/auth.js'
+import { getPublicSystemConfigs } from '@/api/systemConfig.js'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -194,8 +200,28 @@ const form = reactive({
   emailCode: ''
 })
 
+// 邮箱选填：填了邮箱才展示验证码行并要求验证码，留空则直接注册
+const hasEmail = computed(() => Boolean(form.email?.trim()))
+// 邮箱一变即作废已输入的验证码：旧 code 对新邮箱的 Redis key 无效，
+// 拿去提交只会白白累加失败次数
+watch(() => form.email, () => { form.emailCode = '' })
+
 // ----- 忘记密码 -----
 const showForgot = ref(false)
+// 管理员联系方式（SystemConfig 公开配置 auth.adminContact）：供未绑定邮箱用户找回密码。
+// 懒加载：首次进入忘记密码页时拉取一次（接口自带 5 分钟缓存），失败静默走通用文案
+const adminContact = ref('')
+let adminContactLoaded = false
+watch(showForgot, async (visible) => {
+  if (!visible || adminContactLoaded) return
+  adminContactLoaded = true
+  try {
+    const configMap = await getPublicSystemConfigs()
+    adminContact.value = (configMap?.['auth.adminContact'] || '').trim()
+  } catch {
+    // 配置接口失败时保持通用文案（对齐首页公告的容错模式）
+  }
+})
 const resetStep = ref(1)
 const sendingResetCode = ref(false)
 const resetting = ref(false)
@@ -247,11 +273,13 @@ const rules = computed(() => {
   }
   if (!isLogin.value) {
     base.confirmPassword = [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }]
-    base.email = [
-      { required: true, message: '请输入邮箱', trigger: 'blur' },
-      { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
-    ]
-    base.emailCode = [{ required: true, message: '请输入邮箱验证码', trigger: 'blur' }]
+    // 邮箱选填：只校验格式不校验必填；填了邮箱（hasEmail）才要求验证码。
+    // rules 依赖 hasEmail 重建，表单已设 :validate-on-rule-change="false" 不会自动触发校验；
+    // 验证码行随 v-if 隐藏时 Element Plus 也不校验该字段
+    base.email = [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }]
+    if (hasEmail.value) {
+      base.emailCode = [{ required: true, message: '请输入邮箱验证码', trigger: 'blur' }]
+    }
   }
   return base
 })
@@ -292,12 +320,13 @@ const toggleMode = () => {
 
 // 发送注册验证码
 const handleSendRegisterCode = async () => {
-  if (!form.email) { ElMessage.warning('请先填写邮箱地址'); return }
+  const email = form.email.trim()
+  if (!email) { ElMessage.warning('请先填写邮箱地址'); return }
   const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailReg.test(form.email)) { ElMessage.warning('邮箱格式不正确'); return }
+  if (!emailReg.test(email)) { ElMessage.warning('邮箱格式不正确'); return }
   sendingRegisterCode.value = true
   try {
-    await sendRegisterCode(form.email)
+    await sendRegisterCode(email)
     ElMessage.success('验证码已发送，请查收邮件')
     startRegisterCountdown()
   } catch (e) {
@@ -332,7 +361,22 @@ const handleSubmit = async () => {
         ElMessage.error('用户名已存在，请更换后重试')
         return
       }
-      await userStore.register(form.username, form.password, form.email, form.emailCode)
+      // 与 username 同构：提交前 trim 回写，空白邮箱按未填写处理
+      form.email = form.email.trim()
+      if (!form.email) {
+        try {
+          await ElMessageBox.confirm('未填写邮箱将无法通过邮箱自助找回密码，确认继续注册？', '跳过邮箱验证', {
+            confirmButtonText: '继续注册',
+            cancelButtonText: '返回填写邮箱',
+            type: 'warning'
+          })
+        } catch {
+          // 取消/关闭：静默返回，绝不落入外层 catch（否则会弹"注册失败"）
+          return
+        }
+      }
+      await userStore.register(form.username, form.password,
+        form.email || null, hasEmail.value ? (form.emailCode || '').trim() : null)
       await userStore.login(form.username, form.password)
       ElMessage.success('注册成功')
     }
@@ -746,6 +790,34 @@ onUnmounted(() => {
   flex-shrink: 0;
   width: 112px;
   border-radius: 8px;
+}
+
+/* 注册页邮箱选填提示 & 忘记密码找回引导 */
+.field-hint {
+  width: 100%;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-400);
+}
+
+.reset-guide {
+  margin: 2px 0 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--front-border);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.reset-guide p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-500);
+}
+
+.reset-guide p + p {
+  margin-top: 4px;
 }
 
 .reset-success {

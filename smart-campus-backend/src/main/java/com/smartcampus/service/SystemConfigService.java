@@ -11,6 +11,7 @@ public interface SystemConfigService {
     String HOME_ANNOUNCEMENT_DEFAULT_COLLAPSED = "home.announcement.defaultCollapsed";
     String DASHBOARD_HOT_POI_LIMIT = "dashboard.hotPoi.limit";
     String DASHBOARD_RECENT_SHARE_LIMIT = "dashboard.recentShare.limit";
+    String ADMIN_CONTACT = "auth.adminContact";
 
     List<AdminSystemConfigItemResponse> getAdminConfigs();
 
