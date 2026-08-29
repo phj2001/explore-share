@@ -49,12 +49,46 @@
                     <el-form-item label="登录账号">
                       <el-input :model-value="userStore.username" disabled />
                     </el-form-item>
-                    <el-form-item label="绑定邮箱">
-                      <el-input :model-value="userStore.userInfo?.email || '暂未绑定邮箱'" disabled>
-                        <template v-if="userStore.userInfo?.email" #suffix>
+                    <el-form-item v-if="userStore.userInfo?.email" label="绑定邮箱">
+                      <el-input :model-value="userStore.userInfo?.email" disabled>
+                        <template #suffix>
                           <el-tag size="small" type="success" effect="plain">已验证</el-tag>
                         </template>
                       </el-input>
+                    </el-form-item>
+                    <el-form-item v-else label="绑定邮箱">
+                      <div class="bind-form">
+                        <p class="bind-hint">当前账号尚未绑定邮箱，绑定并验证后可通过邮箱找回密码</p>
+                        <div class="code-row">
+                          <el-input v-model="bindForm.email" placeholder="请输入邮箱地址" class="code-input" />
+                          <el-button
+                            class="code-btn"
+                            :disabled="bindCountdown > 0 || bindSending"
+                            :loading="bindSending"
+                            @click="handleSendBindCode"
+                          >
+                            {{ bindCountdown > 0 ? `${bindCountdown}s 后重发` : '获取验证码' }}
+                          </el-button>
+                        </div>
+                        <div class="code-row">
+                          <el-input
+                            v-model="bindForm.emailCode"
+                            placeholder="请输入验证码"
+                            class="code-input"
+                            maxlength="6"
+                            @keyup.enter="submitBindEmail"
+                          />
+                          <el-button
+                            type="primary"
+                            class="code-btn"
+                            :loading="bindSubmitting"
+                            @click="submitBindEmail"
+                          >
+                            绑定邮箱
+                          </el-button>
+                        </div>
+                        <p class="bind-tip">验证码 5 分钟内有效；若未收到邮件，请检查垃圾箱</p>
+                      </div>
                     </el-form-item>
                     <el-form-item label="展示名" prop="displayName">
                       <el-input v-model="profileForm.displayName" maxlength="100" show-word-limit placeholder="未设置时默认显示用户名" />
@@ -88,6 +122,50 @@
                       <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
                     </el-form-item>
                   </el-form>
+                </section>
+
+                <section class="settings-card front-panel">
+                  <div class="card-head">
+                    <div>
+                      <span class="front-kicker">隐私设置</span>
+                      <h2>主页可见性</h2>
+                    </div>
+                    <el-button type="primary" :loading="visibilitySaving" @click="submitVisibility">保存设置</el-button>
+                  </div>
+                  <el-radio-group v-model="visibilityForm.profileVisibility" class="visibility-group">
+                    <el-radio :value="0" class="visibility-option">
+                      <div class="visibility-text">
+                        <strong>公开</strong>
+                        <span>所有人都可以查看你的主页、分享与成就</span>
+                      </div>
+                    </el-radio>
+                    <el-radio :value="1" class="visibility-option">
+                      <div class="visibility-text">
+                        <strong>仅关注者</strong>
+                        <span>只有你和关注你的人可以查看你的内容</span>
+                      </div>
+                    </el-radio>
+                    <el-radio :value="2" class="visibility-option">
+                      <div class="visibility-text">
+                        <strong>仅自己</strong>
+                        <span>除你以外，任何人无法查看你的主页内容</span>
+                      </div>
+                    </el-radio>
+                  </el-radio-group>
+                  <p class="visibility-tip">地图上的公开分享与排行榜不受此设置影响，这里只控制个人主页的可见范围。</p>
+                </section>
+
+                <section class="settings-card front-panel danger-card">
+                  <div class="card-head">
+                    <div>
+                      <span class="front-kicker danger-kicker">危险操作</span>
+                      <h2>危险区域</h2>
+                    </div>
+                  </div>
+                  <div class="danger-body">
+                    <p>注销后账号信息将被匿名化清除并立即退出登录，<b>不可恢复</b>；您发布的内容将以「已注销用户」身份保留展示。</p>
+                    <el-button type="danger" plain :loading="deletingAccount" @click="handleDeleteAccount">注销账号</el-button>
+                  </div>
                 </section>
               </div>
             </el-tab-pane>
@@ -270,6 +348,15 @@
                   <div class="ach-info">
                     <strong>{{ ach.name }}</strong>
                     <span>{{ ach.description }}</span>
+                    <div v-if="!ach.unlocked && ach.progressTarget" class="ach-progress">
+                      <div class="ach-progress-track">
+                        <div
+                          class="ach-progress-fill"
+                          :style="{ width: Math.min(100, Math.round((ach.progressCurrent / ach.progressTarget) * 100)) + '%' }"
+                        ></div>
+                      </div>
+                      <span class="ach-progress-text">{{ ach.progressCurrent }}/{{ ach.progressTarget }}</span>
+                    </div>
                     <time v-if="ach.unlocked && ach.unlockedAt">{{ formatTime(ach.unlockedAt) }}</time>
                   </div>
                 </div>
@@ -295,13 +382,14 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Header from '@/components/common/Header.vue'
 import Footer from '@/components/common/Footer.vue'
 import AvatarCropperDialog from '@/components/user/AvatarCropperDialog.vue'
-import { changeMyPassword, updateMyProfile, uploadMyAvatar } from '@/api/user.js'
+import { changeMyPassword, deleteAccountApi, updateMyProfile, uploadMyAvatar } from '@/api/user.js'
+import { bindEmailApi, sendBindCodeApi } from '@/api/auth.js'
 import { useUserStore } from '@/stores/user'
 import { getUserFavorites } from '@/api/poiFavorite'
 import { getUserReviews, deleteReview } from '@/api/poiReview'
@@ -322,6 +410,14 @@ const avatarUploading = ref(false)
 const profileSaving = ref(false)
 const passwordSaving = ref(false)
 
+// ---- 邮箱补绑 / 账号注销 ----
+const bindForm = reactive({ email: '', emailCode: '' })
+const bindSending = ref(false)
+const bindSubmitting = ref(false)
+const bindCountdown = ref(0)
+let bindTimer = null
+const deletingAccount = ref(false)
+
 const activeTab = ref('account')
 const loadedTabs = ref(new Set(['account']))
 const favSubTab = ref('pois')
@@ -329,6 +425,9 @@ const routeSubTab = ref('mine')
 
 const profileForm = reactive({ displayName: '', bio: '' })
 const passwordForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
+// ---- 隐私设置（profileVisibility：0 公开 / 1 仅关注者 / 2 仅自己）----
+const visibilityForm = reactive({ profileVisibility: 0 })
+const visibilitySaving = ref(false)
 const displayName = computed(() => userStore.displayName || userStore.username || '当前用户')
 
 // ---- Avatar ----
@@ -399,8 +498,22 @@ const loadProfile = async () => {
     const profile = await userStore.fetchMyProfile()
     profileForm.displayName = profile?.displayName || ''
     profileForm.bio = profile?.bio || ''
+    visibilityForm.profileVisibility = profile?.profileVisibility ?? 0
   } catch (error) {
     ElMessage.error(error.message || '加载用户资料失败')
+  }
+}
+
+const submitVisibility = async () => {
+  visibilitySaving.value = true
+  try {
+    const profile = await updateMyProfile({ profileVisibility: visibilityForm.profileVisibility })
+    userStore.updateUserInfo(profile)
+    ElMessage.success('隐私设置已更新')
+  } catch (error) {
+    ElMessage.error(error.message || '隐私设置更新失败')
+  } finally {
+    visibilitySaving.value = false
   }
 }
 
@@ -450,6 +563,92 @@ const submitPassword = async () => {
     ElMessage.error(error.message || '密码修改失败')
   } finally {
     passwordSaving.value = false
+  }
+}
+
+// ---- 邮箱补绑（仅未绑定邮箱时展示，不支持换绑）----
+const EMAIL_REG = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const startBindCountdown = () => {
+  bindCountdown.value = 60
+  bindTimer = setInterval(() => {
+    bindCountdown.value--
+    if (bindCountdown.value <= 0) clearInterval(bindTimer)
+  }, 1000)
+}
+
+const handleSendBindCode = async () => {
+  const email = bindForm.email.trim()
+  if (!email) { ElMessage.warning('请先填写邮箱地址'); return }
+  if (!EMAIL_REG.test(email)) { ElMessage.warning('邮箱格式不正确'); return }
+  bindSending.value = true
+  try {
+    await sendBindCodeApi(email)
+    ElMessage.success('验证码已发送，请查收邮件')
+    startBindCountdown()
+  } catch (error) {
+    ElMessage.error(error.message || '发送失败，请稍后重试')
+  } finally {
+    bindSending.value = false
+  }
+}
+
+const submitBindEmail = async () => {
+  const email = bindForm.email.trim()
+  if (!EMAIL_REG.test(email)) { ElMessage.warning('请填写正确的邮箱地址'); return }
+  if (!bindForm.emailCode.trim()) { ElMessage.warning('请输入邮箱验证码'); return }
+  bindSubmitting.value = true
+  try {
+    await bindEmailApi(email, bindForm.emailCode.trim())
+    bindForm.email = ''
+    bindForm.emailCode = ''
+    ElMessage.success('邮箱绑定成功')
+    // 刷新 store，让上方只读「绑定邮箱」行立即显示新邮箱（非阻塞，失败不打扰用户）
+    userStore.fetchMyProfile().catch(() => {})
+  } catch (error) {
+    ElMessage.error(error.message || '绑定失败，请稍后重试')
+  } finally {
+    bindSubmitting.value = false
+  }
+}
+
+// 修改邮箱后旧验证码对新邮箱无效，直接清空避免误用（倒计时保留，防换邮箱绕过发送间隔）
+watch(() => bindForm.email, () => {
+  bindForm.emailCode = ''
+})
+
+// ---- 账号注销（匿名化保留内容，不可恢复）----
+const handleDeleteAccount = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '注销后账号信息将被匿名化清除并立即退出登录，该操作不可恢复；您发布的内容将以「已注销用户」身份保留展示。',
+      '注销账号',
+      { type: 'warning', confirmButtonText: '继续注销', cancelButtonText: '取消' }
+    )
+  } catch { return }
+
+  let password
+  try {
+    const { value } = await ElMessageBox.prompt('请输入登录密码以确认本次操作', '身份确认', {
+      confirmButtonText: '确认注销',
+      cancelButtonText: '取消',
+      inputType: 'password',
+      inputValidator: (v) => (v && v.trim() ? true : '请输入登录密码')
+    })
+    password = value.trim()
+  } catch { return }
+
+  deletingAccount.value = true
+  try {
+    await deleteAccountApi(password)
+    ElMessage.success('账号已注销')
+    // 后端已吊销全部 token，logout 的 401 由 skipAuthRedirect 静默处理，本地态照常清理
+    await userStore.logout()
+    router.push({ name: 'Home' })
+  } catch (error) {
+    ElMessage.error(error.message || '注销失败，请稍后重试')
+  } finally {
+    deletingAccount.value = false
   }
 }
 
@@ -651,6 +850,7 @@ const loadMoreApps = () => loadMyApps(false)
 // ---- Lifecycle ----
 onMounted(() => loadProfile())
 onBeforeUnmount(() => revokeCropperUrl())
+onUnmounted(() => clearInterval(bindTimer))
 </script>
 
 <style scoped lang="scss">
@@ -865,6 +1065,113 @@ onBeforeUnmount(() => revokeCropperUrl())
   font-size: 12px;
   line-height: 1.6;
 }
+
+/* ---- 邮箱补绑 ---- */
+.bind-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.bind-hint,
+.bind-tip {
+  margin: 0;
+  color: var(--front-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.bind-hint { color: var(--clay-700); }
+
+.code-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.code-input { flex: 1; }
+
+.code-btn {
+  flex-shrink: 0;
+  width: 112px;
+  border-radius: 8px;
+}
+
+/* ---- 隐私设置 ---- */
+.visibility-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.visibility-group :deep(.el-radio) {
+  margin-right: 0;
+  height: auto;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--front-border);
+  background: rgba(255, 255, 255, 0.72);
+  align-items: flex-start;
+}
+
+.visibility-group :deep(.el-radio.is-checked) {
+  border-color: var(--front-accent);
+  background: var(--front-accent-soft);
+}
+
+.visibility-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.visibility-text strong {
+  color: var(--front-text);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.visibility-text span {
+  color: var(--front-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.visibility-tip {
+  margin: 12px 0 0;
+  color: var(--front-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ---- 危险区域 ---- */
+.danger-card {
+  grid-column: 1 / -1;
+}
+
+.danger-kicker { color: var(--clay-700); }
+
+.danger-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  background: rgba(254, 242, 242, 0.65);
+}
+
+.danger-body p {
+  margin: 0;
+  color: var(--front-text-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.danger-body b { color: var(--clay-700); }
 
 /* ---- Sub-tab bar ---- */
 .sub-tab-bar {
@@ -1223,6 +1530,35 @@ onBeforeUnmount(() => revokeCropperUrl())
 .ach-info span   { color: var(--front-text-muted); font-size: 12px; }
 .ach-info time   { color: var(--front-text-muted); font-size: 11px; }
 
+.ach-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.ach-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--paper-200);
+  overflow: hidden;
+}
+
+.ach-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--forest-500);
+}
+
+.ach-progress-text {
+  flex-shrink: 0;
+  color: var(--ink-400);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---- Empty states ---- */
 .tab-empty {
   display: flex;
@@ -1271,6 +1607,7 @@ onBeforeUnmount(() => revokeCropperUrl())
   .profile-strip { padding: 16px 18px; }
   .social-grid { grid-template-columns: 1fr; }
   .card-head { flex-direction: column; align-items: flex-start; }
+  .danger-body { flex-direction: column; align-items: flex-start; }
 }
 
 @include respond-to(sm) {
@@ -1298,6 +1635,10 @@ onBeforeUnmount(() => revokeCropperUrl())
 @include coarse-pointer {
   .settings-card :deep(.el-button--primary),
   .settings-card :deep(.el-button--danger) {
+    min-height: 44px;
+  }
+
+  .code-btn {
     min-height: 44px;
   }
 

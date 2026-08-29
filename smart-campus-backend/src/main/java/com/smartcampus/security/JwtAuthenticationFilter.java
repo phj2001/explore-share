@@ -84,8 +84,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 redisUtils.set(cacheKey, status + ":" + role, USER_CACHE_TTL_MINUTES, TimeUnit.MINUTES);
             }
 
-            if (UserStatus.fromCode(status) == UserStatus.DISABLED) {
+            UserStatus userStatus = UserStatus.fromCode(status);
+            if (userStatus == UserStatus.DISABLED) {
                 writeUnauthorizedResponse(response, "账号已被禁用");
+                return;
+            }
+            if (userStatus == UserStatus.CANCELLED) {
+                writeUnauthorizedResponse(response, "账号已注销");
                 return;
             }
 

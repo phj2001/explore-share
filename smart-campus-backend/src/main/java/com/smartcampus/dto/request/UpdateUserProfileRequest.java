@@ -11,4 +11,7 @@ public class UpdateUserProfileRequest {
 
     @Size(max = 150, message = "个性签名不能超过150个字符")
     private String bio;
+
+    /** 个人主页可见性：0 公开 / 1 仅关注者 / 2 仅自己；null 表示不修改 */
+    private Short profileVisibility;
 }

@@ -34,3 +34,7 @@ export const getUserPublicShares = (userId, params = {}) => {
 export const getUserCheckIns = (userId, params = {}) => {
   return request.get(`/users/${userId}/checkins`, { params })
 }
+
+export const deleteAccountApi = (password) => {
+  return request.post('/users/me/account/deletion', { password })
+}

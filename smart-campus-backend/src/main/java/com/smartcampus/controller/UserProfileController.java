@@ -2,6 +2,7 @@ package com.smartcampus.controller;
 
 import com.smartcampus.dto.common.Result;
 import com.smartcampus.dto.request.ChangePasswordRequest;
+import com.smartcampus.dto.request.DeleteAccountRequest;
 import com.smartcampus.dto.request.UpdateUserProfileRequest;
 import com.smartcampus.dto.response.UserProfileResponse;
 import com.smartcampus.entity.User;
@@ -46,6 +47,16 @@ public class UserProfileController {
             @Valid @RequestBody ChangePasswordRequest request
     ) {
         userProfileService.changePassword(getCurrentUserId(authentication), request);
+        return Result.success();
+    }
+
+    /** 用户自主注销账号（匿名化保留内容），成功后当前 token 立即失效 */
+    @PostMapping("/account/deletion")
+    public Result<Void> deleteAccount(
+            Authentication authentication,
+            @Valid @RequestBody DeleteAccountRequest request
+    ) {
+        userProfileService.deleteAccount(getCurrentUserId(authentication), request.getPassword());
         return Result.success();
     }
 

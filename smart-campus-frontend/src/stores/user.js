@@ -42,7 +42,8 @@ const buildUserInfo = (data, fallbackUsername) => {
     bio: data?.bio || '',
     email: data?.email || '',
     role: data?.role ?? null,
-    status: data?.status ?? null
+    status: data?.status ?? null,
+    profileVisibility: data?.profileVisibility ?? 0
   }
 }
 

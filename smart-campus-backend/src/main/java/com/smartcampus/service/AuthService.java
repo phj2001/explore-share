@@ -58,4 +58,14 @@ public interface AuthService {
      * 注册：邮箱选填。填写邮箱则须校验邮箱验证码；留空直接注册。
      */
     User register(User user, String emailCode);
+
+    /**
+     * 发送补绑邮箱验证码（仅限 email 为空的已登录账号，不支持换绑）
+     */
+    void sendBindEmailCode(Long userId, String email);
+
+    /**
+     * 绑定邮箱：校验验证码后写入 email（仅限 email 为空的账号）
+     */
+    void bindEmail(Long userId, String email, String code);
 }

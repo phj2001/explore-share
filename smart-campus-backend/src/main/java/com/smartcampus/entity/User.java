@@ -40,6 +40,10 @@ public class User {
     @Column(name = "status", nullable = false)
     private Short status = 1;
 
+    /** 个人主页可见性：0 公开 / 1 仅关注者 / 2 仅自己（ProfileVisibility） */
+    @Column(name = "profile_visibility", nullable = false)
+    private Short profileVisibility = 0;
+
     @Column(name = "avatar_url", length = 255)
     private String avatarUrl;
 

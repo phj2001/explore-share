@@ -15,6 +15,7 @@ declare module 'vue' {
     AnnouncementSection: typeof import('./components/announcement/AnnouncementSection.vue')['default']
     AssistantChat: typeof import('./components/assistant/AssistantChat.vue')['default']
     AvatarCropperDialog: typeof import('./components/user/AvatarCropperDialog.vue')['default']
+    CheckinFootprintMap: typeof import('./components/user/CheckinFootprintMap.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElBadge: typeof import('element-plus/es')['ElBadge']

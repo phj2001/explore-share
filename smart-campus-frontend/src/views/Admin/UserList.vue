@@ -67,7 +67,7 @@
         </el-table-column>
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
-            <el-tag :type="row.status === ACTIVE_STATUS ? 'success' : 'warning'" effect="plain">
+            <el-tag :type="row.status === ACTIVE_STATUS ? 'success' : row.status === CANCELLED_STATUS ? 'info' : 'warning'" effect="plain">
               {{ getStatusLabel(row.status) }}
             </el-tag>
           </template>
@@ -94,7 +94,7 @@
               </el-button>
               <!-- 状态变更：不能操作超管账号；ADMIN 只能操作普通用户 -->
               <el-button
-                v-if="row.role !== SUPER_ADMIN_ROLE && (currentUserIsSuperAdmin || row.role === USER_ROLE)"
+                v-if="row.role !== SUPER_ADMIN_ROLE && row.status !== CANCELLED_STATUS && (currentUserIsSuperAdmin || row.role === USER_ROLE)"
                 size="small"
                 :type="row.status === ACTIVE_STATUS ? 'danger' : 'success'"
                 :disabled="isCurrentUser(row)"
@@ -139,7 +139,7 @@
               <el-tag :type="selectedUser.role === SUPER_ADMIN_ROLE ? 'danger' : selectedUser.role === ADMIN_ROLE ? 'warning' : 'info'" effect="plain">
                 {{ getRoleLabel(selectedUser.role) }}
               </el-tag>
-              <el-tag :type="selectedUser.status === ACTIVE_STATUS ? 'success' : 'warning'" effect="plain">
+              <el-tag :type="selectedUser.status === ACTIVE_STATUS ? 'success' : selectedUser.status === CANCELLED_STATUS ? 'info' : 'warning'" effect="plain">
                 {{ getStatusLabel(selectedUser.status) }}
               </el-tag>
             </div>
@@ -293,6 +293,7 @@ import { API_ORIGIN } from '@/utils/request'
 const USER_ROLE = 1
 const ACTIVE_STATUS = 1
 const DISABLED_STATUS = 0
+const CANCELLED_STATUS = 2
 
 const currentUserIsSuperAdmin = computed(() => userStore.isSuperAdmin)
 
@@ -546,7 +547,11 @@ const getRoleLabel = (role) => {
   if (role === ADMIN_ROLE) return '管理员'
   return '普通用户'
 }
-const getStatusLabel = (status) => (status === ACTIVE_STATUS ? '正常' : '禁用')
+const getStatusLabel = (status) => {
+  if (status === ACTIVE_STATUS) return '正常'
+  if (status === CANCELLED_STATUS) return '已注销'
+  return '禁用'
+}
 const isCurrentUser = (row) => row.id === currentUserId.value
 
 const resolveAvatar = (value) => {

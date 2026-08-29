@@ -36,3 +36,11 @@ export const sendResetCode = (email) => {
 export const resetPassword = (email, code, newPassword) => {
   return request.post('/auth/resetPassword', { email, code, newPassword })
 }
+
+export const sendBindCodeApi = (email) => {
+  return request.post('/auth/sendBindCode', { email })
+}
+
+export const bindEmailApi = (email, emailCode) => {
+  return request.post('/auth/bindEmail', { email, emailCode })
+}

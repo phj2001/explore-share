@@ -29,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
 
     private static final String REDIS_REGISTER_PREFIX = "email_register:";
     private static final String REDIS_RESET_PREFIX    = "email_reset:";
+    private static final String REDIS_BIND_PREFIX     = "email_bind:";
     private static final long   CODE_TTL_SECONDS      = 300L; // 5 分钟
     /** 同一验证码最多允许校验失败次数，超过即作废，防止 6 位数字码被暴力枚举 */
     private static final int    MAX_CODE_ATTEMPTS     = 5;
@@ -106,8 +107,12 @@ public class AuthServiceImpl implements AuthService {
         // 密码正确即清零失败计数——合法用户凭据已验证（即使后续因账号禁用抛异常，也先清计数）
         loginRiskControlService.clearFailures(identifier);
 
-        if (UserStatus.fromCode(user.getStatus()) == UserStatus.DISABLED) {
+        UserStatus userStatus = UserStatus.fromCode(user.getStatus());
+        if (userStatus == UserStatus.DISABLED) {
             throw new BusinessException(403, "账号已被禁用");
+        }
+        if (userStatus == UserStatus.CANCELLED) {
+            throw new BusinessException(403, "账号已注销，无法登录");
         }
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
         return Optional.of(new LoginResponse(token, user.getId(), user.getUsername(), user.getRole()));
@@ -170,6 +175,41 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.delete("user:info:" + user.getId());
     }
 
+    // ----------------------------- 补绑邮箱（仅限未绑定账号，不支持换绑）-------
+
+    @Override
+    public void sendBindEmailCode(Long userId, String email) {
+        User user = getExistingUser(userId);
+        if (StringUtils.hasText(user.getEmail())) {
+            throw new BusinessException(400, "当前账号已绑定邮箱，不支持换绑");
+        }
+        // 与 sendRegisterCode 同款顺序：防刷锁在前（409 请求同样占用 60s 发送间隔）
+        assertSendAllowed(REDIS_BIND_PREFIX + email);
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(409, "该邮箱已被其他账号绑定");
+        }
+        String code = generateCode();
+        redisTemplate.opsForValue().set(REDIS_BIND_PREFIX + email, code, CODE_TTL_SECONDS, TimeUnit.SECONDS);
+        emailService.sendBindCode(email, code);
+    }
+
+    @Override
+    @Transactional
+    public void bindEmail(Long userId, String email, String code) {
+        User user = getExistingUser(userId);
+        if (StringUtils.hasText(user.getEmail())) {
+            throw new BusinessException(400, "当前账号已绑定邮箱，不支持换绑");
+        }
+        // 先验码（成功即消耗）：竞态窗口内邮箱被他人抢绑时二次查重报 409，用户需重新获取验证码，属可接受代价
+        verifyEmailCode(REDIS_BIND_PREFIX + email, code);
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(409, "该邮箱已被其他账号绑定，请更换邮箱后重试");
+        }
+        user.setEmail(email);
+        userRepository.save(user);
+        // 补绑邮箱不改变登录凭据，无需吊销既有 token（与改密/重置密码的安全语义不同）
+    }
+
     // ----------------------------- 其他查询 -------------------------------------
 
     @Override
@@ -204,6 +244,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ----------------------------- 私有工具 -------------------------------------
+
+    private User getExistingUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(404, "用户不存在"));
+    }
 
     private String generateCode() {
         return String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));

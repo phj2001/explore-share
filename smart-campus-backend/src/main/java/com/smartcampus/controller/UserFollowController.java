@@ -37,20 +37,24 @@ public class UserFollowController {
         return Result.success(userFollowService.getFollowStatus(getOptionalUserId(authentication), userId));
     }
 
+    /** 公开接口（游客可访问）：受限查看者 403 */
     @GetMapping("/api/users/{userId}/following")
     public Result<PageResponse<FollowUserItemResponse>> getFollowingList(
             @PathVariable Long userId,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size) {
-        return Result.success(userFollowService.getFollowingList(userId, page, size));
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        return Result.success(userFollowService.getFollowingList(userId, page, size, getOptionalUserId(authentication)));
     }
 
+    /** 公开接口（游客可访问）：受限查看者 403 */
     @GetMapping("/api/users/{userId}/followers")
     public Result<PageResponse<FollowUserItemResponse>> getFollowerList(
             @PathVariable Long userId,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size) {
-        return Result.success(userFollowService.getFollowerList(userId, page, size));
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        return Result.success(userFollowService.getFollowerList(userId, page, size, getOptionalUserId(authentication)));
     }
 
     private Long getOptionalUserId(Authentication authentication) {

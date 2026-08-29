@@ -25,18 +25,28 @@ public class AchievementController {
     @GetMapping("/api/users/me/achievements")
     public Result<List<AchievementResponse>> getMyAchievements(Authentication authentication) {
         Long userId = getRequiredUserId(authentication);
-        return Result.success(achievementService.getUserAchievements(userId));
+        // 本人视角恒可见（viewer == target）
+        return Result.success(achievementService.getUserAchievements(userId, userId));
     }
 
+    /** 公开接口（游客可访问）：受限查看者 403 */
     @GetMapping("/api/users/{userId}/achievements")
-    public Result<List<AchievementResponse>> getUserAchievements(@PathVariable Long userId) {
-        return Result.success(achievementService.getUserAchievements(userId));
+    public Result<List<AchievementResponse>> getUserAchievements(@PathVariable Long userId, Authentication authentication) {
+        return Result.success(achievementService.getUserAchievements(userId, getOptionalUserId(authentication)));
     }
 
-    private Long getRequiredUserId(Authentication authentication) {
+    private Long getOptionalUserId(Authentication authentication) {
         if (authentication != null && authentication.getPrincipal() instanceof Long userId) {
             return userId;
         }
-        throw new IllegalArgumentException("未登录或登录已失效");
+        return null;
+    }
+
+    private Long getRequiredUserId(Authentication authentication) {
+        Long userId = getOptionalUserId(authentication);
+        if (userId == null) {
+            throw new IllegalArgumentException("未登录或登录已失效");
+        }
+        return userId;
     }
 }

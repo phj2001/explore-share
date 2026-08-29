@@ -1,10 +1,15 @@
 package com.smartcampus.service.impl;
 
+import com.smartcampus.annotation.OperationLog;
 import com.smartcampus.dto.request.ChangePasswordRequest;
 import com.smartcampus.dto.request.UpdateUserProfileRequest;
 import com.smartcampus.entity.User;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.security.JwtTokenProvider;
+import com.smartcampus.security.ProfileVisibility;
+import com.smartcampus.security.UserRole;
+import com.smartcampus.security.UserStatus;
+import com.smartcampus.service.EmailService;
 import com.smartcampus.service.UserProfileService;
 import com.smartcampus.service.storage.StorageCategory;
 import com.smartcampus.service.storage.StorageService;
@@ -38,6 +43,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final RedisUtils redisUtils;
     private final JwtTokenProvider jwtTokenProvider;
     private final StorageService storageService;
+    private final EmailService emailService;
 
     @Override
     @Transactional(readOnly = true)
@@ -51,6 +57,13 @@ public class UserProfileServiceImpl implements UserProfileService {
         User user = getRequiredUser(userId);
         user.setDisplayName(trimToNull(request.getDisplayName()));
         user.setBio(trimToNull(request.getBio()));
+        // 隐私档位：null 不修改；非 null 必须是合法 code（不走 trimToNull 路径）
+        if (request.getProfileVisibility() != null) {
+            if (!ProfileVisibility.isValidCode(request.getProfileVisibility())) {
+                throw new IllegalArgumentException("不支持的可见性档位");
+            }
+            user.setProfileVisibility(request.getProfileVisibility());
+        }
         return userRepository.save(user);
     }
 
@@ -77,6 +90,48 @@ public class UserProfileServiceImpl implements UserProfileService {
                 String.valueOf(System.currentTimeMillis()),
                 ttlSeconds, java.util.concurrent.TimeUnit.SECONDS);
         redisUtils.delete("user:info:" + userId);
+    }
+
+    @Override
+    @Transactional
+    @OperationLog(module = "用户", action = "注销账号", targetType = "用户",
+            targetIdSpel = "#userId", summarySpel = "'用户自主注销账号（匿名化保留内容） #' + #userId")
+    public void deleteAccount(Long userId, String password) {
+        User user = getRequiredUser(userId);
+
+        // 站点唯一的超级管理员若自主注销将导致管理端失去控制权，禁止（与管理端“不能动超管”保护一致）
+        if (user.getRole() == UserRole.SUPER_ADMIN.getCode()) {
+            throw new IllegalArgumentException("超级管理员账号不支持自主注销");
+        }
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("密码不正确");
+        }
+
+        // 匿名化前留存旧邮箱，注销成功后发送确认邮件（站内通知对已注销用户不可达）
+        String oldEmail = user.getEmail();
+
+        // 匿名化保留内容：用户行不删除，其发布的内容以「已注销用户」身份继续展示。
+        // 密码改写为随机 UUID 密文，确保原密码此后永远无法登录。
+        user.setUsername("deleted_user_" + userId);
+        user.setEmail(null);
+        user.setDisplayName("已注销用户");
+        user.setBio(null);
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setStatus(UserStatus.CANCELLED.getCode());
+        deleteOldAvatar(user.getAvatarUrl());
+        user.setAvatarUrl(null);
+        userRepository.save(user);
+
+        // 吊销该用户所有旧 token 并清缓存，强制立即下线（与 changePassword/logout 一致的安全闭环）
+        long ttlSeconds = jwtTokenProvider.getExpirationMs() / 1000 + 60;
+        redisUtils.set("jwt:revoke_before:" + userId,
+                String.valueOf(System.currentTimeMillis()),
+                ttlSeconds, java.util.concurrent.TimeUnit.SECONDS);
+        redisUtils.delete("user:info:" + userId);
+
+        if (StringUtils.hasText(oldEmail)) {
+            emailService.sendAccountDeletionNotice(oldEmail);
+        }
     }
 
     @Override

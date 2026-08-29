@@ -5,7 +5,9 @@ import java.util.Arrays;
 public enum UserStatus {
 
     DISABLED((short) 0, "DISABLED"),
-    ACTIVE((short) 1, "ACTIVE");
+    ACTIVE((short) 1, "ACTIVE"),
+    /** 已注销：用户自主注销账号后的终态（匿名化保留内容），不可登录、不可恢复 */
+    CANCELLED((short) 2, "CANCELLED");
 
     private final short code;
     private final String name;

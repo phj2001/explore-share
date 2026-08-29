@@ -14,9 +14,11 @@ public interface UserFollowService {
 
     FollowStatusResponse getFollowStatus(Long currentUserId, Long targetUserId);
 
-    PageResponse<FollowUserItemResponse> getFollowingList(Long userId, Integer page, Integer size);
+    /** viewerId 为查看者（游客为 null）；不可见时抛 403 */
+    PageResponse<FollowUserItemResponse> getFollowingList(Long userId, Integer page, Integer size, Long viewerId);
 
-    PageResponse<FollowUserItemResponse> getFollowerList(Long userId, Integer page, Integer size);
+    /** viewerId 为查看者（游客为 null）；不可见时抛 403 */
+    PageResponse<FollowUserItemResponse> getFollowerList(Long userId, Integer page, Integer size, Long viewerId);
 
     List<Long> getFollowingIds(Long userId);
 }

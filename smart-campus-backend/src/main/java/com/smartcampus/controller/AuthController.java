@@ -1,6 +1,7 @@
 package com.smartcampus.controller;
 
 import com.smartcampus.dto.common.Result;
+import com.smartcampus.dto.request.BindEmailRequest;
 import com.smartcampus.dto.request.LoginRequest;
 import com.smartcampus.dto.request.RegisterRequest;
 import com.smartcampus.dto.request.ResetPasswordRequest;
@@ -131,6 +132,26 @@ public class AuthController {
         return Result.success(null);
     }
 
+    /**
+     * 发送补绑邮箱验证码（仅限未绑定邮箱的已登录账号）
+     */
+    @PostMapping("/sendBindCode")
+    public Result<Void> sendBindCode(Authentication authentication, @Valid @RequestBody SendEmailCodeRequest request) {
+        Long userId = requireUserId(authentication);
+        authService.sendBindEmailCode(userId, request.getEmail().trim());
+        return Result.success(null);
+    }
+
+    /**
+     * 绑定邮箱：校验验证码后写入（仅限未绑定邮箱的账号，不支持换绑）
+     */
+    @PostMapping("/bindEmail")
+    public Result<Void> bindEmail(Authentication authentication, @Valid @RequestBody BindEmailRequest request) {
+        Long userId = requireUserId(authentication);
+        authService.bindEmail(userId, request.getEmail().trim(), request.getEmailCode().trim());
+        return Result.success(null);
+    }
+
     private Result<LoginResponse> doLogin(LoginRequest request) {
         // 凭证错误抛 BusinessException(401)，由 GlobalExceptionHandler 透传为真实 HTTP 401，
         // 而非 @RestController 默认的 HTTP 200（与本次"业务码透传 HTTP 状态码"改造一致）。
@@ -138,5 +159,13 @@ public class AuthController {
         return authService.login(request.getUsername(), request.getPassword())
                 .map(Result::success)
                 .orElseThrow(() -> new BusinessException(401, "用户名/邮箱或密码错误"));
+    }
+
+    /** 补绑邮箱端点位于已认证区（未加入 SecurityConfig 白名单），此处为防御性登录态校验 */
+    private Long requireUserId(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof Long userId)) {
+            throw new BusinessException(401, "未登录或登录已失效");
+        }
+        return userId;
     }
 }

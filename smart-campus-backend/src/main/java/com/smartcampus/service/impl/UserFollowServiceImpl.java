@@ -9,6 +9,7 @@ import com.smartcampus.exception.BusinessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import com.smartcampus.repository.UserFollowRepository;
 import com.smartcampus.repository.UserRepository;
+import com.smartcampus.security.ProfileVisibilityGuard;
 import com.smartcampus.service.NotificationService;
 import com.smartcampus.service.UserFollowService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class UserFollowServiceImpl implements UserFollowService {
     private final UserFollowRepository userFollowRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final ProfileVisibilityGuard profileVisibilityGuard;
 
     @Override
     @Transactional
@@ -67,12 +69,17 @@ public class UserFollowServiceImpl implements UserFollowService {
     @Override
     @Transactional(readOnly = true)
     public FollowStatusResponse getFollowStatus(Long currentUserId, Long targetUserId) {
-        getRequiredUser(targetUserId);
+        User target = getRequiredUser(targetUserId);
 
         boolean following = currentUserId != null
                 && userFollowRepository.existsByFollowerIdAndFollowingId(currentUserId, targetUserId);
         boolean follower = currentUserId != null
                 && userFollowRepository.existsByFollowerIdAndFollowingId(targetUserId, currentUserId);
+
+        // 受限查看者：两计数置 0（布尔保留，前端引导关注需要）；关注成功后无缓存残留、立即可见
+        if (!profileVisibilityGuard.isContentVisible(target, currentUserId)) {
+            return new FollowStatusResponse(following, follower, 0L, 0L);
+        }
 
         long followingCount = userFollowRepository.countByFollowerId(targetUserId);
         long followerCount = userFollowRepository.countByFollowingId(targetUserId);
@@ -82,8 +89,9 @@ public class UserFollowServiceImpl implements UserFollowService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<FollowUserItemResponse> getFollowingList(Long userId, Integer page, Integer size) {
-        getRequiredUser(userId);
+    public PageResponse<FollowUserItemResponse> getFollowingList(Long userId, Integer page, Integer size, Long viewerId) {
+        User targetUser = getRequiredUser(userId);
+        profileVisibilityGuard.checkContentVisible(targetUser, viewerId);
         Pageable pageable = buildPageable(page, size);
 
         Page<UserFollow> result = userFollowRepository.findByFollowerIdOrderByCreatedAtDesc(userId, pageable);
@@ -97,8 +105,9 @@ public class UserFollowServiceImpl implements UserFollowService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<FollowUserItemResponse> getFollowerList(Long userId, Integer page, Integer size) {
-        getRequiredUser(userId);
+    public PageResponse<FollowUserItemResponse> getFollowerList(Long userId, Integer page, Integer size, Long viewerId) {
+        User targetUser = getRequiredUser(userId);
+        profileVisibilityGuard.checkContentVisible(targetUser, viewerId);
         Pageable pageable = buildPageable(page, size);
 
         Page<UserFollow> result = userFollowRepository.findByFollowingIdOrderByCreatedAtDesc(userId, pageable);

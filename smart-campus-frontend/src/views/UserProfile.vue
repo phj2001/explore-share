@@ -15,8 +15,9 @@
             <div class="hero-info">
               <div class="hero-name-row">
                 <h1>{{ profile.displayName || profile.username }}</h1>
+                <el-tag v-if="isCancelled" size="small" type="info" effect="plain">该用户已注销</el-tag>
                 <el-button
-                  v-if="isOtherUser"
+                  v-if="isOtherUser && !isCancelled && !isPrivateProfile"
                   :type="followData.following ? 'default' : 'primary'"
                   :loading="followLoading"
                   size="small"
@@ -25,13 +26,15 @@
                   {{ followData.following ? '已关注' : '关注' }}
                 </el-button>
               </div>
-              <span class="hero-username">@{{ profile.username }}</span>
-              <p v-if="profile.bio">{{ profile.bio }}</p>
-              <time>加入于 {{ formatTime(profile.createdAt) }}</time>
+              <!-- 已注销用户隐藏 @username，避免暴露匿名化占位名中的原用户 id；受限查看者同理（后端已精简为 null） -->
+              <span v-if="!isCancelled && !contentHidden" class="hero-username">@{{ profile.username }}</span>
+              <p v-if="!contentHidden && profile.bio">{{ profile.bio }}</p>
+              <time v-if="!contentHidden">加入于 {{ formatTime(profile.createdAt) }}</time>
             </div>
           </section>
 
-          <div class="stats-bar">
+          <!-- 受限查看者后端只回精简响应（计数清零），整块隐藏避免误导 -->
+          <div v-if="!contentHidden" class="stats-bar">
             <div class="stat-item">
               <strong>{{ profile.checkInCount }}</strong>
               <span>打卡</span>
@@ -58,6 +61,22 @@
             </div>
           </div>
 
+          <!-- 受限查看者占位卡：仅关注者档给关注引导，仅自己档纯提示 -->
+          <div v-if="contentHidden" class="locked-placeholder front-panel">
+            <div class="locked-icon">&#128274;</div>
+            <h3>{{ isPrivateProfile ? '该用户内容仅自己可见' : '该用户仅对关注者可见' }}</h3>
+            <p>{{ isPrivateProfile ? '对方将主页设置为仅自己可见，你无法查看 TA 的内容。' : '关注 TA 之后，即可查看 TA 的分享、打卡足迹与成就。' }}</p>
+            <el-button
+              v-if="!isPrivateProfile && isOtherUser && !isCancelled"
+              :type="followData.following ? 'default' : 'primary'"
+              :loading="followLoading"
+              @click="toggleFollow"
+            >
+              {{ followData.following ? '已关注，即将加载' : '关注并查看' }}
+            </el-button>
+          </div>
+
+          <template v-else>
           <div class="profile-tabs">
             <button
               :class="['tab-btn', { active: activeTab === 'shares' }]"
@@ -95,13 +114,14 @@
             <el-skeleton v-if="sharesLoading && !shares.length" :rows="4" animated />
 
             <div v-else-if="shares.length" class="shares-list">
-              <div v-for="share in shares" :key="share.id" class="share-card">
+              <div v-for="share in shares" :key="share.id" class="share-card" @click="goToPoi(share.poiId)">
                 <div class="share-card-head">
                   <strong>{{ profile.displayName || profile.username }}</strong>
                   <time>{{ formatTime(share.createdAt) }}</time>
                 </div>
                 <p v-if="share.content" class="share-content">{{ share.content }}</p>
-                <div v-if="share.imageUrls?.length" class="share-images">
+                <!-- @click.stop：点图进大图预览，不触发整卡跳转 -->
+                <div v-if="share.imageUrls?.length" class="share-images" @click.stop>
                   <el-image
                     v-for="(url, i) in share.imageUrls"
                     :key="i"
@@ -114,7 +134,14 @@
                   />
                 </div>
                 <div class="share-stats">
-                  <span>{{ share.likeCount || 0 }} 赞</span>
+                  <button
+                    class="like-btn"
+                    :class="{ liked: share.likedByCurrentUser }"
+                    :disabled="share.likeLoading"
+                    @click.stop="toggleShareLike(share)"
+                  >
+                    {{ share.likedByCurrentUser ? '♥' : '♡' }} {{ share.likeCount || 0 }} 赞
+                  </button>
                   <span>{{ share.replyCount || 0 }} 回复</span>
                 </div>
               </div>
@@ -130,11 +157,22 @@
           <div v-if="activeTab === 'checkins'" class="tab-content">
             <el-skeleton v-if="checkinsLoading && !checkins.length" :rows="4" animated />
 
-            <div v-else-if="checkins.length" class="checkins-grid">
-              <div v-for="item in checkins" :key="item.checkInId" class="checkin-card">
-                <span class="checkin-category">{{ item.category }}</span>
-                <strong>{{ item.poiName }}</strong>
-                <time>{{ formatTime(item.checkedInAt) }}</time>
+            <div v-else-if="checkins.length" class="checkins-block">
+              <!-- 足迹地图：同点多卡去重打点，分类色沿用 poiSymbol 体系 -->
+              <div class="footprint-card front-panel">
+                <div class="footprint-head">
+                  <span class="front-kicker">Footprint</span>
+                  <span class="footprint-count">{{ checkins.length }} 条打卡 · {{ footprintPoiCount }} 个地点</span>
+                </div>
+                <CheckinFootprintMap :checkins="checkins" />
+              </div>
+
+              <div class="checkins-grid">
+                <div v-for="item in checkins" :key="item.checkInId" class="checkin-card">
+                  <span class="checkin-category">{{ item.category }}</span>
+                  <strong>{{ item.poiName }}</strong>
+                  <time>{{ formatTime(item.checkedInAt) }}</time>
+                </div>
               </div>
             </div>
 
@@ -215,6 +253,16 @@
                 <div class="badge-info">
                   <strong>{{ ach.name }}</strong>
                   <span>{{ ach.description }}</span>
+                  <!-- 未解锁且有规则的成就显示进度条，后端已将当前值封顶于阈值 -->
+                  <div v-if="!ach.unlocked && ach.progressTarget" class="ach-progress">
+                    <div class="ach-progress-track">
+                      <div
+                        class="ach-progress-fill"
+                        :style="{ width: Math.min(100, Math.round((ach.progressCurrent / ach.progressTarget) * 100)) + '%' }"
+                      ></div>
+                    </div>
+                    <span class="ach-progress-text">{{ ach.progressCurrent }}/{{ ach.progressTarget }}</span>
+                  </div>
                   <time v-if="ach.unlocked">{{ formatTime(ach.unlockedAt) }}</time>
                 </div>
               </div>
@@ -222,6 +270,7 @@
 
             <el-empty v-else description="暂无成就" />
           </div>
+          </template>
         </template>
 
         <el-empty v-else description="用户不存在" />
@@ -234,7 +283,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import Header from '@/components/common/Header.vue'
 import Footer from '@/components/common/Footer.vue'
@@ -242,8 +291,11 @@ import { useUserStore } from '@/stores/user'
 import { getUserCheckIns, getUserPublicProfile, getUserPublicShares } from '@/api/user'
 import { followUser, unfollowUser, getFollowStatus, getFollowingList, getFollowerList } from '@/api/userFollow'
 import { getUserAchievements } from '@/api/achievement'
+import { likePoiShare, unlikePoiShare } from '@/api/poiShare'
+import CheckinFootprintMap from '@/components/user/CheckinFootprintMap.vue'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 const PAGE_SIZE = 10
@@ -292,6 +344,23 @@ const isOtherUser = computed(() => {
   return userStore.userInfo?.id !== profile.value.userId
 })
 
+// 已注销用户（UserStatus.CANCELLED = 2）：内容保留可浏览，但隐藏身份标识与关注入口
+const isCancelled = computed(() => profile.value?.status === 2)
+
+// 主页可见性受限（ProfileVisibility：0 公开 / 1 仅关注者 / 2 仅自己）：后端 profile 只回精简响应
+const contentHidden = computed(() => profile.value?.contentVisible === false)
+const isPrivateProfile = computed(() => profile.value?.profileVisibility === 2)
+
+// 足迹地图卡片副标题：去重后的地点数（与地图组件内 poiId 去重口径一致）
+const footprintPoiCount = computed(() => {
+  const keys = new Set()
+  checkins.value.forEach((item) => {
+    if (item?.poiId != null) keys.add(`poi-${item.poiId}`)
+    else if (item?.latitude != null && item?.longitude != null) keys.add(`${item.latitude},${item.longitude}`)
+  })
+  return keys.size
+})
+
 const loadProfile = async (userId) => {
   loading.value = true
   try {
@@ -323,11 +392,43 @@ const toggleFollow = async () => {
       await followUser(profile.value.userId)
       followData.value.following = true
       followData.value.followerCount += 1
+      // 「仅关注者」档受限查看者关注成功后自动重载主页与分享，无需手动刷新
+      if (contentHidden.value) {
+        await loadProfile(profile.value.userId)
+        if (profile.value && !contentHidden.value) {
+          loadShares(profile.value.userId, true)
+        }
+      }
     }
   } catch (error) {
     ElMessage.error(error.message || '操作失败')
   } finally {
     followLoading.value = false
+  }
+}
+
+// 点击分享卡跳转对应地点：Home 路由消费 poiId query 并弹出 POI 详情
+const goToPoi = (poiId) => {
+  if (!poiId) return
+  router.push({ name: 'Home', query: { poiId } })
+}
+
+// 公开主页分享点赞（与地图分享面板同一套接口；游客仅提示，不强制跳登录）
+const toggleShareLike = async (share) => {
+  if (share.likeLoading) return
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('登录后可参与互动')
+    return
+  }
+  share.likeLoading = true
+  try {
+    const data = share.likedByCurrentUser ? await unlikePoiShare(share.id) : await likePoiShare(share.id)
+    share.likeCount = data?.likeCount || 0
+    share.likedByCurrentUser = Boolean(data?.likedByCurrentUser)
+  } catch (error) {
+    ElMessage.error(error.message || '点赞操作失败')
+  } finally {
+    share.likeLoading = false
   }
 }
 
@@ -338,7 +439,8 @@ const loadShares = async (userId, reset = false) => {
 
   try {
     const data = await getUserPublicShares(userId, { page: nextPage, size: PAGE_SIZE })
-    const records = data?.records || []
+    // 补 likeLoading 本地态，供点赞按钮禁用
+    const records = (data?.records || []).map((r) => ({ ...r, likeLoading: false }))
     shares.value = reset ? records : [...shares.value, ...records]
     sharesPage.value = data?.page || nextPage
     sharesHasMore.value = Boolean(data?.hasNext)
@@ -432,7 +534,8 @@ const loadAchievements = async (userId) => {
 
 const switchTab = (tab) => {
   activeTab.value = tab
-  if (!profile.value) return
+  // 受限查看者内容端点一律 403，静默 catch 会误显「还没有分享」空态，直接不请求
+  if (!profile.value || contentHidden.value) return
   const userId = profile.value.userId
 
   if (tab === 'shares' && !shares.value.length) loadShares(userId, true)
@@ -449,7 +552,8 @@ onMounted(async () => {
   await loadProfile(userId)
   if (profile.value) {
     await Promise.all([
-      loadShares(userId, true),
+      // 受限查看者跳过分享预载（403 且会误显空态）；followStatus 仍要拿，占位卡关注引导依赖它
+      contentHidden.value ? Promise.resolve() : loadShares(userId, true),
       loadFollowStatus(userId)
     ])
   }
@@ -655,6 +759,7 @@ onMounted(async () => {
   background: #fff;
   box-shadow: var(--front-shadow-soft);
   transition: border-color 0.15s;
+  cursor: pointer;
 }
 .share-card:hover { border-color: var(--forest-300); }
 
@@ -703,6 +808,7 @@ onMounted(async () => {
 .share-stats {
   margin-top: 10px;
   display: flex;
+  align-items: center;
   gap: 16px;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -710,7 +816,53 @@ onMounted(async () => {
   color: var(--ink-400);
 }
 
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-400);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.like-btn:hover:not(:disabled),
+.like-btn.liked { color: var(--clay-600); }
+
+.like-btn:disabled { cursor: default; opacity: 0.6; }
+
 /* 打卡足迹 */
+.checkins-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.footprint-card {
+  padding: 16px 18px;
+  border-radius: 14px;
+}
+
+.footprint-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.footprint-count {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-400);
+}
+
 .checkins-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -882,6 +1034,80 @@ onMounted(async () => {
   color: var(--ink-400);
 }
 
+/* ---- 成就进度条（未解锁且有规则时显示，与 Settings 同款） ---- */
+.ach-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.ach-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--paper-200);
+  overflow: hidden;
+}
+
+.ach-progress-fill {
+  height: 100%;
+  background: var(--forest-500);
+}
+
+.ach-progress-text {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-400);
+}
+
+/* ---- 受限查看者占位卡 ---- */
+.locked-placeholder {
+  padding: 56px 24px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.locked-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: var(--paper-200);
+  color: var(--ink-400);
+  margin-bottom: 4px;
+}
+
+.locked-placeholder h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink-900);
+}
+
+.locked-placeholder p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-500);
+  max-width: 380px;
+}
+
+.locked-placeholder :deep(.el-button) {
+  margin-top: 8px;
+}
+
 @include respond-to(md) {
   .profile-hero {
     flex-direction: column;
@@ -914,6 +1140,10 @@ onMounted(async () => {
   .tab-btn,
   .stat-item.clickable {
     min-height: 40px;
+  }
+
+  .like-btn {
+    min-height: 44px;
   }
 
   .load-more :deep(.el-button) {

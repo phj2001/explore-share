@@ -18,6 +18,7 @@ public class UserProfileResponse {
     private String email;
     private Short role;
     private Short status;
+    private Short profileVisibility;
     private Boolean canResetPassword;
 
     public static UserProfileResponse fromUser(User user) {
@@ -30,6 +31,7 @@ public class UserProfileResponse {
         r.setEmail(user.getEmail());
         r.setRole(user.getRole());
         r.setStatus(user.getStatus());
+        r.setProfileVisibility(user.getProfileVisibility());
         r.setCanResetPassword(Boolean.TRUE.equals(user.getCanResetPassword()));
         return r;
     }

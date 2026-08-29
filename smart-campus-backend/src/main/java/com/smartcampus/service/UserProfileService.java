@@ -13,5 +13,7 @@ public interface UserProfileService {
 
     void changePassword(Long userId, ChangePasswordRequest request);
 
+    void deleteAccount(Long userId, String password);
+
     User updateAvatar(Long userId, MultipartFile file);
 }

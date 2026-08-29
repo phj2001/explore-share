@@ -198,6 +198,16 @@ public class AdminUserServiceImpl implements AdminUserService {
             throw new BusinessException(403, "不能修改超级管理员的账号状态");
         }
 
+        // 已注销账号是用户自主注销的终态，管理端不可再变更其状态
+        if (UserStatus.fromCode(targetUser.getStatus()) == UserStatus.CANCELLED) {
+            throw new BusinessException(400, "该用户已注销，无法修改账号状态");
+        }
+
+        // 注销只能由用户本人通过自主注销流程发起，管理端不提供代注销
+        if (UserStatus.CANCELLED.getCode() == status) {
+            throw new BusinessException(400, "不支持将用户设置为已注销状态");
+        }
+
         if (operatorUser.getRole() == UserRole.ADMIN.getCode()
                 && targetUser.getRole() != UserRole.USER.getCode()) {
             throw new BusinessException(403, "管理员只能修改普通用户的账号状态");
