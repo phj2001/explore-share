@@ -2,6 +2,13 @@
 # 消除跨平台/编辑器造成的 CRLF↔LF 翻转"伪改动"（git diff -w 为空的纯空白差异）。
 * text=auto eol=crlf
 
+# shell 脚本豁免：bash 不容忍 CRLF（\r 会拼进命令/参数）。
+# CI 检出后要 scp 到 Linux VPS 执行，必须强制 LF。
+# 2026-08-30 教训：CRLF 版 deploy-backend.sh 在 VPS 报
+# "set: pipefail: invalid option name"（实为 pipefail\r），部署直接失败。
+*.sh    text eol=lf
+mvnw    text eol=lf
+
 # 二进制文件：不做行尾转换，避免被破坏
 *.png   binary
 *.jpg   binary
