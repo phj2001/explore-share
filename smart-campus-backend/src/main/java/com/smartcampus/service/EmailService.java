@@ -21,6 +21,14 @@ public class EmailService {
 
     @Async
     public void sendHtml(String to, String subject, String htmlContent) {
+        // from 未配置（MAIL_USERNAME 为空）时 setFrom("") 会抛晦涩的 "Illegal address"，
+        // 提前拦截并给出可自诊断的提示（本地需在 config/application-local.properties 补 MAIL 配置）
+        if (from == null || from.isBlank()) {
+            log.error("邮件发送失败: 发件人未配置（app.email.from / MAIL_USERNAME 为空），" +
+                    "请在 config/application-local.properties（本地）或 .env.prod（线上）补充邮箱配置。" +
+                    " to={}, subject={}", to, subject);
+            return;
+        }
         try {
             MimeMessage msg = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");

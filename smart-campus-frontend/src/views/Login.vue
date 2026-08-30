@@ -174,7 +174,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, onUnmounted, watch } from 'vue'
+import { computed, reactive, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -191,6 +191,7 @@ const isLogin = ref(true)
 const sendingRegisterCode = ref(false)
 const registerCountdown = ref(0)
 let registerTimer = null
+let registerEndTime = 0
 
 const form = reactive({
   username: '',
@@ -226,6 +227,7 @@ const resetStep = ref(1)
 const sendingResetCode = ref(false)
 const resetting = ref(false)
 const resetCountdown = ref(0)
+let resetEndTime = 0
 const resetRedirectCount = ref(5)
 let resetTimer = null
 let redirectTimer = null
@@ -336,12 +338,20 @@ const handleSendRegisterCode = async () => {
   }
 }
 
+// 倒计时用时间戳驱动而非每秒递减：移动端浏览器切后台会冻结 setInterval，
+// 递减式倒计时会"暂停"，切回后才接着数；改为每次 tick 用 Date.now() 算真实剩余。
+const refreshRegisterCountdown = () => {
+  registerCountdown.value = Math.max(0, Math.ceil((registerEndTime - Date.now()) / 1000))
+  if (registerCountdown.value <= 0 && registerTimer) {
+    clearInterval(registerTimer)
+    registerTimer = null
+  }
+}
+
 const startRegisterCountdown = () => {
-  registerCountdown.value = 60
-  registerTimer = setInterval(() => {
-    registerCountdown.value--
-    if (registerCountdown.value <= 0) clearInterval(registerTimer)
-  }, 1000)
+  registerEndTime = Date.now() + 60 * 1000
+  refreshRegisterCountdown()
+  registerTimer = setInterval(refreshRegisterCountdown, 1000)
 }
 
 // 登录/注册提交
@@ -408,12 +418,18 @@ const handleSendResetCode = async () => {
   }
 }
 
+const refreshResetCountdown = () => {
+  resetCountdown.value = Math.max(0, Math.ceil((resetEndTime - Date.now()) / 1000))
+  if (resetCountdown.value <= 0 && resetTimer) {
+    clearInterval(resetTimer)
+    resetTimer = null
+  }
+}
+
 const startResetCountdown = () => {
-  resetCountdown.value = 60
-  resetTimer = setInterval(() => {
-    resetCountdown.value--
-    if (resetCountdown.value <= 0) clearInterval(resetTimer)
-  }, 1000)
+  resetEndTime = Date.now() + 60 * 1000
+  refreshResetCountdown()
+  resetTimer = setInterval(refreshResetCountdown, 1000)
 }
 
 // 确认重置密码
@@ -454,7 +470,17 @@ const backToLogin = () => {
   resetForm.confirmNewPassword = ''
 }
 
+// 切回前台立即按时间戳刷新，不等下一秒的 tick
+const refreshCountdownsOnVisible = () => {
+  if (document.visibilityState !== 'visible') return
+  refreshRegisterCountdown()
+  refreshResetCountdown()
+}
+
+onMounted(() => document.addEventListener('visibilitychange', refreshCountdownsOnVisible))
+
 onUnmounted(() => {
+  document.removeEventListener('visibilitychange', refreshCountdownsOnVisible)
   clearInterval(registerTimer)
   clearInterval(resetTimer)
   clearInterval(redirectTimer)

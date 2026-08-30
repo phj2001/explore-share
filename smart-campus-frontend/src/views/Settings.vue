@@ -416,6 +416,7 @@ const bindSending = ref(false)
 const bindSubmitting = ref(false)
 const bindCountdown = ref(0)
 let bindTimer = null
+let bindEndTime = 0
 const deletingAccount = ref(false)
 
 const activeTab = ref('account')
@@ -569,12 +570,20 @@ const submitPassword = async () => {
 // ---- 邮箱补绑（仅未绑定邮箱时展示，不支持换绑）----
 const EMAIL_REG = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// 倒计时用时间戳驱动而非每秒递减：移动端浏览器切后台会冻结 setInterval，
+// 递减式会"暂停"；改为每次 tick 用 Date.now() 算真实剩余（与 Login.vue 同款修法）。
+const refreshBindCountdown = () => {
+  bindCountdown.value = Math.max(0, Math.ceil((bindEndTime - Date.now()) / 1000))
+  if (bindCountdown.value <= 0 && bindTimer) {
+    clearInterval(bindTimer)
+    bindTimer = null
+  }
+}
+
 const startBindCountdown = () => {
-  bindCountdown.value = 60
-  bindTimer = setInterval(() => {
-    bindCountdown.value--
-    if (bindCountdown.value <= 0) clearInterval(bindTimer)
-  }, 1000)
+  bindEndTime = Date.now() + 60 * 1000
+  refreshBindCountdown()
+  bindTimer = setInterval(refreshBindCountdown, 1000)
 }
 
 const handleSendBindCode = async () => {
@@ -848,9 +857,20 @@ const loadMyApps = async (reset = false) => {
 const loadMoreApps = () => loadMyApps(false)
 
 // ---- Lifecycle ----
-onMounted(() => loadProfile())
+// 切回前台立即按时间戳刷新倒计时，不等下一秒的 tick
+const refreshBindCountdownOnVisible = () => {
+  if (document.visibilityState === 'visible') refreshBindCountdown()
+}
+
+onMounted(() => {
+  loadProfile()
+  document.addEventListener('visibilitychange', refreshBindCountdownOnVisible)
+})
 onBeforeUnmount(() => revokeCropperUrl())
-onUnmounted(() => clearInterval(bindTimer))
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', refreshBindCountdownOnVisible)
+  clearInterval(bindTimer)
+})
 </script>
 
 <style scoped lang="scss">
