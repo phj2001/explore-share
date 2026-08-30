@@ -73,7 +73,14 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Flyway 数据库迁移（版本由 Spring Boot BOM 统一管理；Flyway 10+ 起 PostgreSQL 方言拆为独立模块）-->
+		<!-- Flyway 数据库迁移（版本由 Spring Boot BOM 统一管理；Flyway 10+ 起 PostgreSQL 方言拆为独立模块）。
+		     ⚠️ SB4 起 Boot 自动配置按技术拆分独立模块：只放 flyway-core 时 FlywayAutoConfiguration 不在 classpath，
+		     Flyway 会静默不运行（零日志/零报错，仅 flyway_schema_history 永不出现）——必须引入 starter 带上
+		     spring-boot-flyway 模块。2026-08-29 线上缺列事故根因即此。 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-core</artifactId>
