@@ -46,6 +46,17 @@ jobs:
           npm ci
           npm run build
 
+      # ---------- 同步部署脚本（仓库 deploy/ 为唯一真源，防止 VPS 存量脚本漂移）----------
+      - name: Sync deploy scripts
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "deploy/*"
+          target: "/opt/place-explore/deploy"
+          strip_components: 1
+
       # ---------- 上传产物到服务器 ----------
       - name: Prepare remote temp dir
         uses: appleboy/ssh-action@v1.0.3
