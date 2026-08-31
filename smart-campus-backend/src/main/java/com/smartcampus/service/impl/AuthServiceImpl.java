@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -53,7 +54,7 @@ public class AuthServiceImpl implements AuthService {
         // 归一化：空白邮箱一律归 null。
         // @Email 校验其实放行空串 ""，但 "" 会误入下方邮箱分支，且 email 列的部分唯一索引
         // （WHERE email IS NOT NULL）会把 '' 视为已占用值，导致第二个空串用户撞唯一索引 500。
-        String email = StringUtils.hasText(user.getEmail()) ? user.getEmail().trim() : null;
+        String email = StringUtils.hasText(user.getEmail()) ? normalizeEmail(user.getEmail()) : null;
         user.setEmail(email);
 
         // 先查用户名重复：注定失败的请求不白白消耗有效的邮箱验证码
@@ -88,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
         // 先按用户名，查不到再按邮箱
         Optional<User> userOpt = userRepository.findByUsername(identifier);
         if (userOpt.isEmpty()) {
-            userOpt = userRepository.findByEmail(identifier);
+            userOpt = userRepository.findByEmail(normalizeEmail(identifier));
         }
 
         if (userOpt.isEmpty()) {
@@ -122,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
     public Optional<User> verifyLogin(String identifier, String password) {
         Optional<User> userOpt = userRepository.findByUsername(identifier);
         if (userOpt.isEmpty()) {
-            userOpt = userRepository.findByEmail(identifier);
+            userOpt = userRepository.findByEmail(normalizeEmail(identifier));
         }
         return userOpt
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
@@ -133,6 +134,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendRegisterCode(String email) {
+        email = normalizeEmail(email);
         assertSendAllowed(REDIS_REGISTER_PREFIX + email);
         if (userRepository.existsByEmail(email)) {
             throw new BusinessException(409, "邮箱已被注册");
@@ -144,6 +146,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendResetCode(String email) {
+        email = normalizeEmail(email);
         assertSendAllowed(REDIS_RESET_PREFIX + email);
         userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(404, "该邮箱未绑定任何账号"));
@@ -155,6 +158,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void resetPassword(String email, String code, String newPassword) {
+        email = normalizeEmail(email);
         // 校验邮箱验证码（带失败次数限制，防暴力枚举——重置密码是账号接管的直接入口，必须限次）
         verifyEmailCode(REDIS_RESET_PREFIX + email, code);
 
@@ -179,6 +183,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendBindEmailCode(Long userId, String email) {
+        email = normalizeEmail(email);
         User user = getExistingUser(userId);
         if (StringUtils.hasText(user.getEmail())) {
             throw new BusinessException(400, "当前账号已绑定邮箱，不支持换绑");
@@ -196,6 +201,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void bindEmail(Long userId, String email, String code) {
+        email = normalizeEmail(email);
         User user = getExistingUser(userId);
         if (StringUtils.hasText(user.getEmail())) {
             throw new BusinessException(400, "当前账号已绑定邮箱，不支持换绑");
@@ -244,6 +250,17 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ----------------------------- 私有工具 -------------------------------------
+
+    /**
+     * 邮箱归一化：去首尾空白 + 转小写（Locale.ROOT，避免土耳其语等 locale 的 i→ı 意外映射）。
+     * 所有邮箱入口（注册/登录回退/找回密码/补绑/发码）必须先归一化再使用：
+     * ① existsByEmail / findByEmail 均为精确匹配，大小写或空白变体（Abc@qq.com 与 abc@qq.com）
+     *   会绕过唯一性校验注册出同邮箱多账号，令找回密码、邮箱登录产生歧义；
+     * ② 发码与验码两侧必须用同一归一化值拼 Redis key，否则验证码永远匹配不上。
+     */
+    private static String normalizeEmail(String raw) {
+        return raw == null ? null : raw.trim().toLowerCase(Locale.ROOT);
+    }
 
     private User getExistingUser(Long userId) {
         return userRepository.findById(userId)
