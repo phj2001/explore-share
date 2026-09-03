@@ -37,14 +37,6 @@
           <p>基于地点组织路线，形成完整的探索路径与推荐体验。</p>
         </article>
       </div>
-
-      <div class="intro-bottom">
-        <div class="intro-stat"><strong>4,776</strong><span>收录地点</span></div>
-        <div class="intro-divider" />
-        <div class="intro-stat"><strong>2,184</strong><span>社区分享</span></div>
-        <div class="intro-divider" />
-        <div class="intro-stat"><strong>386</strong><span>原创路线</span></div>
-      </div>
     </section>
 
     <!-- 右侧：极简表单 -->
@@ -607,42 +599,6 @@ onUnmounted(() => {
   font-size: 12.5px;
   line-height: 1.7;
   color: var(--forest-300);
-}
-
-.intro-bottom {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(74,196,154,0.15);
-}
-
-.intro-stat {
-  text-align: left;
-}
-
-.intro-stat strong {
-  display: block;
-  font-family: var(--font-serif);
-  font-size: 22px;
-  color: var(--forest-100);
-  letter-spacing: -0.02em;
-}
-
-.intro-stat span {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--forest-400);
-  margin-top: 3px;
-}
-
-.intro-divider {
-  width: 1px;
-  height: 36px;
-  background: rgba(74,196,154,0.2);
 }
 
 /* 右侧：极简表单 */
