@@ -13,6 +13,7 @@ import com.smartcampus.security.UserRole;
 import com.smartcampus.security.UserStatus;
 import com.smartcampus.service.AdminOperationLogService;
 import com.smartcampus.service.AdminUserService;
+import com.smartcampus.service.LeaderboardService;
 import com.smartcampus.security.JwtTokenProvider;
 import com.smartcampus.util.RedisUtils;
 import jakarta.persistence.criteria.Predicate;
@@ -46,6 +47,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final PasswordEncoder passwordEncoder;
     private final RedisUtils redisUtils;
     private final JwtTokenProvider jwtTokenProvider;
+    private final LeaderboardService leaderboardService;
 
     @Override
     @Transactional(readOnly = true)
@@ -229,6 +231,8 @@ public class AdminUserServiceImpl implements AdminUserService {
         );
         // 账号状态（如禁用）已变更，立即清除用户信息缓存；若被禁用，额外吊销所有旧 token 以强制立即下线
         invalidateUserInfoCache(savedUser.getId());
+        // 禁用立即下榜 / 解禁恢复上榜资格：清用户榜单缓存，消除最长 1h 的延迟
+        leaderboardService.evictUserLeaderboards();
         if (UserStatus.fromCode(savedUser.getStatus()) == UserStatus.DISABLED) {
             forceInvalidateUserTokens(savedUser.getId());
         }

@@ -10,6 +10,7 @@ import com.smartcampus.security.ProfileVisibility;
 import com.smartcampus.security.UserRole;
 import com.smartcampus.security.UserStatus;
 import com.smartcampus.service.EmailService;
+import com.smartcampus.service.LeaderboardService;
 import com.smartcampus.service.UserProfileService;
 import com.smartcampus.service.storage.StorageCategory;
 import com.smartcampus.service.storage.StorageService;
@@ -44,6 +45,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final JwtTokenProvider jwtTokenProvider;
     private final StorageService storageService;
     private final EmailService emailService;
+    private final LeaderboardService leaderboardService;
 
     @Override
     @Transactional(readOnly = true)
@@ -55,16 +57,26 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Transactional
     public User updateProfile(Long userId, UpdateUserProfileRequest request) {
         User user = getRequiredUser(userId);
-        user.setDisplayName(trimToNull(request.getDisplayName()));
+        // 展示名先归一化再比对，识别真实变化：榜单缓存快照了 displayName，改名后须清缓存，否则最长 1h 内榜单仍显示旧名
+        String newDisplayName = trimToNull(request.getDisplayName());
+        boolean displayNameChanged = !java.util.Objects.equals(newDisplayName, user.getDisplayName());
+        user.setDisplayName(newDisplayName);
         user.setBio(trimToNull(request.getBio()));
         // 隐私档位：null 不修改；非 null 必须是合法 code（不走 trimToNull 路径）
+        boolean visibilityChanged = false;
         if (request.getProfileVisibility() != null) {
             if (!ProfileVisibility.isValidCode(request.getProfileVisibility())) {
                 throw new IllegalArgumentException("不支持的可见性档位");
             }
+            visibilityChanged = !request.getProfileVisibility().equals(user.getProfileVisibility());
             user.setProfileVisibility(request.getProfileVisibility());
         }
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        // 展示名/隐私档位变化即时生效到榜单（改名立即换名重排、改为受限立即下榜 / 改回公开重新上榜），不等 1h 缓存自然过期
+        if (displayNameChanged || visibilityChanged) {
+            leaderboardService.evictUserLeaderboards();
+        }
+        return saved;
     }
 
     @Override
@@ -128,6 +140,8 @@ public class UserProfileServiceImpl implements UserProfileService {
                 String.valueOf(System.currentTimeMillis()),
                 ttlSeconds, java.util.concurrent.TimeUnit.SECONDS);
         redisUtils.delete("user:info:" + userId);
+        // 已注销用户立即从榜单消失（过滤条件含非 ACTIVE，此处清缓存消除最长 1h 的延迟展示）
+        leaderboardService.evictUserLeaderboards();
 
         if (StringUtils.hasText(oldEmail)) {
             emailService.sendAccountDeletionNotice(oldEmail);
@@ -163,7 +177,10 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         deleteOldAvatar(user.getAvatarUrl());
         user.setAvatarUrl(avatarUrl);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        // 头像同样被榜单缓存快照（LeaderboardItemResponse.avatarUrl），换头像后清缓存，避免最长 1h 内榜单显示旧头像
+        leaderboardService.evictUserLeaderboards();
+        return saved;
     }
 
     private User getRequiredUser(Long userId) {

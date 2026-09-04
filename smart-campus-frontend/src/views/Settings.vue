@@ -152,7 +152,7 @@
                       </div>
                     </el-radio>
                   </el-radio-group>
-                  <p class="visibility-tip">地图上的公开分享与排行榜不受此设置影响，这里只控制个人主页的可见范围。</p>
+                  <p class="visibility-tip">设置受限后你将不再出现在排行榜中；地图上的公开分享仍保持公开，不受此设置影响。</p>
                 </section>
 
                 <section class="settings-card front-panel danger-card">

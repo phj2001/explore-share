@@ -7,6 +7,8 @@ import com.smartcampus.repository.POICheckInRepository;
 import com.smartcampus.repository.POIShareLikeRepository;
 import com.smartcampus.repository.POIShareRepository;
 import com.smartcampus.repository.UserRepository;
+import com.smartcampus.security.ProfileVisibility;
+import com.smartcampus.security.UserStatus;
 import com.smartcampus.service.LeaderboardService;
 import com.smartcampus.util.RedisUtils;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final RedisUtils redisUtils;
 
     private static final int CACHE_HOURS = 1;
+    /** 用户维度榜单的全部缓存 key 维度：3 类型 × 2 周期（前端只传 total/week，与 getLeaderboard 的 key 构造一致） */
+    private static final String[] LB_TYPES = {"checkin", "share", "likes"};
+    private static final String[] LB_PERIODS = {"total", "week"};
 
     @Override
     public List<LeaderboardItemResponse> getLeaderboard(String type, String period, int limit) {
@@ -74,6 +79,12 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             long count = ((Number) row[1]).longValue();
             User user = userMap.get(userId);
             if (user == null) continue;
+            // 隐私/状态过滤：非公开主页或非活跃用户不上榜（不占名次、名次连续，与 user==null 同模式），
+            // 榜单属全站公开展示位，口径与 6 个公开内容端点的隐私拦截保持一致
+            if (ProfileVisibility.fromCode(user.getProfileVisibility()) != ProfileVisibility.PUBLIC
+                    || UserStatus.fromCode(user.getStatus()) != UserStatus.ACTIVE) {
+                continue;
+            }
 
             result.add(new LeaderboardItemResponse(
                     rank + 1,
@@ -115,6 +126,15 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
         redisUtils.setObject(cacheKey, result, CACHE_HOURS, TimeUnit.HOURS);
         return result;
+    }
+
+    @Override
+    public void evictUserLeaderboards() {
+        for (String type : LB_TYPES) {
+            for (String period : LB_PERIODS) {
+                redisUtils.delete(String.format("leaderboard:%s:%s", type, period));
+            }
+        }
     }
 
     private LocalDateTime weekStart() {
