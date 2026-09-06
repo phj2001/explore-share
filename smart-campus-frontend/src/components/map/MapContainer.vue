@@ -139,6 +139,9 @@ const EMPTY_STATE_FALLBACK_ZOOM = 5
 // 定位目标层级：IP 城市级 / 浏览器精确（15 级起自研聚合散开为单个点，正好承接精确定位）
 const IP_LOCATE_ZOOM = 11
 const PRECISE_LOCATE_ZOOM = 15
+// IP 城市级定位超时：CitySearch 自身无 timeout 参数，用 race 兜底防挂死；getCityInfo 在移动网络下偏慢，6000 实测偏短
+const CITY_SEARCH_TIMEOUT_MS = 8000
+const GEOLOCATION_IP_TIMEOUT_MS = 10000
 
 // 切回桌面时收起移动端路线面板
 watch(isMobile, (mobile) => {
@@ -1107,20 +1110,54 @@ const flyToGcj02 = (lng, lat, zoomLevel) => {
   map?.setZoomAndCenter(zoomLevel, [lng, lat])
 }
 
-// 动态加载 Geolocation 插件后再执行（loader URL 未挂 plugin 参数，与现有按需加载风格一致）
-const withGeolocationPlugin = (action) => {
+// 动态加载指定插件后再执行（loader URL 未挂 plugin 参数，与现有按需加载风格一致）
+const withAmapPlugin = (pluginName, action) => {
   if (!AMapRef || !map) return Promise.resolve(null)
   return new Promise((resolve) => {
-    AMapRef.plugin('AMap.Geolocation', () => resolve(action()))
+    AMapRef.plugin(pluginName, () => resolve(action()))
   })
 }
 
-// IP 城市级定位：无授权弹窗、秒回，用于首屏静默定位与精确定位失败后的降级
-const locateByIp = () =>
-  withGeolocationPlugin(
+const withGeolocationPlugin = (action) => withAmapPlugin('AMap.Geolocation', action)
+
+// CitySearch 无 timeout 参数，race 兜底防挂死：超时仍未回调即视为失败，继续走 getCityInfo
+const withRaceTimeout = (promise, ms) =>
+  Promise.race([promise, new Promise((resolve) => setTimeout(() => resolve(null), ms))])
+
+// IP 城市级定位·首选通道：CitySearch 插件按 IP 查询所在城市，与 Geolocation 的 getCityInfo 相互独立。
+// 生产站实测出现过精确定位与 getCityInfo 双双失败（直达最终级提示），引入独立通道提高降级成功率
+const locateByCitySearch = () =>
+  withAmapPlugin('AMap.CitySearch', () =>
+    new Promise((resolve) => {
+      new AMapRef.CitySearch().getLocalCity((status, result) => {
+        const cityInfo = result?.cityInfo
+        // center 兼容数组 / LngLat 两种形态，缺失时退回 bounds 的几何中心
+        const rawCenter = Array.isArray(cityInfo?.center)
+          ? cityInfo.center
+          : cityInfo?.center
+            ? [cityInfo.center.lng, cityInfo.center.lat]
+            : null
+        const center = rawCenter ?? cityInfo?.bounds?.getCenter?.()
+        const lng = Number(center?.lng ?? center?.[0])
+        const lat = Number(center?.lat ?? center?.[1])
+        if (status === 'complete' && Number.isFinite(lng) && Number.isFinite(lat)) {
+          resolve({ lng, lat, city: cityInfo?.city || '' })
+        } else {
+          resolve(null)
+        }
+      })
+    })
+  )
+
+// IP 城市级定位：无授权弹窗，用于首屏静默定位与精确定位失败后的降级；CitySearch 优先、getCityInfo 兜底
+const locateByIp = async () => {
+  const byCitySearch = await withRaceTimeout(locateByCitySearch(), CITY_SEARCH_TIMEOUT_MS)
+  if (byCitySearch) return byCitySearch
+
+  return withGeolocationPlugin(
     () =>
       new Promise((resolve) => {
-        const geolocation = new AMapRef.Geolocation({ timeout: 6000 })
+        const geolocation = new AMapRef.Geolocation({ timeout: GEOLOCATION_IP_TIMEOUT_MS })
         geolocation.getCityInfo((status, result) => {
           const center = result?.center
           if (status === 'complete' && Array.isArray(center) && center.length === 2) {
@@ -1133,6 +1170,7 @@ const locateByIp = () =>
         })
       })
   )
+}
 
 // 飞到定位结果并抑制空态回退：用户已定位到明确位置，周边暂无 POI 也停在原地，不被拉回全国
 const flyToLocation = (loc, zoomLevel) => {
