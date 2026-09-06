@@ -36,6 +36,15 @@
         >
           申请添加地点
         </el-button>
+        <el-button
+          plain
+          class="map-toolbar-button"
+          :loading="isLocating"
+          @click="locateMe"
+        >
+          <el-icon><Aim /></el-icon>
+          <span>定位</span>
+        </el-button>
       </div>
 
       <!-- 性能截断提示已下线（用户反馈：不需要该提示）
@@ -64,6 +73,7 @@
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Aim } from '@element-plus/icons-vue'
 import RoutePolyline from '@/components/map/RoutePolyline.vue'
 import { useUserStore } from '@/stores/user'
 import { usePOIStore } from '@/stores/poi'
@@ -126,6 +136,9 @@ const MAP_BOUNDS_LIMIT_MAX = 900
 const BOUNDS_REUSE_EPSILON = 0.0001
 const EMPTY_STATE_FALLBACK_CENTER = { lat: 35.8617, lng: 104.1954 }
 const EMPTY_STATE_FALLBACK_ZOOM = 5
+// 定位目标层级：IP 城市级 / 浏览器精确（15 级起自研聚合散开为单个点，正好承接精确定位）
+const IP_LOCATE_ZOOM = 11
+const PRECISE_LOCATE_ZOOM = 15
 
 // 切回桌面时收起移动端路线面板
 watch(isMobile, (mobile) => {
@@ -1084,6 +1097,91 @@ const handleFitSearchResults = () => {
   schedulePoiResultViewportAdjustment()
 }
 
+// ---- 定位（AMap.Geolocation 返回 GCJ02 高德系坐标）----
+const isLocating = ref(false)
+
+const flyToGcj02 = (lng, lat, zoomLevel) => {
+  // 双写口径与 loadInitialMapData 一致：地图实例吃 GCJ02，store 存业务 WGS84（syncMapCenterToStore 同款换算）
+  const wgs84 = fromAmapCoordinate(lat, lng)
+  mapStore.flyTo(wgs84.lat, wgs84.lng, zoomLevel)
+  map?.setZoomAndCenter(zoomLevel, [lng, lat])
+}
+
+// 动态加载 Geolocation 插件后再执行（loader URL 未挂 plugin 参数，与现有按需加载风格一致）
+const withGeolocationPlugin = (action) => {
+  if (!AMapRef || !map) return Promise.resolve(null)
+  return new Promise((resolve) => {
+    AMapRef.plugin('AMap.Geolocation', () => resolve(action()))
+  })
+}
+
+// IP 城市级定位：无授权弹窗、秒回，用于首屏静默定位与精确定位失败后的降级
+const locateByIp = () =>
+  withGeolocationPlugin(
+    () =>
+      new Promise((resolve) => {
+        const geolocation = new AMapRef.Geolocation({ timeout: 6000 })
+        geolocation.getCityInfo((status, result) => {
+          const center = result?.center
+          if (status === 'complete' && Array.isArray(center) && center.length === 2) {
+            // 透出城市名：IP 定位返回的是"IP 注册归属地"而非实际所在地（移动骨干段实测可偏差到外省），
+            // 提示里必须展示实际定位到的城市，用户才能一眼识别偏差
+            resolve({ lng: Number(center[0]), lat: Number(center[1]), city: result?.city || '' })
+          } else {
+            resolve(null)
+          }
+        })
+      })
+  )
+
+// 飞到定位结果并抑制空态回退：用户已定位到明确位置，周边暂无 POI 也停在原地，不被拉回全国
+const flyToLocation = (loc, zoomLevel) => {
+  if (!loc || !map) return
+  hasAppliedEmptyStateFallback = true
+  flyToGcj02(loc.lng, loc.lat, zoomLevel)
+}
+
+// 准星按钮：点击才做浏览器精确定位（授权弹窗在用户主动点击时出现，体验最佳），失败逐级降级
+const locateMe = async () => {
+  if (isLocating.value) return
+  isLocating.value = true
+  try {
+    const precise = await withGeolocationPlugin(
+      () =>
+        new Promise((resolve) => {
+          // noIpLocate：禁止高德在浏览器定位失败时内部静默降级为 IP 定位（仍回调 complete，会把 IP 归属地伪装成精确定位结果，
+          // 台式机无 GPS 时实测被定位到 IP 注册城市）。失败交给下方 locateByIp 显式降级并明示"城市级"
+          const geolocation = new AMapRef.Geolocation({ enableHighAccuracy: true, timeout: 10000, noIpLocate: true })
+          geolocation.getCurrentPosition((status, result) => {
+            const pos = result?.position
+            if (status === 'complete' && pos) {
+              resolve({ lng: Number(pos.lng), lat: Number(pos.lat) })
+            } else {
+              resolve(null)
+            }
+          })
+        })
+    )
+    if (precise) {
+      flyToLocation(precise, PRECISE_LOCATE_ZOOM)
+      return
+    }
+    const byIp = await locateByIp()
+    if (byIp) {
+      flyToLocation(byIp, IP_LOCATE_ZOOM)
+      ElMessage.info(
+        byIp.city
+          ? `精确定位不可用，已按 IP 定位到${byIp.city}（IP 归属地，可能与实际不符）`
+          : '精确定位不可用，已按 IP 归属地定位，可能与实际不符'
+      )
+      return
+    }
+    ElMessage.warning('定位失败，请检查浏览器的定位权限是否开启')
+  } finally {
+    isLocating.value = false
+  }
+}
+
 onMounted(async () => {
   try {
     await initMap()
@@ -1102,6 +1200,10 @@ onMounted(async () => {
       } catch {
         // 静默，不影响主流程
       }
+    } else {
+      // 首屏 IP 静默定位（无授权弹窗）：飞到用户所在城市；失败静默保持默认全国视野。
+      // 分享链接带 poiId 时跳过（明确意图优先，准星按钮不受影响）
+      locateByIp().then((loc) => flyToLocation(loc, IP_LOCATE_ZOOM))
     }
   } catch (error) {
     sdkError.value = error.message || '高德地图初始化失败'
